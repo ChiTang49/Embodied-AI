@@ -1,0 +1,6 @@
+# Ignore every directory named __plan__ or raw at any depth
+__plan__/
+raw/
+
+# GitHub rejects files larger than 100 MB
+/notes/CS 294-277, Robots That Learn (Fall 2024)/materials/robots_that_learn_course_notes.pdf
