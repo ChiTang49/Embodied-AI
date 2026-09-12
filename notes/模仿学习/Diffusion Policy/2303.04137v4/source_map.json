@@ -1,0 +1,1344 @@
+{
+  "paper": {
+    "title": "Diffusion Policy: Visuomotor Policy Learning via Action Diffusion",
+    "venue": "arXiv preprint arXiv:2303.04137v4",
+    "source_type": "pdf",
+    "language": "en",
+    "source_path": "F:\\Learning-Space\\Embodied-AI\\notes\\模仿学习\\Diffusion Policy\\2303.04137v4.pdf",
+    "pdf_pages": 16
+  },
+  "blocks": [
+    {
+      "id": "S001",
+      "page": 1,
+      "type": "paragraph",
+      "order": 1,
+      "original_text": "This paper introduces Diffusion Policy, a new way of generating robot behavior by representing a robot’s visuomotor policy as a conditional denoising diffusion process. We benchmark Diffusion Policy across 12 different tasks from 4 different robot manipulation benchmarks and find that it consistently outperforms existing state-of-the-art robot learning methods with an average improvement of 46.9%. Diffusion Policy learns the gradient of the action-distribution score function and iteratively optimizes with respect to this gradient field during inference via a series of stochastic Langevin dynamics steps. We find that the diffusion formulation yields powerful advantages when used for robot policies, including gracefully handling multimodal action distributions, being suitable for high-dimensional action spaces, and exhibiting impressive training stability. To fully unlock the potential of diffusion models for visuomotor policy learning on physical robots, this paper presents a set of key technical contributions including the incorporation of receding horizon control, visual conditioning, and the time-series diffusion transformer. We hope this work will help motivate a new generation of policy learning techniques that are able to leverage the powerful generative modeling capabilities of diffusion models. Code, data, and training details will be publicly available.",
+      "translation": "本文提出 Diffusion Policy：将机器人的视觉运动策略表示为条件去噪扩散过程，以此生成机器人行为。作者在来自 4 个机器人操作基准的 12 项任务上进行评测，发现该方法稳定超过现有最先进的机器人学习方法，平均提升 46.9%。Diffusion Policy 学习动作分布得分函数的梯度，并在推理时通过一系列随机 Langevin 动力学步骤，沿该梯度场迭代优化。实验表明，扩散形式为机器人策略带来多项优势：能够自然处理多模态动作分布，适用于高维动作空间，并具有出色的训练稳定性。为充分发挥扩散模型在真实机器人视觉运动策略学习中的潜力，论文进一步引入 receding-horizon control（滚动时域控制）、视觉条件和时间序列扩散 Transformer 等关键技术。作者希望本工作推动新一代策略学习技术，利用扩散模型强大的生成建模能力。代码、数据和训练细节将公开。",
+      "confidence": "high",
+      "refs": [
+        "F001"
+      ]
+    },
+    {
+      "id": "S002",
+      "page": 1,
+      "type": "paragraph",
+      "order": 2,
+      "original_text": "Policy learning from demonstration, in its simplest form, can be formulated as the supervised regression task of learning to map observations to actions. In practice however, the unique nature of predicting robot actions — such as the existence of multimodal distributions, sequential correlation, and the requirement of high precision — makes this task distinct and challenging compared to other supervised learning problems.",
+      "translation": "从示范中学习策略，最简单的形式可以写成一个监督回归任务：学习将观测映射到动作。然而，机器人动作预测具有独特性质——动作分布可能是多模态的，动作之间存在序列相关性，而且通常要求高精度——因此它与其他监督学习问题不同，也更具挑战。",
+      "confidence": "high",
+      "refs": []
+    },
+    {
+      "id": "S003",
+      "page": 1,
+      "type": "paragraph",
+      "order": 3,
+      "original_text": "Prior work attempts to address this challenge by exploring different action representations (Fig. 1 a) — using mixtures of Gaussians, categorical representations of quantized actions, or by switching the policy representation (Fig. 1 b) — from explicit to implicit to better capture multi-modal distributions.",
+      "translation": "以往工作尝试通过探索不同的动作表示来应对这一挑战（图 1a）：使用高斯混合、量化动作的类别表示，或切换策略表示形式（图 1b），从显式策略转向隐式策略，以更好地捕获多模态分布。",
+      "confidence": "high",
+      "refs": [
+        "F001"
+      ]
+    },
+    {
+      "id": "S004",
+      "page": 1,
+      "type": "paragraph",
+      "order": 4,
+      "original_text": "In this work, we seek to address this challenge by introducing a new form of robot visuomotor policy that generates behavior via a “conditional denoising diffusion process” on robot action space, Diffusion Policy. In this formulation, instead of directly outputting an action, the policy infers the action-score gradient, conditioned on visual observations, for K denoising iterations (Fig. 1 c). This formulation allows robot policies to inherit several key properties from diffusion models.",
+      "translation": "本文提出 Diffusion Policy：在机器人动作空间上执行“条件去噪扩散过程”，以生成机器人行为。该策略不直接输出动作，而是在视觉观测条件下，经过 K 次去噪迭代推断动作得分的梯度（图 1c）。因此，机器人策略可以继承扩散模型的若干关键性质。",
+      "confidence": "high",
+      "refs": [
+        "F001"
+      ]
+    },
+    {
+      "id": "S005",
+      "page": 1,
+      "type": "paragraph",
+      "order": 5,
+      "original_text": "Expressing multimodal action distributions. By learning the gradient of the action score function and performing Stochastic Langevin Dynamics sampling on this gradient field, Diffusion policy can express arbitrary normalizable distributions, which includes multimodal action distributions, a well-known challenge for policy learning.",
+      "translation": "**表达多模态动作分布。** Diffusion Policy 学习动作得分函数的梯度，并在该梯度场上执行随机 Langevin 动力学采样，因此能够表达任意可归一化分布，其中包括策略学习长期难以处理的多模态动作分布。",
+      "confidence": "high",
+      "refs": []
+    },
+    {
+      "id": "S006",
+      "page": 1,
+      "type": "paragraph",
+      "order": 6,
+      "original_text": "High-dimensional output space. As demonstrated by their impressive image generation results, diffusion models have shown excellent scalability to high-dimension output spaces. This property allows the policy to jointly infer a sequence of future actions instead of single-step actions, which is critical for encouraging temporal action consistency and avoiding myopic planning.",
+      "translation": "**高维输出空间。** 扩散模型在图像生成中的结果表明，它们能够很好地扩展到高维输出空间。因此，策略可以联合推断一段未来动作序列，而不是只预测单步动作；这对于鼓励动作的时间一致性、避免短视规划至关重要。",
+      "confidence": "high",
+      "refs": []
+    },
+    {
+      "id": "S007",
+      "page": 1,
+      "type": "paragraph",
+      "order": 7,
+      "original_text": "Stable training. Training energy-based policies often requires negative sampling to estimate an intractable normalization constant, which is known to cause training instability. Diffusion Policy bypasses this requirement by learning the gradient of the energy function and thereby achieves stable training while maintaining distributional expressivity.",
+      "translation": "**稳定训练。** 能量策略的训练通常需要通过负采样估计难以处理的归一化常数，而负采样会导致训练不稳定。Diffusion Policy 通过学习能量函数的梯度绕开这一要求，在保持分布表达能力的同时实现稳定训练。",
+      "confidence": "high",
+      "refs": []
+    },
+    {
+      "id": "S008",
+      "page": 2,
+      "type": "paragraph",
+      "order": 8,
+      "original_text": "Our primary contribution is to bring the above advantages to the field of robotics and demonstrate their effectiveness on complex real-world robot manipulation tasks. To successfully employ diffusion models for visuomotor policy learning, we present the following technical contributions: closed-loop action sequences, visual conditioning, and a time-series diffusion transformer. We systematically evaluate Diffusion Policy across 12 tasks from 4 different benchmarks under the behavior cloning formulation. The evaluation includes simulated and real-world environments, 2DoF to 6DoF actions, single- and multi-task benchmarks, fully- and under-actuated systems, rigid and fluid objects, and demonstrations collected by single and multiple users. Empirically, we find consistent performance boost across all benchmarks with an average improvement of 46.9%.",
+      "translation": "本文的主要贡献是将上述优势带入机器人领域，并在复杂真实机器人操作任务上验证其有效性。为将扩散模型用于视觉运动策略学习，作者提出三项技术贡献：闭环动作序列、视觉条件和时间序列扩散 Transformer。论文在行为克隆设定下，系统评测来自 4 个基准的 12 项任务，覆盖仿真与真实环境、2DoF 至 6DoF 动作、单任务与多任务、全驱动与欠驱动系统、刚性与流体物体，以及单人和多人采集的示范。实验发现所有基准均有稳定提升，平均提升 46.9%。",
+      "confidence": "high",
+      "refs": [
+        "F002"
+      ]
+    },
+    {
+      "id": "S009",
+      "page": 2,
+      "type": "paragraph",
+      "order": 9,
+      "original_text": "We formulate visuomotor robot policies as Denoising Diffusion Probabilistic Models (DDPMs). Crucially, Diffusion policies are able to express complex multimodal action distributions and possess stable training behavior — requiring little task-specific hyperparameter tuning.",
+      "translation": "作者将视觉运动机器人策略形式化为去噪扩散概率模型（DDPM）。关键在于，Diffusion Policy 能表达复杂的多模态动作分布，并具有稳定的训练行为，因此不需要大量针对任务的超参数调节。",
+      "confidence": "high",
+      "refs": []
+    },
+    {
+      "id": "S010",
+      "page": 2,
+      "type": "paragraph",
+      "order": 10,
+      "original_text": "DDPMs are a class of generative model where the output generation is modeled as a denoising process, often called Stochastic Langevin Dynamics. Starting from x^K sampled from Gaussian noise, the DDPM performs K iterations of denoising to produce intermediate actions with decreasing levels of noise, x^K, x^{K−1}, …, x^0, until a desired noise-free output x^0 is formed.",
+      "translation": "DDPM 是一类将输出生成建模为去噪过程的生成模型，这一过程通常称为随机 Langevin 动力学。从高斯噪声采样得到的 x^K 出发，DDPM 执行 K 次去噪，生成噪声水平逐步降低的中间动作 x^K、x^{K−1}、…、x^0，直到得到目标的无噪声输出 x^0。",
+      "confidence": "high",
+      "refs": []
+    },
+    {
+      "id": "S011",
+      "page": 2,
+      "type": "paragraph",
+      "order": 11,
+      "original_text": "The process follows x^{k−1}=α(x^k−γε_θ(x^k,k)+N(0,σ²I)). Here ε_θ is the noise prediction network with parameters θ, and N(0,σ²I) is Gaussian noise added at each iteration. Equation (1) may also be interpreted as a single noisy gradient descent step, x′=x−γ∇E(x), where the noise prediction network effectively predicts the gradient field ∇E(x), and γ is the learning rate.",
+      "translation": "该过程满足 x^{k−1}=α(x^k−γε_θ(x^k,k)+N(0,σ²I))。其中，ε_θ 是参数为 θ 的噪声预测网络，N(0,σ²I) 是每次迭代加入的高斯噪声。该式也可以看作一个带噪梯度下降步骤 x′=x−γ∇E(x)：噪声预测网络实际上预测梯度场 ∇E(x)，而 γ 是学习率。",
+      "confidence": "high",
+      "refs": []
+    },
+    {
+      "id": "S012",
+      "page": 2,
+      "type": "paragraph",
+      "order": 12,
+      "original_text": "The choice of α, γ, σ as functions of iteration step k, also called noise schedule, can be interpreted as learning rate scheduling in gradient descent process. An α slightly smaller than 1 has been shown to improve stability.",
+      "translation": "将 α、γ、σ 设为迭代步 k 的函数，即噪声调度（noise schedule），可以解释为梯度下降过程中的学习率调度。已有研究表明，让 α 略小于 1 有助于提高稳定性。",
+      "confidence": "high",
+      "refs": []
+    },
+    {
+      "id": "S013",
+      "page": 2,
+      "type": "paragraph",
+      "order": 13,
+      "original_text": "The training process starts by randomly drawing unmodified examples, x^0, from the dataset. For each sample, we randomly select a denoising iteration k and then sample a random noise ε^k with appropriate variance for iteration k. The noise prediction network is asked to predict the noise from the data sample with noise added.",
+      "translation": "训练首先从数据集中随机抽取未加噪样本 x^0。对于每个样本，随机选择去噪迭代步 k，再按照该步对应的方差采样随机噪声 ε^k。噪声预测网络需要根据加噪后的数据样本预测这部分噪声。",
+      "confidence": "high",
+      "refs": []
+    },
+    {
+      "id": "S014",
+      "page": 2,
+      "type": "paragraph",
+      "order": 14,
+      "original_text": "L = MSE(ε^k, ε_θ(x^0+ε^k,k)). As shown in [18], minimizing the loss function in Eq. 3 also minimizes the variational lower bound of the KL-divergence between the data distribution p(x^0) and the distribution of samples drawn from the DDPM.",
+      "translation": "训练损失为噪声均方误差 L = MSE(ε^k, ε_θ(x^0+ε^k,k))。根据文献 [18]，最小化该损失也等价于最小化数据分布 p(x^0) 与由 DDPM 采样得到的分布之间 KL 散度的变分下界。",
+      "confidence": "high",
+      "refs": []
+    },
+    {
+      "id": "S015",
+      "page": 3,
+      "type": "paragraph",
+      "order": 15,
+      "original_text": "While DDPMs are typically used for image generation (x is an image), we use a DDPM to learn robot visuomotor policies. This requires two major modifications: changing the output x to represent robot actions, and making the denoising process conditioned on input observation O_t.",
+      "translation": "DDPM 通常用于图像生成（此时 x 是图像），而本文将 DDPM 用于学习机器人视觉运动策略，需要两项主要改造：一是让输出 x 表示机器人动作；二是让去噪过程以输入观测 O_t 为条件。",
+      "confidence": "high",
+      "refs": [
+        "F003"
+      ]
+    },
+    {
+      "id": "S016",
+      "page": 3,
+      "type": "paragraph",
+      "order": 16,
+      "original_text": "Closed-loop action-sequence prediction: an effective action formulation should encourage temporal consistency and smoothness in long-horizon planning while allowing prompt reactions to unexpected observations. At time step t the policy takes the latest T_o steps of observation data O_t as input and predicts T_p steps of actions, of which T_a steps are executed on the robot without re-planning. T_o is the observation horizon, T_p the action prediction horizon, and T_a the action execution horizon.",
+      "translation": "**闭环动作序列预测。** 有效的动作表示应在长时域规划中鼓励时间一致性和平滑性，同时允许对意外观测快速反应。在时间步 t，策略输入最近 T_o 步观测 O_t，预测 T_p 步动作，其中 T_a 步在不重新规划的情况下执行。T_o、T_p、T_a 分别称为观测窗口、动作预测窗口和动作执行窗口。",
+      "confidence": "high",
+      "refs": [
+        "F003"
+      ]
+    },
+    {
+      "id": "S017",
+      "page": 3,
+      "type": "paragraph",
+      "order": 17,
+      "original_text": "Visual observation conditioning: we use a DDPM to approximate the conditional distribution p(A_t|O_t) instead of the joint distribution p(A_t,O_t) used for planning. This formulation allows the model to predict actions conditioned on observations without inferring future states, speeding up diffusion and improving generated-action accuracy.",
+      "translation": "**视觉观测条件。** 作者使用 DDPM 近似条件分布 p(A_t|O_t)，而不是规划工作中使用的联合分布 p(A_t,O_t)。这样，模型无需推断未来状态，就能在观测条件下预测动作，从而加速扩散过程并提高生成动作的准确性。",
+      "confidence": "high",
+      "refs": [
+        "F003"
+      ]
+    },
+    {
+      "id": "S018",
+      "page": 3,
+      "type": "paragraph",
+      "order": 18,
+      "original_text": "The conditional denoising and training equations are A_t^{k−1}=α(A_t^k−γε_θ(O_t,A_t^k,k)+N(0,σ²I)) and L=MSE(ε^k, ε_θ(O_t,A_t^0+ε^k,k)). The exclusion of observation features O_t from the output of the denoising process significantly improves inference speed and better accommodates real-time control. It also makes end-to-end training of the vision encoder feasible.",
+      "translation": "条件去噪和训练公式分别为 A_t^{k−1}=α(A_t^k−γε_θ(O_t,A_t^k,k)+N(0,σ²I)) 和 L=MSE(ε^k, ε_θ(O_t,A_t^0+ε^k,k))。将观测特征 O_t 排除在去噪输出之外，显著提高了推理速度，更适合实时控制，也使视觉编码器能够进行端到端训练。",
+      "confidence": "high",
+      "refs": []
+    },
+    {
+      "id": "S019",
+      "page": 3,
+      "type": "paragraph",
+      "order": 19,
+      "original_text": "We examine two common network architecture types for ε_θ, convolutional neural networks (CNNs) and Transformers, and compare their performance and training characteristics. The choice of noise prediction network is independent of visual encoders.",
+      "translation": "作者考察了两种用于 ε_θ 的常见网络结构：卷积神经网络（CNN）和 Transformer，并比较它们的性能与训练特性。噪声预测网络的选择与视觉编码器相互独立。",
+      "confidence": "high",
+      "refs": []
+    },
+    {
+      "id": "S020",
+      "page": 3,
+      "type": "paragraph",
+      "order": 20,
+      "original_text": "CNN-based Diffusion Policy adopts a 1D temporal CNN with FiLM conditioning on observation features and denoising iteration k. It predicts only the action trajectory rather than a concatenated observation-action trajectory. The CNN backbone works well out of the box on most tasks, but performs poorly when the desired action sequence changes quickly and sharply, likely because temporal convolutions prefer low-frequency signals.",
+      "translation": "基于 CNN 的 Diffusion Policy 采用一维时间 CNN，并利用 FiLM 以观测特征和去噪迭代步 k 为条件。它只预测动作轨迹，而不是拼接后的观测-动作轨迹。CNN 主干在大多数任务上无需大量调参即可工作良好，但当目标动作序列快速、剧烈变化时性能较差，可能是因为时间卷积具有偏好低频信号的归纳偏置。",
+      "confidence": "high",
+      "refs": []
+    },
+    {
+      "id": "S021",
+      "page": 4,
+      "type": "paragraph",
+      "order": 21,
+      "original_text": "Time-series diffusion transformer introduces a Transformer-based DDPM based on minGPT. Noisy actions are input tokens, the sinusoidal diffusion-step embedding is prepended, and the observation sequence is transformed by a shared MLP and passed to the decoder stack. Each output token predicts ε_θ(O_t,A_t^k,k). In state-based experiments the Transformer often performs best on complex tasks and high action-change rates, but is more sensitive to hyperparameters. The authors recommend starting with CNN and switching to the time-series diffusion Transformer when task complexity or high-rate changes limit performance.",
+      "translation": "时间序列扩散 Transformer 在 minGPT 结构基础上构造 Transformer-DDPM。带噪动作作为输入 token，正弦形式的扩散步嵌入放在序列开头，观测序列经共享 MLP 变换后输入解码器堆栈；每个输出 token 预测 ε_θ(O_t,A_t^k,k)。在基于状态的实验中，Transformer 在复杂任务和高动作变化率任务上通常表现最好，但对超参数更敏感。作者建议新任务先从 CNN 版本开始；若任务复杂度或高频变化限制性能，再切换到时间序列扩散 Transformer，并承担额外调参成本。",
+      "confidence": "high",
+      "refs": []
+    },
+    {
+      "id": "S022",
+      "page": 4,
+      "type": "paragraph",
+      "order": 22,
+      "original_text": "The visual encoder maps the raw image sequence into a latent embedding O_t and is trained end-to-end with the diffusion policy. Different camera views use separate encoders; images at each timestep are encoded independently and concatenated. A standard ResNet-18 without pretraining is used, replacing global average pooling with spatial softmax pooling and BatchNorm with GroupNorm for stable training with Exponential Moving Average.",
+      "translation": "视觉编码器将原始图像序列映射为潜在嵌入 O_t，并与扩散策略一起端到端训练。不同相机视角使用独立编码器，每个时间步的图像分别编码后拼接。作者使用未经预训练的标准 ResNet-18，并以 spatial softmax pooling 替代全局平均池化，以保留空间信息；以 GroupNorm 替代 BatchNorm，以便与指数移动平均结合时保持训练稳定。",
+      "confidence": "high",
+      "refs": []
+    },
+    {
+      "id": "S023",
+      "page": 4,
+      "type": "paragraph",
+      "order": 23,
+      "original_text": "The noise schedule, defined by σ, α, γ and the additive Gaussian noise as functions of k, controls the extent to which diffusion policy captures high- and low-frequency action characteristics. Empirically, the Square Cosine Schedule from iDDPM works best. For real-time control, DDIM decouples training and inference denoising iterations. Using 100 training iterations and 10 inference iterations gives 0.1 s inference latency on an Nvidia 3080 GPU.",
+      "translation": "噪声调度由 σ、α、γ 以及随 k 变化的加性高斯噪声定义，它控制扩散策略捕获动作高频和低频特征的程度。实验上，iDDPM 的 Square Cosine Schedule 最适合这些任务。为实现实时控制，DDIM 将训练和推理的去噪迭代次数解耦；在 Nvidia 3080 GPU 上，训练使用 100 次迭代、推理使用 10 次迭代时，推理延迟可达 0.1 秒。",
+      "confidence": "high",
+      "refs": []
+    },
+    {
+      "id": "S024",
+      "page": 4,
+      "type": "paragraph",
+      "order": 24,
+      "original_text": "Diffusion Policy’s ability to express multimodal distributions arises from stochastic sampling and stochastic initialization. In Stochastic Langevin Dynamics, an initial sample A_t^K is drawn from a standard Gaussian, which helps specify different convergence basins. Gaussian perturbations across iterations allow samples to move between multimodal basins.",
+      "translation": "Diffusion Policy 表达多模态分布的能力来自随机采样和随机初始化。在随机 Langevin 动力学中，初始样本 A_t^K 从标准高斯分布采样，这有助于指定不同的收敛盆地；迭代过程中加入的高斯扰动则允许样本在不同多模态盆地之间移动。",
+      "confidence": "high",
+      "refs": [
+        "F004"
+      ]
+    },
+    {
+      "id": "S025",
+      "page": 4,
+      "type": "paragraph",
+      "order": 25,
+      "original_text": "Diffusion Policy with a position-control action space consistently outperforms velocity control. The authors speculate that multimodality is more pronounced in position control, which Diffusion Policy handles better, and that position control suffers less from compounding errors, making it more suitable for action-sequence prediction.",
+      "translation": "使用位置控制动作空间的 Diffusion Policy 稳定优于速度控制。作者推测，位置控制中的动作多模态性更加明显，而 Diffusion Policy 更擅长表达这种多模态；同时位置控制受累积误差影响更小，因此更适合动作序列预测。",
+      "confidence": "high",
+      "refs": [
+        "F005",
+        "F006"
+      ]
+    },
+    {
+      "id": "S026",
+      "page": 5,
+      "type": "paragraph",
+      "order": 26,
+      "original_text": "Sequence prediction is often avoided because sampling from high-dimensional output spaces is difficult. Diffusion Policy represents action as a high-dimensional action sequence, naturally addressing temporal action consistency and robustness to idle actions. Independent multimodal predictions can switch modes between consecutive steps and produce jitter; a sequence-level prediction keeps one coherent mode. Idle actions occur when demonstrations pause, and filtering them is undesirable for tasks such as pouring. Diffusion Policy models such pauses instead of overfitting to them.",
+      "translation": "许多策略学习方法回避序列预测，因为从高维输出空间有效采样很困难。Diffusion Policy 将动作表示为高维动作序列，从而自然解决时间动作一致性和对空闲动作的鲁棒性问题。若每一步独立进行多模态预测，相邻动作可能在不同模式之间跳转，产生抖动；序列级预测则能保持同一条连贯轨迹。示范暂停时会出现空闲动作，倒液体等任务并不适合简单过滤这些动作。Diffusion Policy 直接建模暂停，而不是对其过拟合。",
+      "confidence": "high",
+      "refs": []
+    },
+    {
+      "id": "S027",
+      "page": 5,
+      "type": "paragraph",
+      "order": 27,
+      "original_text": "Implicit Behavioral Cloning (IBC) can in theory possess similar advantages, but reliable high-performance results are difficult because its training is unstable. IBC may show smoothly decreasing training loss while failing to infer training actions accurately, and its evaluation success rate can oscillate, making hyperparameter tuning and checkpoint selection difficult.",
+      "translation": "从理论上说，隐式行为克隆（IBC）也可能拥有类似优势，但由于训练不稳定，实际难以得到可靠且高性能的结果。IBC 可能在能量函数损失平滑下降的同时，逐渐无法准确推断训练动作；其评测成功率还会振荡，使超参数调节和检查点选择变得困难。",
+      "confidence": "high",
+      "refs": [
+        "F007"
+      ]
+    },
+    {
+      "id": "S028",
+      "page": 5,
+      "type": "paragraph",
+      "order": 28,
+      "original_text": "An implicit policy represents the action distribution with an Energy-Based Model, p_θ(a|o)=e^{−E_θ(o,a)}/Z(o,θ). Training uses an InfoNCE-style loss and negative samples to estimate the intractable normalization constant. Diffusion Policy instead models the score function ∇_a log p(a|o), where the gradient of the normalization constant is zero with respect to a. Therefore neither training nor inference requires evaluating Z(o,θ), which makes training more stable.",
+      "translation": "隐式策略用能量模型表示动作分布：p_θ(a|o)=e^{−E_θ(o,a)}/Z(o,θ)。训练使用 InfoNCE 风格损失，并依赖负样本估计难以求解的归一化常数。Diffusion Policy 改为建模得分函数 ∇_a log p(a|o)；由于归一化常数对动作 a 的梯度为零，训练和推理都不需要计算 Z(o,θ)，因此更稳定。",
+      "confidence": "high",
+      "refs": []
+    },
+    {
+      "id": "S029",
+      "page": 6,
+      "type": "paragraph",
+      "order": 29,
+      "original_text": "We systematically evaluate Diffusion Policy on 12 tasks from 4 benchmarks. The suite includes simulation and real environments, single and multiple tasks, fully actuated and under-actuated systems, rigid and fluid objects, and 2DoF to 6DoF action spaces. Diffusion Policy consistently outperforms prior state of the art, with an average success-rate improvement of 46.9%.",
+      "translation": "作者在来自 4 个基准的 12 项任务上系统评测 Diffusion Policy。任务集合覆盖仿真和真实环境、单任务和多任务、全驱动和欠驱动系统、刚性和流体物体，以及 2DoF 至 6DoF 动作空间。Diffusion Policy 在所有测试基准上都稳定超过先前最先进方法，平均成功率提升 46.9%。",
+      "confidence": "high",
+      "refs": [
+        "T001",
+        "T002",
+        "T003"
+      ]
+    },
+    {
+      "id": "S030",
+      "page": 6,
+      "type": "paragraph",
+      "order": 30,
+      "original_text": "Robomimic is a large-scale robotic manipulation benchmark for imitation learning and offline RL. It contains five tasks with proficient-human and mixed proficient/non-proficient human demonstrations. Push-T requires precisely pushing a T-shaped block to a fixed target with a circular end-effector. Multimodal Block Pushing tests pushing two blocks into two squares in any order. Franka Kitchen contains seven objects and human demonstrations completing four tasks in arbitrary order.",
+      "translation": "Robomimic 是用于研究模仿学习和离线强化学习的大规模机器人操作基准，包含 5 项任务，并提供熟练人类示范以及熟练/非熟练混合示范。Push-T 要求使用圆形末端执行器，将 T 形方块精确推入固定目标。多模态 Block Pushing 测试以任意顺序把两个方块推入两个方形目标。Franka Kitchen 包含 7 个物体，示范者以任意顺序完成其中 4 项任务。",
+      "confidence": "high",
+      "refs": [
+        "T004"
+      ]
+    },
+    {
+      "id": "S031",
+      "page": 7,
+      "type": "paragraph",
+      "order": 31,
+      "original_text": "The evaluation reports the best-performing baseline available from reproduction or the original paper, and averages the last 10 checkpoints across 3 training seeds and 50 environment initializations. All state-based tasks are trained for 4500 epochs and image-based tasks for 3000 epochs. Each method uses its best action space: position control for Diffusion Policy and velocity control for baselines.",
+      "translation": "评测对每个基准报告可获得的最佳基线结果（来自复现或原论文），并对 3 个训练种子、50 个环境初始条件下最后 10 个检查点取平均。状态任务训练 4500 个 epoch，图像任务训练 3000 个 epoch。每种方法使用其最佳动作空间：Diffusion Policy 使用位置控制，基线方法使用速度控制。",
+      "confidence": "high",
+      "refs": []
+    },
+    {
+      "id": "S032",
+      "page": 7,
+      "type": "paragraph",
+      "order": 32,
+      "original_text": "Diffusion Policy can express short-horizon multimodality and long-horizon multimodality. It learns to approach the Push-T contact point from either side, and it handles arbitrary orders of sub-goals in Block Push and Kitchen. The paper reports 32% improvement on Block Push p2 and 213% improvement on Kitchen p4.",
+      "translation": "Diffusion Policy 能表达短时域和长时域多模态性。它可以学会从 Push-T 接触点的左侧或右侧接近，也能处理 Block Push 和 Kitchen 中子目标的任意执行顺序。论文报告 Block Push 的 p2 指标提升 32%，Kitchen 的 p4 指标提升 213%。",
+      "confidence": "high",
+      "refs": []
+    },
+    {
+      "id": "S033",
+      "page": 7,
+      "type": "paragraph",
+      "order": 33,
+      "original_text": "The action horizon creates a trade-off: a horizon greater than 1 helps predict consistent actions and compensate for idle portions of demonstrations, but an overly long horizon slows reaction. Experiments find that 8 action steps are optimal for most tested tasks. Position control is also better exploited by Diffusion Policy than by baselines.",
+      "translation": "动作窗口存在权衡：窗口大于 1 有助于预测一致动作、补偿示范中的空闲片段，但过长会降低反应速度。实验发现，对大多数任务而言 8 步动作窗口最优。Diffusion Policy 也比基线更能发挥位置控制的优势。",
+      "confidence": "high",
+      "refs": [
+        "F006"
+      ]
+    },
+    {
+      "id": "S034",
+      "page": 8,
+      "type": "paragraph",
+      "order": 34,
+      "original_text": "We evaluated Diffusion Policy on four real-world tasks across two hardware setups. On real-world Push-T we ablated two architecture options and three visual encoder options, and benchmarked two baselines with position and velocity control. Variants with CNN backbones and end-to-end visual encoders yielded the best performance.",
+      "translation": "作者在两套硬件平台上的四项真实世界任务中评测 Diffusion Policy。在真实 Push-T 上，作者比较了两种网络结构、三种视觉编码器，并让两种基线分别使用位置控制和速度控制。使用 CNN 主干和端到端视觉编码器的 Diffusion Policy 变体取得最佳性能。",
+      "confidence": "high",
+      "refs": [
+        "T005"
+      ]
+    },
+    {
+      "id": "S035",
+      "page": 8,
+      "type": "paragraph",
+      "order": 35,
+      "original_text": "Real-world Push-T reaches 95% success and 0.80 IoU versus human 1.00 and 0.84; IBC and LSTM-GMM reach 0% and 20%.",
+      "translation": "真实 Push-T 达到 95% 成功率和 0.80 IoU，接近人类 1.00 和 0.84；IBC、LSTM-GMM 为 0% 和 20%。",
+      "confidence": "high",
+      "refs": [
+        "F008",
+        "T005"
+      ]
+    },
+    {
+      "id": "S036",
+      "page": 8,
+      "type": "paragraph",
+      "order": 36,
+      "original_text": "Receding-horizon position control predicts a future action sequence and helps address latency from image processing, policy inference, and network delay. Simulated latency shows peak performance up to 4 steps; velocity control is more affected by latency because of compounding errors. Diffusion Policy also shows stable training, while IBC remains prone to instability.",
+      "translation": "滚动时域位置控制会预测未来动作序列，有助于抵消图像处理、策略推理和网络传输造成的延迟。模拟延迟实验表明，Diffusion Policy 在最多 4 步延迟下仍保持峰值性能；速度控制由于累积误差更容易受延迟影响。Diffusion Policy 的训练也更稳定，而 IBC 仍容易出现不稳定。",
+      "confidence": "high",
+      "refs": [
+        "F006",
+        "F009"
+      ]
+    },
+    {
+      "id": "S037",
+      "page": 9,
+      "type": "paragraph",
+      "order": 37,
+      "original_text": "The mug flipping task tests complex 3D rotations near the hardware’s kinematic limits. Demonstrations are highly multimodal: depending on the mug pose, the demonstrator may grasp and place directly or use additional pushes, with different grasp types and local adjustments. Diffusion Policy completes the task with 90% success over 20 trials and can sequence multiple pushes or regrasp when necessary; LSTM-GMM never aligns properly in 20 trials.",
+      "translation": "杯子翻转任务测试机器人在接近运动学极限时处理复杂三维旋转的能力。示范高度多模态：根据杯子初始姿态，示范者可能直接抓取并放置，也可能额外推动把手；抓取方式和局部调整也各不相同。Diffusion Policy 在 20 次试验中达到 90% 成功率，并能在需要时串联多次推动或重新抓取；LSTM-GMM 在 20 次试验中从未正确对齐杯子。",
+      "confidence": "high",
+      "refs": [
+        "F010"
+      ]
+    },
+    {
+      "id": "S038",
+      "page": 10,
+      "type": "paragraph",
+      "order": 38,
+      "original_text": "Sauce pouring and spreading test non-rigid objects, 6DoF action spaces, and periodic actions. Pouring is measured by IoU between the poured sauce mask and a nominal circle; spreading is measured by sauce coverage. Pouring requires idle actions while the ladle fills and fine adjustments for coverage. Spreading requires a long-horizon cyclic pattern and short-horizon feedback because sauce drips unpredictably. Both tasks use the same Push-T hyperparameters and successful policies were obtained on the first attempt.",
+      "translation": "酱汁倾倒和涂抹任务测试非刚性物体、6DoF 动作空间和周期性动作。倾倒性能由酱汁掩膜与披萨面团中心名义圆之间的 IoU 衡量；涂抹性能由酱汁覆盖率衡量。倾倒过程中，勺子装满酱汁时需要空闲动作，并需要精细调整以获得理想覆盖；涂抹则需要长时域周期模式和短时域反馈，因为酱汁会以不可预测的团块滴落。两项任务使用与 Push-T 相同的超参数，并且第一次训练就得到成功策略。",
+      "confidence": "high",
+      "refs": [
+        "F011"
+      ]
+    },
+    {
+      "id": "S039",
+      "page": 10,
+      "type": "paragraph",
+      "order": 39,
+      "original_text": "Diffusion Policy achieves near-human performance: coverage/IoU is 0.74 versus 0.79 for pouring and 0.77 versus 0.79 for spreading, with 0.79 human success and 1.00 policy success for spreading. LSTM-GMM fails to lift the ladle after scooping in most pouring trials and fails to self-terminate in spreading.",
+      "translation": "Diffusion Policy 达到接近人类的性能：倾倒 IoU 为 0.74（人类 0.79），涂抹覆盖率为 0.77（人类 0.79），涂抹成功率达到 1.00。LSTM-GMM 在多数倾倒试验中取酱后无法抬起勺子，在涂抹任务中也无法自主终止。",
+      "confidence": "high",
+      "refs": [
+        "F011"
+      ]
+    },
+    {
+      "id": "S040",
+      "page": 10,
+      "type": "paragraph",
+      "order": 40,
+      "original_text": "Behavior cloning methods can be grouped by policy structure. Explicit policies directly map observations to actions and have efficient one-pass inference, but struggle with multimodal and high-precision behavior. Classification, mixture-density networks, and clustering with offset prediction improve multimodal modeling but may require many bins, sensitive tuning, or suffer mode collapse. Implicit policies use energy-based models and naturally represent multiple low-energy actions, but existing methods are unstable because they require negative samples for InfoNCE losses.",
+      "translation": "行为克隆方法可以按策略结构分组。显式策略直接将观测映射为动作，并能通过一次前向传播高效推理，但难以建模多模态和高精度行为。分类、混合密度网络和带偏移预测的聚类可以改善多模态建模，但可能需要大量离散 bin、敏感的超参数调节，或出现模式坍塌。隐式策略使用能量模型，自然表示多个低能量动作；不过现有方法因为 InfoNCE 损失需要负样本而训练不稳定。",
+      "confidence": "high",
+      "refs": []
+    },
+    {
+      "id": "S041",
+      "page": 11,
+      "type": "paragraph",
+      "order": 41,
+      "original_text": "Diffusion models iteratively refine random noise into samples from an underlying distribution and can be interpreted as learning the gradient field of an implicit action score. Prior work applied diffusion to planning and reinforcement learning. This work instead applies it to behavioral cloning for visuomotor control, combining high-dimensional action-sequence prediction, closed-loop control, a new transformer architecture, and visual conditioning.",
+      "translation": "扩散模型通过迭代将随机噪声细化为底层分布的样本，也可以理解为学习隐式动作得分的梯度场。先前工作将扩散模型用于规划和强化学习；本文则将其用于视觉运动控制中的行为克隆，并结合高维动作序列预测、闭环控制、新的 Transformer 结构和视觉条件。",
+      "confidence": "high",
+      "refs": []
+    },
+    {
+      "id": "S042",
+      "page": 11,
+      "type": "paragraph",
+      "order": 42,
+      "original_text": "Concurrent work studied diffusion-based policies in simulation, focusing on sampling strategies, classifier-free guidance, goal conditioning, and reinforcement learning. The authors’ empirical findings agree in simulation, while their real-world experiments emphasize receding-horizon prediction, the choice between velocity and position control, and real-time inference optimization.",
+      "translation": "同期工作也在仿真环境中研究扩散策略，重点关注采样策略、classifier-free guidance、目标条件和强化学习。本文在仿真中的经验结果与这些工作基本一致，但进一步通过真实世界实验强调滚动时域预测、速度控制与位置控制的选择，以及实时推理优化。",
+      "confidence": "high",
+      "refs": []
+    },
+    {
+      "id": "S043",
+      "page": 11,
+      "type": "paragraph",
+      "order": 43,
+      "original_text": "Diffusion Policy inherits behavior-cloning limitations, such as suboptimal performance with inadequate demonstrations. It can be applied to reinforcement learning to exploit suboptimal and negative data. It has higher computational cost and inference latency than simple methods such as LSTM-GMM; action-sequence prediction partly mitigates this, but may not suffice for high-rate control. Future work can use improved diffusion acceleration methods, new noise schedules, inference solvers, and consistency models.",
+      "translation": "Diffusion Policy 继承了行为克隆的局限，例如示范不足时性能不佳。未来可以将其用于强化学习，以利用次优数据和负数据。与 LSTM-GMM 等简单方法相比，Diffusion Policy 的计算成本和推理延迟更高；动作序列预测能部分缓解这一问题，但可能仍不足以支持高频控制。后续工作可以利用更先进的扩散加速方法、新噪声调度、推理求解器和一致性模型。",
+      "confidence": "high",
+      "refs": []
+    },
+    {
+      "id": "S044",
+      "page": 11,
+      "type": "paragraph",
+      "order": 44,
+      "original_text": "Through a comprehensive evaluation of 12 tasks in simulation and the real world, we demonstrate that diffusion-based visuomotor policies consistently and definitively outperform existing methods while also being stable and easy to train. Critical design factors include receding-horizon action prediction, end-effector position control, and efficient visual conditioning. Although demonstration quality and quantity, robot capabilities, policy architecture, and pretraining all matter, the results strongly indicate that policy structure is a significant bottleneck in behavior cloning.",
+      "translation": "通过对仿真和真实世界 12 项任务的全面评测，作者证明基于扩散的视觉运动策略能够稳定且显著地超过现有方法，同时保持稳定、易训练。关键设计因素包括滚动时域动作预测、末端执行器位置控制和高效视觉条件。尽管示范的质量与数量、机器人能力、策略结构和预训练方式都会影响最终行为质量，实验强烈表明，策略结构本身是行为克隆的重要性能瓶颈。",
+      "confidence": "high",
+      "refs": []
+    },
+    {
+      "id": "S045",
+      "page": 11,
+      "type": "note",
+      "order": 45,
+      "original_text": "This work was supported in part by NSF Awards 2037101, 2132519, 2037101, and Toyota Research Institute. We would like to thank Google for the UR5 robot hardware. The views and conclusions contained herein are those of the authors.",
+      "translation": "本工作部分得到 NSF 项目 2037101、2132519、2037101 以及 Toyota Research Institute 的支持。作者感谢 Google 提供 UR5 机器人硬件。文中的观点和结论仅代表作者本人。",
+      "confidence": "high",
+      "refs": []
+    },
+    {
+      "id": "S046",
+      "page": 14,
+      "type": "paragraph",
+      "order": 46,
+      "original_text": "Properly normalizing action data is critical. Scaling the minimum and maximum of each action dimension independently to [−1,1] works well for most tasks. Since DDPMs clip prediction to [−1,1] at each iteration, zero-mean unit-variance normalization can make some action-space regions inaccessible. When data variance is small, shift to zero mean without scaling. Rotation dimensions such as quaternions are left unchanged.",
+      "translation": "正确归一化动作数据对获得最佳性能至关重要。对每个动作维度独立地将最小值和最大值缩放到 [−1,1]，对大多数任务都有效。由于 DDPM 在每次迭代都会将预测裁剪到 [−1,1]，常见的零均值单位方差归一化可能使动作空间的部分区域无法访问。当数据方差很小时，应只平移到零均值而不缩放，以避免数值问题。旋转表示（如四元数）对应的维度保持不变。",
+      "confidence": "high",
+      "refs": [
+        "T006"
+      ]
+    },
+    {
+      "id": "S047",
+      "page": 14,
+      "type": "paragraph",
+      "order": 47,
+      "original_text": "Velocity-control environments use 3D axis-angle rotation, while position-control environments use the 6D rotation representation. Random crop augmentation is used during training; inference uses a static center crop of the same size.",
+      "translation": "速度控制环境使用三维 axis-angle 旋转表示，位置控制环境使用 6D 旋转表示。训练时使用随机裁剪增强；推理时使用相同尺寸的固定中心裁剪。",
+      "confidence": "high",
+      "refs": []
+    },
+    {
+      "id": "S048",
+      "page": 14,
+      "type": "paragraph",
+      "order": 48,
+      "original_text": "On simulation benchmarks, iDDPM uses 100 denoising iterations for training and inference. On real-world benchmarks, DDIM reduces inference iterations to 16. Batch size is 256 for state-based experiments and 64 for image-based experiments. Cosine learning-rate scheduling with linear warmup is used; CNN warms up for 500 steps and Transformer for 1000 steps.",
+      "translation": "在仿真基准中，iDDPM 的训练和推理都使用 100 次去噪迭代；在真实世界基准中，DDIM 将推理迭代降为 16 次。状态实验 batch size 为 256，图像实验为 64。学习率采用带线性 warmup 的 cosine 调度；CNN warmup 500 步，Transformer warmup 1000 步。",
+      "confidence": "high",
+      "refs": [
+        "T006",
+        "T007"
+      ]
+    },
+    {
+      "id": "S049",
+      "page": 15,
+      "type": "paragraph",
+      "order": 49,
+      "original_text": "Diffusion Policy outperforms LSTM-GMM at every training dataset size. State-based Diffusion Policy is insensitive to observation horizon, while vision-based policies, especially CNN, degrade as the horizon increases. An observation horizon of 2 works well for most state and image tasks.",
+      "translation": "在每一种训练数据规模下，Diffusion Policy 都优于 LSTM-GMM。基于状态的 Diffusion Policy 对观测窗口不敏感；基于视觉的策略，尤其是 CNN 版本，会随着观测窗口增加而性能下降。对大多数状态和图像任务，2 步观测窗口是合适选择。",
+      "confidence": "high",
+      "refs": [
+        "F012",
+        "F013"
+      ]
+    },
+    {
+      "id": "S050",
+      "page": 15,
+      "type": "paragraph",
+      "order": 50,
+      "original_text": "For each task i, improvement_i=(max_ours_i−max_baseline_i)/max_baseline_i. The average improvement is the mean over tasks: 0.46858≈46.9%.",
+      "translation": "对每个任务 i，性能提升定义为 (max_ours_i−max_baseline_i)/max_baseline_i。对各任务取平均得到总体提升 0.46858≈46.9%。",
+      "confidence": "high",
+      "refs": []
+    },
+    {
+      "id": "S051",
+      "page": 15,
+      "type": "paragraph",
+      "order": 51,
+      "original_text": "Push-T uses 136 demonstrations, randomized initial poses, 10 Hz policy commands, and 125 Hz interpolated robot execution. Sauce pouring and spreading use 50 demonstrations per task, with 90% for training. Coverage is computed by projecting camera images into table space through homography. The UR5 station uses two policy cameras downsampled to 320×240 at 10 fps. The Franka station uses a quadratic-program differential-kinematics controller with collision avoidance, safety regions, and joint limits; teleoperation and learned policies run at 10 Hz, while the mid-level controller runs around 1 kHz.",
+      "translation": "Push-T 使用 136 条示范，随机化初始姿态；策略以 10 Hz 输出命令，机器人执行端线性插值到 125 Hz。酱汁倾倒和涂抹每项任务使用 50 条示范，其中 90% 用于训练。覆盖率通过单应性将相机图像投影到桌面空间后计算。UR5 平台使用两台策略相机，输入下采样到 320×240、10 fps。Franka 平台使用基于二次规划的微分运动学中层控制器，并施加碰撞避免、安全区域和关节限制；遥操作与学习策略以 10 Hz 运行，中层控制器约以 1 kHz 运行。",
+      "confidence": "high",
+      "refs": []
+    },
+    {
+      "id": "C001",
+      "page": 1,
+      "type": "caption",
+      "order": 100,
+      "original_text": "Fig. 1: Policy Representations. a) Explicit policy with different types of action representations. b) Implicit policy learns an energy function conditioned on both action and observation and optimizes for actions that minimize the energy landscape c) Diffusion policy refines noise into actions via a learned gradient field. This formulation provides stable training, allows the learned policy to accurately model multimodal action distributions, and accommodates high-dimensional action sequences.",
+      "translation": "图 1：策略表示。a）使用不同动作表示的显式策略；b）隐式策略学习一个同时以动作和观测为条件的能量函数，并优化使能量景观最小的动作；c）扩散策略通过学习到的梯度场将噪声逐步细化为动作。该形式具有稳定训练的特点，能准确建模多模态动作分布，并支持高维动作序列。",
+      "confidence": "high",
+      "refs": [
+        "F001"
+      ]
+    },
+    {
+      "id": "C002",
+      "page": 2,
+      "type": "caption",
+      "order": 101,
+      "original_text": "Fig. 2: Realworld Benchmarks. We deployed Diffusion Policy on two different robot platforms (UR5 and Franka) for 4 challenging tasks: under-actuate precise pushing (Push-T), 6DoF mug flipping, 6DoF sauce pouring, and periodic sauce spreading.",
+      "translation": "图 2：真实世界基准。作者在 UR5 和 Franka 两种机器人平台上部署 Diffusion Policy，完成四项具有挑战性的任务：欠驱动精确推箱（Push-T）、6DoF 杯子翻转、6DoF 酱汁倾倒和周期性酱汁涂抹。",
+      "confidence": "high",
+      "refs": [
+        "F002"
+      ]
+    },
+    {
+      "id": "C003",
+      "page": 3,
+      "type": "caption",
+      "order": 102,
+      "original_text": "Fig. 3: Diffusion Policy Overview. At time step t, the policy takes the latest T_o steps of observation data O_t as input and outputs T_a steps of actions A_t. The CNN-based policy applies FiLM conditioning at every convolution layer. The Transformer-based policy passes observation embeddings into cross-attention layers and applies causal attention over action tokens.",
+      "translation": "图 3：Diffusion Policy 概览。在时间步 t，策略输入最近 T_o 步观测 O_t，输出 T_a 步动作 A_t。CNN 版本在每个卷积层施加 FiLM 条件；Transformer 版本将观测嵌入送入交叉注意力层，并对动作 token 使用因果注意力。",
+      "confidence": "high",
+      "refs": [
+        "F003"
+      ]
+    },
+    {
+      "id": "C004",
+      "page": 4,
+      "type": "caption",
+      "order": 103,
+      "original_text": "At the given state, the end-effector can either go left or right to push the block. Diffusion Policy learns both modes and commits to only one mode within each rollout. LSTM-GMM and IBC are biased toward one mode, while BET fails to commit to a single mode due to its lack of temporal action consistency.",
+      "translation": "在给定状态下，末端执行器可以向左或向右绕行来推动方块。Diffusion Policy 学会两种模式，并在每次 rollout 内只选择其中一种。LSTM-GMM 和 IBC 偏向某一个模式，而 BET 由于缺乏时间动作一致性，无法在一次 rollout 中稳定承诺单一模式。",
+      "confidence": "high",
+      "refs": [
+        "F004"
+      ]
+    },
+    {
+      "id": "C005",
+      "page": 5,
+      "type": "caption",
+      "order": 104,
+      "original_text": "While both BCRNN and BET performance decrease when switching from velocity to position control, Diffusion Policy is able to leverage the advantage of position and improve its performance.",
+      "translation": "从速度控制切换到位置控制时，BCRNN 和 BET 的性能都会下降；Diffusion Policy 则能利用位置控制的优势并提升性能。",
+      "confidence": "high",
+      "refs": [
+        "F005"
+      ]
+    },
+    {
+      "id": "C006",
+      "page": 5,
+      "type": "caption",
+      "order": 105,
+      "original_text": "Change in success rate relative to the maximum for each task. Left: trade-off between temporal consistency and responsiveness when selecting the action horizon. Right: position-controlled Diffusion Policy is robust against latency.",
+      "translation": "相对于每个任务最大成功率的变化。左：动作窗口选择中时间一致性与响应性的权衡；右：位置控制的 Diffusion Policy 对延迟具有鲁棒性。",
+      "confidence": "high",
+      "refs": [
+        "F006"
+      ]
+    },
+    {
+      "id": "C007",
+      "page": 6,
+      "type": "caption",
+      "order": 106,
+      "original_text": "Left: IBC fails to infer training actions with increasing accuracy despite smoothly decreasing training loss for the energy function. Right: IBC’s evaluation success rate oscillates, making checkpoint selection difficult.",
+      "translation": "左：尽管能量函数训练损失平滑下降，IBC 并未越来越准确地推断训练动作；右：IBC 的评测成功率振荡，使检查点选择困难。",
+      "confidence": "high",
+      "refs": [
+        "F007"
+      ]
+    },
+    {
+      "id": "C012",
+      "page": 9,
+      "type": "caption",
+      "order": 107,
+      "original_text": "Columns 1–4 show action trajectories based on key events. The last column shows averaged images of the end state. Diffusion Policy (End2End) achieves more accurate and consistent end states; the R3M variant initially gets stuck but recovers; LSTM-GMM fails to reach the end zone; IBC prematurely ends the pushing stage.",
+      "translation": "前四列展示关键事件对应的动作轨迹，最后一列展示末状态平均图像。端到端 Diffusion Policy 的末状态更准确且一致；R3M 版本会先卡住但随后恢复；LSTM-GMM 未能到达终止区域；IBC 提前结束推送阶段。",
+      "confidence": "high",
+      "refs": [
+        "F008"
+      ]
+    },
+    {
+      "id": "C014",
+      "page": 9,
+      "type": "caption",
+      "order": 108,
+      "original_text": "A waving hand in front of the camera for 3 seconds causes slight jitter, but predicted actions still work. During pushing, the policy immediately corrects a shifted block. During finishing, it returns a shifted block to the goal before entering the end-zone; this behavior was never demonstrated.",
+      "translation": "手遮挡前置相机 3 秒，仅造成轻微抖动；推送阶段移动方块后，策略立即纠正方块；结束阶段移动方块后，策略先把方块纠正回目标，再进入终止区域。这一行为从未在示范中出现。",
+      "confidence": "high",
+      "refs": [
+        "F009"
+      ]
+    },
+    {
+      "id": "C015",
+      "page": 9,
+      "type": "caption",
+      "order": 109,
+      "original_text": "The robot needs to pick up a randomly placed mug and place it lip down, then rotate the mug so that its handle points left.",
+      "translation": "机器人需要先拾取随机放置的杯子并将杯口朝下，再旋转杯子使把手朝左。",
+      "confidence": "high",
+      "refs": [
+        "F010"
+      ]
+    },
+    {
+      "id": "C016",
+      "page": 10,
+      "type": "caption",
+      "order": 110,
+      "original_text": "Left: 6DoF pouring task, in which the robot dips a ladle, approaches the pizza dough center, pours sauce, and lifts the ladle. Right: periodic spreading task, in which the robot approaches the sauce center, follows a spiral pattern, and lifts the spoon.",
+      "translation": "左：6DoF 倾倒任务，机器人依次浸入勺子取酱、接近披萨面团中心、倾倒酱汁并抬起勺子结束。右：周期性涂抹任务，机器人接近酱汁中心，按螺旋轨迹覆盖面团，最后抬起勺子。",
+      "confidence": "high",
+      "refs": [
+        "F011"
+      ]
+    },
+    {
+      "id": "C019",
+      "page": 14,
+      "type": "caption",
+      "order": 111,
+      "original_text": "State-based Diffusion Policy is not sensitive to observation horizon. Vision-based Diffusion Policy prefers low but greater-than-one observation horizon, with 2 being a good compromise for most tasks.",
+      "translation": "基于状态的 Diffusion Policy 对观测窗口不敏感；基于视觉的策略更偏好较小但大于 1 的观测窗口，2 步对多数任务是良好折中。",
+      "confidence": "high",
+      "refs": [
+        "F012"
+      ]
+    },
+    {
+      "id": "C020",
+      "page": 14,
+      "type": "caption",
+      "order": 112,
+      "original_text": "Diffusion Policy outperforms LSTM-GMM at every training dataset size.",
+      "translation": "在所有训练数据规模下，Diffusion Policy 都超过 LSTM-GMM。",
+      "confidence": "high",
+      "refs": [
+        "F013"
+      ]
+    },
+    {
+      "id": "C008",
+      "page": 6,
+      "type": "caption",
+      "order": 113,
+      "original_text": "Success rates are reported as (maximum performance)/(average of last 10 checkpoints), averaged across 3 training seeds and 50 environment initial conditions. Diffusion Policy significantly improves state-of-the-art performance across the board.",
+      "translation": "成功率以“最大性能 / 最后 10 个检查点的平均性能”报告，并在 3 个训练随机种子和 50 个环境初始条件上取平均。Diffusion Policy 全面提升了状态策略的最先进性能。",
+      "confidence": "high",
+      "refs": [
+        "T001"
+      ]
+    },
+    {
+      "id": "C009",
+      "page": 6,
+      "type": "caption",
+      "order": 114,
+      "original_text": "Performance is reported in the same format as Table 1. LSTM-GMM numbers were reproduced to obtain a complete evaluation. Diffusion Policy shows consistent improvement, especially for complex tasks like Transport and ToolHang.",
+      "translation": "报告格式与表 1 相同。作者复现 LSTM-GMM 以获得完整评测。Diffusion Policy 在视觉输入下仍保持稳定提升，尤其是在 Transport 和 ToolHang 等复杂任务上。",
+      "confidence": "high",
+      "refs": [
+        "T002"
+      ]
+    },
+    {
+      "id": "C010",
+      "page": 6,
+      "type": "caption",
+      "order": 115,
+      "original_text": "# Rob: number of robots, # Obj: number of objects, ActD: action dimension, PH: proficient-human demonstration, MH: multi-human demonstration, Steps: maximum rollout steps, Img?: image observation, HiPrec: high-precision requirement. BlockPush uses 1000 episodes of scripted demonstrations.",
+      "translation": "表中汇总机器人数量、物体数量、动作维度、熟练/多人示范数量、最大 rollout 步数、是否使用图像和是否有高精度要求。BlockPush 使用 1000 个脚本示范回合。",
+      "confidence": "high",
+      "refs": [
+        "T003"
+      ]
+    },
+    {
+      "id": "C011",
+      "page": 7,
+      "type": "caption",
+      "order": 116,
+      "original_text": "For PushBlock, p_x is the frequency of pushing x blocks into the targets. For Kitchen, p_x is the frequency of interacting with x or more objects (for example, the bottom burner). Diffusion Policy performs better, especially on difficult metrics such as p2 for Block Pushing and p4 for Kitchen.",
+      "translation": "对 BlockPush，p_x 表示将 x 个方块推入目标的频率；对 Kitchen，p_x 表示与至少 x 个物体交互的频率。Diffusion Policy 在困难指标（如 Block Push 的 p2、Kitchen 的 p4）上提升尤其明显。",
+      "confidence": "high",
+      "refs": [
+        "T004"
+      ]
+    },
+    {
+      "id": "C013",
+      "page": 8,
+      "type": "caption",
+      "order": 117,
+      "original_text": "The robot needs to precisely push the T-shaped block into the target region and move the end-effector to the end-zone. Success is defined by end-state IoU greater than the minimum IoU in the demonstration dataset. Average episode duration is presented in seconds. T-E2E stands for end-to-end trained Transformer-based Diffusion Policy.",
+      "translation": "机器人需要将 T 形方块精确推入目标区域，并把末端执行器移入终止区。Success 定义为末状态 IoU 大于示范数据集中的最小 IoU。平均回合时长以秒计。T-E2E 表示端到端训练的 Transformer 版 Diffusion Policy。",
+      "confidence": "high",
+      "refs": [
+        "T005"
+      ]
+    },
+    {
+      "id": "C017",
+      "page": 15,
+      "type": "caption",
+      "order": 118,
+      "original_text": "Caption preserved in the figure/table card.",
+      "translation": "表中列出控制方式、观测窗口 T_o、动作窗口 T_a、预测窗口 T_p、图像/裁剪分辨率、扩散网络与视觉编码器参数量、学习率、权重衰减及训练/推理去噪步数。",
+      "confidence": "high",
+      "refs": [
+        "T006"
+      ]
+    },
+    {
+      "id": "C018",
+      "page": 15,
+      "type": "caption",
+      "order": 119,
+      "original_text": "Caption preserved in the figure/table card.",
+      "translation": "Transformer 版本额外报告层数、token 嵌入维度和注意力 dropout。真实世界任务使用 DDIM 将推理去噪步数降到 16。",
+      "confidence": "high",
+      "refs": [
+        "T007"
+      ]
+    },
+    {
+      "id": "R001",
+      "page": 11,
+      "type": "note",
+      "order": 52,
+      "original_text": "The complete bibliography occupies PDF pages 11–14 and contains references [1]–[61].",
+      "translation": "完整参考文献表位于 PDF 第 11–14 页，包含 [1]–[61] 条目。",
+      "confidence": "high",
+      "refs": []
+    }
+  ],
+  "pages": [
+    {
+      "page": 1,
+      "block_ids": [
+        "S001",
+        "S002",
+        "S003",
+        "F001",
+        "C001",
+        "S004",
+        "S005",
+        "S006",
+        "S007"
+      ]
+    },
+    {
+      "page": 2,
+      "block_ids": [
+        "S008",
+        "F002",
+        "C002",
+        "S009",
+        "S010",
+        "S011",
+        "S012",
+        "S013",
+        "S014"
+      ]
+    },
+    {
+      "page": 3,
+      "block_ids": [
+        "S015",
+        "F003",
+        "C003",
+        "S016",
+        "S017",
+        "S018",
+        "S019",
+        "S020"
+      ]
+    },
+    {
+      "page": 4,
+      "block_ids": [
+        "S021",
+        "S022",
+        "S023",
+        "S024",
+        "F004",
+        "C004",
+        "S025",
+        "F005"
+      ]
+    },
+    {
+      "page": 5,
+      "block_ids": [
+        "F006",
+        "C006",
+        "S026",
+        "S027",
+        "F007",
+        "S028"
+      ]
+    },
+    {
+      "page": 6,
+      "block_ids": [
+        "S029",
+        "T001",
+        "C008",
+        "T002",
+        "C009",
+        "T003",
+        "C010",
+        "S030"
+      ]
+    },
+    {
+      "page": 7,
+      "block_ids": [
+        "T004",
+        "C011",
+        "S031",
+        "S032",
+        "S033"
+      ]
+    },
+    {
+      "page": 8,
+      "block_ids": [
+        "S034",
+        "S035",
+        "T005",
+        "C013",
+        "S036",
+        "F009"
+      ]
+    },
+    {
+      "page": 9,
+      "block_ids": [
+        "F008",
+        "C012",
+        "F010",
+        "C015",
+        "S037"
+      ]
+    },
+    {
+      "page": 10,
+      "block_ids": [
+        "F011",
+        "C016",
+        "S038",
+        "S039",
+        "S040"
+      ]
+    },
+    {
+      "page": 11,
+      "block_ids": [
+        "S041",
+        "S042",
+        "S043",
+        "S044",
+        "S045",
+        "R001"
+      ]
+    },
+    {
+      "page": 12,
+      "block_ids": [
+        "R001"
+      ]
+    },
+    {
+      "page": 13,
+      "block_ids": [
+        "R001"
+      ]
+    },
+    {
+      "page": 14,
+      "block_ids": [
+        "S046",
+        "S047",
+        "T006",
+        "T007",
+        "F012",
+        "C019",
+        "F013",
+        "C020"
+      ]
+    },
+    {
+      "page": 15,
+      "block_ids": [
+        "S048",
+        "S049",
+        "S050",
+        "S051"
+      ]
+    },
+    {
+      "page": 16,
+      "block_ids": [
+        "S051"
+      ]
+    }
+  ],
+  "figures": [
+    {
+      "id": "F001",
+      "page": 1,
+      "caption_id": "C001",
+      "image_path": "assets/fig1.png",
+      "bbox": [
+        75,
+        280,
+        950,
+        470
+      ],
+      "placement_hint": "near_first_mention",
+      "placed_after": "S003",
+      "alt_text": "Explicit, implicit, and diffusion policy representations"
+    },
+    {
+      "id": "F002",
+      "page": 2,
+      "caption_id": "C002",
+      "image_path": "assets/fig2.png",
+      "bbox": [
+        515,
+        80,
+        950,
+        425
+      ],
+      "placement_hint": "near_first_mention",
+      "placed_after": "S008",
+      "alt_text": "UR5 and Franka real-world benchmark tasks"
+    },
+    {
+      "id": "F003",
+      "page": 3,
+      "caption_id": "C003",
+      "image_path": "assets/fig3.png",
+      "bbox": [
+        70,
+        70,
+        955,
+        325
+      ],
+      "placement_hint": "near_first_mention",
+      "placed_after": "S015",
+      "alt_text": "Diffusion Policy overview and CNN/Transformer architectures"
+    },
+    {
+      "id": "F004",
+      "page": 4,
+      "caption_id": "C004",
+      "image_path": "assets/fig4.png",
+      "bbox": [
+        505,
+        610,
+        955,
+        745
+      ],
+      "placement_hint": "near_first_mention",
+      "placed_after": "S024",
+      "alt_text": "Multimodal pushing trajectories"
+    },
+    {
+      "id": "F005",
+      "page": 5,
+      "caption_id": "C005",
+      "image_path": "assets/fig5.png",
+      "bbox": [
+        75,
+        145,
+        480,
+        365
+      ],
+      "placement_hint": "near_first_mention",
+      "placed_after": "S025",
+      "alt_text": "Velocity versus positional control"
+    },
+    {
+      "id": "F006",
+      "page": 5,
+      "caption_id": "C006",
+      "image_path": "assets/fig6.png",
+      "bbox": [
+        500,
+        60,
+        955,
+        265
+      ],
+      "placement_hint": "near_first_mention",
+      "placed_after": "S025",
+      "alt_text": "Action horizon and latency robustness"
+    },
+    {
+      "id": "F007",
+      "page": 6,
+      "caption_id": "C007",
+      "image_path": "assets/fig7.png",
+      "bbox": [
+        80,
+        610,
+        480,
+        825
+      ],
+      "placement_hint": "near_first_mention",
+      "placed_after": "S027",
+      "alt_text": "IBC training instability"
+    },
+    {
+      "id": "F008",
+      "page": 9,
+      "caption_id": "C012",
+      "image_path": "assets/fig8.png",
+      "bbox": [
+        120,
+        80,
+        950,
+        500
+      ],
+      "placement_hint": "near_first_mention",
+      "placed_after": "S035",
+      "alt_text": "Real-world Push-T trajectories"
+    },
+    {
+      "id": "F009",
+      "page": 9,
+      "caption_id": "C014",
+      "image_path": "assets/fig9.png",
+      "bbox": [
+        70,
+        560,
+        510,
+        800
+      ],
+      "placement_hint": "near_first_mention",
+      "placed_after": "S036",
+      "alt_text": "Robustness to visual and physical perturbations"
+    },
+    {
+      "id": "F010",
+      "page": 9,
+      "caption_id": "C015",
+      "image_path": "assets/fig10.png",
+      "bbox": [
+        525,
+        555,
+        955,
+        780
+      ],
+      "placement_hint": "near_first_mention",
+      "placed_after": "S037",
+      "alt_text": "6DoF mug flipping"
+    },
+    {
+      "id": "F011",
+      "page": 10,
+      "caption_id": "C016",
+      "image_path": "assets/fig11.png",
+      "bbox": [
+        70,
+        75,
+        510,
+        425
+      ],
+      "placement_hint": "near_first_mention",
+      "placed_after": "S038",
+      "alt_text": "Sauce pouring and spreading"
+    },
+    {
+      "id": "F012",
+      "page": 14,
+      "caption_id": "C019",
+      "image_path": "assets/fig12.png",
+      "bbox": [
+        515,
+        65,
+        955,
+        345
+      ],
+      "placement_hint": "near_first_mention",
+      "placed_after": "S049",
+      "alt_text": "Observation horizon ablation"
+    },
+    {
+      "id": "F013",
+      "page": 14,
+      "caption_id": "C020",
+      "image_path": "assets/fig13.png",
+      "bbox": [
+        515,
+        355,
+        955,
+        585
+      ],
+      "placement_hint": "near_first_mention",
+      "placed_after": "S049",
+      "alt_text": "Data efficiency ablation"
+    }
+  ],
+  "tables": [
+    {
+      "id": "T001",
+      "page": 6,
+      "caption_id": "C008",
+      "image_path": "assets/table1.png",
+      "bbox": [
+        80,
+        220,
+        950,
+        370
+      ],
+      "placed_after": "S029",
+      "alt_text": "State-policy behavior cloning benchmark"
+    },
+    {
+      "id": "T002",
+      "page": 6,
+      "caption_id": "C009",
+      "image_path": "assets/table2.png",
+      "bbox": [
+        80,
+        440,
+        950,
+        575
+      ],
+      "placed_after": "S029",
+      "alt_text": "Visual-policy behavior cloning benchmark"
+    },
+    {
+      "id": "T003",
+      "page": 6,
+      "caption_id": "C010",
+      "image_path": "assets/table3.png",
+      "bbox": [
+        515,
+        625,
+        955,
+        960
+      ],
+      "placed_after": "S029",
+      "alt_text": "Task summary"
+    },
+    {
+      "id": "T004",
+      "page": 7,
+      "caption_id": "C011",
+      "image_path": "assets/table4.png",
+      "bbox": [
+        75,
+        235,
+        500,
+        375
+      ],
+      "placed_after": "S030",
+      "alt_text": "Multi-stage task metrics"
+    },
+    {
+      "id": "T005",
+      "page": 8,
+      "caption_id": "C013",
+      "image_path": "assets/table5.png",
+      "bbox": [
+        75,
+        350,
+        490,
+        490
+      ],
+      "placed_after": "S035",
+      "alt_text": "Real-world Push-T experiment"
+    },
+    {
+      "id": "T006",
+      "page": 15,
+      "caption_id": "C017",
+      "image_path": "assets/table6.png",
+      "bbox": [
+        75,
+        70,
+        950,
+        315
+      ],
+      "placed_after": "S048",
+      "alt_text": "CNN-based hyperparameters"
+    },
+    {
+      "id": "T007",
+      "page": 15,
+      "caption_id": "C018",
+      "image_path": "assets/table7.png",
+      "bbox": [
+        75,
+        420,
+        950,
+        610
+      ],
+      "placed_after": "S048",
+      "alt_text": "Transformer-based hyperparameters"
+    }
+  ],
+  "glossary": [
+    {
+      "term": "Diffusion Policy",
+      "translation": "扩散策略",
+      "note": "Conditional denoising diffusion policy for robot actions"
+    },
+    {
+      "term": "DDPM",
+      "translation": "去噪扩散概率模型",
+      "note": "Denoising diffusion probabilistic model"
+    },
+    {
+      "term": "DDIM",
+      "translation": "去噪扩散隐式模型",
+      "note": "Fewer-step inference sampler"
+    },
+    {
+      "term": "visuomotor policy",
+      "translation": "视觉运动策略",
+      "note": "Policy mapping observations to robot actions"
+    },
+    {
+      "term": "receding-horizon control",
+      "translation": "滚动时域控制",
+      "note": "Execute part of a predicted sequence, then replan"
+    },
+    {
+      "term": "score function",
+      "translation": "得分函数",
+      "note": "Gradient of log action density"
+    },
+    {
+      "term": "FiLM",
+      "translation": "特征线性调制",
+      "note": "Feature-wise Linear Modulation"
+    },
+    {
+      "term": "multimodality",
+      "translation": "多模态性",
+      "note": "Multiple valid action modes under one observation"
+    },
+    {
+      "term": "position control",
+      "translation": "位置控制",
+      "note": "Predict target pose/position"
+    },
+    {
+      "term": "idle action",
+      "translation": "空闲动作",
+      "note": "Pause/near-zero-motion segment in demonstrations"
+    }
+  ]
+}
