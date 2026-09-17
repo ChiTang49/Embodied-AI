@@ -1,0 +1,1243 @@
+{
+ "paper": {
+  "title": "RT-1: Robotics Transformer for Real-World Control at Scale",
+  "title_zh": "RT-1：面向大规模真实世界控制的机器人 Transformer",
+  "arxiv": "2212.06817v2",
+  "source_pdf": "raw/2212.06817v2.pdf",
+  "pdf_pages": 31,
+  "type": "方法/算法论文（大规模机器人模仿学习与规模化研究）",
+  "authors_note": "按姓氏字母序列出，贡献见附录 A"
+ },
+ "blocks": [
+  {
+   "id": "S001",
+   "page": 1,
+   "type": "body",
+   "section": "摘要与引言（p.1–p.2）",
+   "heading": "A BSTRACT｜摘要",
+   "original": "By transferring knowledge from large, diverse, task-agnostic datasets, modern machine learning models can solve specific downstream tasks either zero-shot or with small task-specific datasets to a high level of performance. While this capability has been demonstrated in other fields such as computer vision, natural language processing or speech recognition, it remains to be shown in robotics, where the generalization capabilities of the models are particularly critical due to the difficulty of collecting real-world robotic data. We argue that one of the keys to the success of such general robotic models lies with open-ended task-agnostic training, combined with high-capacity architectures that can absorb all of the diverse, robotic data. In this paper, we present a model class, dubbed Robotics Transformer, that exhibits promising scalable model properties. We verify our conclusions in a study of different model classes and their ability to generalize as a function of the data size, model size, and data diversity based on a large-scale data collection on real robots performing real-world tasks. The project's website and videos can be found at robotics-transformer1.github.io",
+   "translation": "通过从大规模、多样、任务无关的数据集中迁移知识，现代机器学习模型已经能够以零样本方式、或仅使用少量任务专属数据，就在特定下游任务上达到很高水平的性能。这一能力已在计算机视觉、自然语言处理或语音识别等领域得到验证，但在机器人领域仍有待证明——由于采集真实世界机器人数据十分困难，模型在机器人领域的泛化能力尤为关键。我们认为，这类通用机器人模型成功的关键之一，在于开放式、任务无关的训练，再配合能够吸收全部多样化机器人数据的高容量架构。本文提出一类模型，称为 Robotics Transformer（机器人 Transformer），它展现出颇具前景的可扩展模型特性。我们基于在真实机器人上执行真实任务的大规模数据采集，通过研究不同模型类别及其随数据规模、模型规模与数据多样性变化的泛化能力，验证了上述结论。项目网站与视频见 robotics-transformer1.github.io。 ### 1 INTRODUCTION｜引言",
+   "confidence": "high"
+  },
+  {
+   "id": "S002",
+   "page": 1,
+   "type": "body",
+   "section": "摘要与引言（p.1–p.2）",
+   "heading": "1 INTRODUCTION｜引言",
+   "original": "End-to-end robotic learning, with either imitation or reinforcement, typically involves collecting task-specific data in either single-task (Kalashnikov et al., 2018; Zhang et al., 2018) or multi-task (Kalashnikov et al., 2021b; Jang et al., 2021) settings that are narrowly tailored to the tasks that the robot should perform. This workflow mirrors the classic approach to supervised learning in other domains, such as computer vision and NLP, where task-specific datasets would be collected, labeled, and deployed to solve individual tasks, with little interplay between the tasks themselves.",
+   "translation": "端到端机器人学习，无论采用模仿学习还是强化学习，通常都要采集任务专属数据：或者在单任务设定（Kalashnikov et al., 2018; Zhang et al., 2018）下，或者在多任务设定（Kalashnikov et al., 2021b; Jang et al., 2021）下进行，而这些设定都是针对机器人应当执行的任务量身裁剪的。这一工作流沿袭了其他领域（如计算机视觉与 NLP）中经典的监督学习做法：采集任务专属数据集、加以标注、再部署去解决各自的任务，任务之间几乎没有相互影响。",
+   "confidence": "high"
+  },
+  {
+   "id": "S003",
+   "page": 1,
+   "type": "body",
+   "section": "摘要与引言（p.1–p.2）",
+   "heading": "1 INTRODUCTION｜引言",
+   "original": "Recent years have seen a transformation in vision, NLP, and other domains, away from siloed, small-scale datasets and models and towards large, general models pre-trained on broad, large datasets. The keys to the success of such models lie with open-ended task-agnostic training, combined with high-capacity architectures that can absorb all of the knowledge present in large-scale datasets. If a model can \"sponge up\" experience to learn general patterns in language or perception, then it can bring them to bear on individual tasks more efficiently. While removing the need for large task-specific datasets is appealing generally in supervised learning, it is even more critical in robotics, where datasets might require engineering-heavy autonomous operation or expensive human demonstrations. We therefore ask: can we train a single, capable, large multi-task backbone model on data consisting of a wide variety of robotic tasks? And does such a model enjoy the benefits observed in other domains, exhibiting zero-shot generalization to new tasks, environments, and objects?",
+   "translation": "近年来，视觉、NLP 及其他领域发生了一次转变：从各自为政、小规模的数据集与模型，转向在广泛、大规模数据集上预训练的大型通用模型。这类模型成功的关键，在于开放式、任务无关的训练，以及能够吸收大规模数据集中全部知识的高容量架构。如果模型能够像海绵一样\"吸收\"经验，学到语言或感知中的通用模式，那么它就能更高效地把这些模式用于具体任务。摆脱对大规模任务专属数据集的依赖，在监督学习里普遍都有吸引力；而在机器人领域这一点更为关键——那里的数据集往往需要工程负担很重的自主运行，或昂贵的人类示教。因此我们提出：能否在由种类繁多的机器人任务构成的数据上，训练出单个能力强、规模大的多任务骨干模型？这样的模型能否享有在其他领域观察到的收益，展现出对新任务、新环境和新物体的零样本泛化？",
+   "confidence": "high"
+  },
+  {
+   "id": "S004",
+   "page": 1,
+   "type": "body",
+   "section": "摘要与引言（p.1–p.2）",
+   "heading": "1 INTRODUCTION｜引言",
+   "original": "Building such models in robotics is not easy. Although recent years have seen several large multi-task robot policies proposed in the literature (Reed et al., 2022; Jang et al., 2021), such models often have limited breadth of real-world tasks, as with Gato (Reed et al., 2022), or focus on training tasks rather than generalization to new tasks, as with recent instruction following methods (Shridhar et al., 2021; 2022), or attain comparatively lower performance on new tasks (Jang et al., 2021).",
+   "translation": "在机器人领域构建这类模型并不容易。尽管近年来文献中提出了若干大规模多任务机器人策略（Reed et al., 2022; Jang et al., 2021），但这些模型往往在真实世界任务覆盖面上有限（如 Gato（Reed et al., 2022）），或者聚焦于训练任务而非泛化到新任务（如近期的指令跟随方法（Shridhar et al., 2021; 2022）），或者在新任务上表现相对较低（Jang et al., 2021）。",
+   "confidence": "high"
+  },
+  {
+   "id": "S005",
+   "page": 2,
+   "type": "body",
+   "section": "摘要与引言（p.1–p.2）",
+   "heading": "1 INTRODUCTION｜引言",
+   "original": "The two main challenges lie in assembling the right dataset and designing the right model. While data collection and curation is often the \"unsung hero\" of many large-scale machine learning projects (Radford et al., 2021; Ramesh et al., 2021), this is especially true in robotics, where datasets are often robot-specific and gathered manually (Dasari et al., 2019; Ebert et al., 2021). As we will show in our evaluations, good generalization requires datasets that combine both scale and breadth, covering a variety of tasks and settings. At the same time, the tasks in the dataset should be sufficiently well-connected to enable generalization, such that the model can discover the patterns between structural similar tasks and perform new tasks that combine those patterns in novel ways. We utilize a dataset that we gathered over the course of 17 months with a fleet of 13 robots, containing ∼130k episodes and over 700 tasks, and we ablate various aspects of this dataset in our evaluation.",
+   "translation": "两个主要挑战分别在于：组装合适的数据集，以及设计合适的模型。数据采集与整理往往是许多大规模机器学习项目中\"默默无闻的英雄\"（Radford et al., 2021; Ramesh et al., 2021），在机器人领域尤其如此——那里的数据集通常与特定机器人绑定，并且靠人工采集（Dasari et al., 2019; Ebert et al., 2021）。正如我们将在评测中展示的，良好的泛化要求数据集同时具备规模与广度，覆盖多样的任务与场景。与此同时，数据集中的任务之间应当联系得足够紧密，从而支撑泛化：模型能够发现结构相似任务之间的模式，并以新颖的方式组合这些模式来完成新任务。我们使用的数据集历时 17 个月、由 13 台机器人组成的机队采集，包含约 130k 个回合和 700 多个任务；在评测中我们对该数据集的多个方面做了消融。",
+   "confidence": "high"
+  },
+  {
+   "id": "S006",
+   "page": 2,
+   "type": "body",
+   "section": "摘要与引言（p.1–p.2）",
+   "heading": "1 INTRODUCTION｜引言",
+   "original": "The second challenge lies in the design of the model itself. Effective robotic multi-task learning requires a high capacity model, and Transformer (Vaswani et al., 2017) models excel in this regard, particularly when it is necessary to learn many tasks conditioned, as in our case, on language instructions. However, robotic controllers must also be efficient enough to run in real time, which presents a major challenge for Transformers in particular. We propose a novel architecture that we call RT-1 (Robotics Transformer 1), which by encoding high-dimensional inputs and outputs, including camera images, instructions and motor commands into compact token representations to be used by the Transformer, allows for efficient inference at runtime to make real-time control feasible.",
+   "translation": "第二个挑战在于模型本身的设计。有效的机器人多任务学习需要一个高容量模型，而 Transformer（Vaswani et al., 2017）在这方面表现突出，尤其当需要学习大量以语言指令为条件的任务时（正如本文的情形）。然而，机器人控制器还必须足够高效、能够实时运行，这对 Transformer 尤其构成重大挑战。我们提出一种新架构，称为 RT-1（Robotics Transformer 1）：它把高维的输入与输出（包括相机图像、指令和电机命令）编码成紧凑的 token 表示，交给 Transformer 处理，从而在运行时实现高效推理，使实时控制变得可行。",
+   "confidence": "high"
+  },
+  {
+   "id": "S007",
+   "page": 2,
+   "type": "body",
+   "section": "摘要与引言（p.1–p.2）",
+   "heading": "1 INTRODUCTION｜引言",
+   "original": "Our contribution is the RT-1 model and experiments with this model on a large and broad dataset of real-world robotic tasks. Our experiments not only demonstrate that RT-1 can exhibit significantly improved generalization and robustness compared to prior techniques, but also evaluate and ablate many design choices in both the model and in the composition of the training set. Our results show that RT-1 can perform over 700 training instructions at 97% success rate, and can generalize to new tasks, distractors, and backgrounds 25%, 36% and 18% better than the next best baseline, respectively. This level of performance allows us to execute very long-horizon tasks in the SayCan (Ahn et al., 2022) framework, with as many as 50 stages. We further show that RT-1 can incorporate data from simulation or even other robot types, retaining performance on the original tasks and improving generalization to new scenarios. A short overview of RT-1 capabilities is presented in Fig. 1b².",
+   "translation": "我们的贡献是 RT-1 模型，以及在一个大规模、广覆盖的真实世界机器人任务数据集上对该模型的实验。实验不仅表明 RT-1 相比此前技术能显著改善泛化性与鲁棒性，还评估并消融了模型设计与训练集构成中的许多设计选择。结果表明：RT-1 能以 97% 的成功率执行 700 多条训练指令，并且在泛化到新任务、新干扰物和新背景上，分别比次优基线好 25%、36% 和 18%。这一性能水平使我们能够在 SayCan（Ahn et al., 2022）框架中执行极长时程任务，最多可达 50 个阶段。我们进一步表明，RT-1 能够吸收来自仿真、甚至其他机器人类型的数据，在保持原有任务性能的同时改善对新场景的泛化。RT-1 能力的简要概览见 Fig. 1b²。",
+   "confidence": "high"
+  },
+  {
+   "id": "S008",
+   "page": 3,
+   "type": "body",
+   "section": "相关工作与预备知识（p.3–p.4）",
+   "heading": "2 RELATED WORK｜相关工作",
+   "original": "A number of recent works have proposed Transformer-based policies for robotic control. As in RT-1, several works use language commands processed with Transformers as a robust framework for specifying and generalizing to new tasks (Zhang & Chai, 2021; Pashevich et al., 2021; Silva et al., 2021; Jang et al., 2021; Ahn et al., 2022; Nair et al., 2022). Our work takes the application of Transformers a step further and treats the mapping of language and vision observations to robot actions as a sequence modelling problem, using a Transformer to learn this mapping. This idea is directly inspired by successes in game-playing (Chen et al., 2021; Lee et al., 2022a) as well as simulated robot navigation (Fang et al., 2019), locomotion (Janner et al., 2021; Gupta et al., 2022), and manipulation (Jiang et al., 2022) environments. We note that several of these works go beyond only text conditioning and use Transformers to also generalize across robot morphologies (e.g., Gupta et al. (2022)) and other modalities for task specifications (e.g., Jang et al. (2021); Jiang et al. (2022)). These extensions are promising future directions for RT-1.",
+   "translation": "近期有不少工作提出了基于 Transformer 的机器人控制策略。与 RT-1 一样，其中一些工作把用 Transformer 处理的语言命令，当作指定任务并泛化到新任务的稳健框架（Zhang & Chai, 2021; Pashevich et al., 2021; Silva et al., 2021; Jang et al., 2021; Ahn et al., 2022; Nair et al., 2022）。我们的工作把 Transformer 的应用推进一步：将\"语言与视觉观测到机器人动作\"的映射视为一个序列建模问题，用 Transformer 来学习这一映射。这一想法直接受到博弈游戏（Chen et al., 2021; Lee et al., 2022a），以及仿真环境中的机器人导航（Fang et al., 2019）、运动控制（Janner et al., 2021; Gupta et al., 2022）和操作（Jiang et al., 2022）等方面成功的启发。我们注意到，这些工作中有一部分不只做文本条件化，还用 Transformer 泛化到不同机器人形态（例如 Gupta et al. (2022)）以及用于任务指定的其他模态（例如 Jang et al. (2021); Jiang et al. (2022)）。这些扩展是 RT-1 有前景的未来方向。",
+   "confidence": "high"
+  },
+  {
+   "id": "S009",
+   "page": 3,
+   "type": "body",
+   "section": "相关工作与预备知识（p.3–p.4）",
+   "heading": "2 RELATED WORK｜相关工作",
+   "original": "Beyond Transformer-based policies, the focus of our work is on generalizable and robust real-world robotic manipulation at scale. Existing works on real-world Transformer-based robotic manipulation focus on efficiently learning tasks from a set of demonstrations per task (Shridhar et al., 2022). Behavior Transformer (Shafiullah et al., 2022) and Gato (Reed et al., 2022) advocate for training a single model on large-scale robotic and non-robotic datasets. However, these works are limited in their real-world robotic tasks; e.g., Gato learns effectively a single task (colored block stacking) without evaluating generalization to new tasks or a variety of real-world settings. On the technical side, our work examines how Transformer-based policies can be built so as to combine high capacity and generalization with the computational efficiency necessary for real-time control.",
+   "translation": "除了基于 Transformer 的策略之外，我们工作的重点是大规模、可泛化且稳健的真实世界机器人操作。现有的真实世界 Transformer 操作工作，关注的是针对每个任务、从一组示范中高效地学习该任务（Shridhar et al., 2022）。Behavior Transformer（Shafiullah et al., 2022）与 Gato（Reed et al., 2022）主张在大规模机器人与非机器人数据集上训练单一模型。然而，这些工作在真实机器人任务上存在局限：例如 Gato 实际上只学习单个任务（彩色积木堆叠），并未评估对新任务的泛化，也未评估在多种真实世界场景下的表现。在技术层面，我们的工作考察的是：如何构建基于 Transformer 的策略，使其同时具备高容量、强泛化，以及实时控制所必需的计算效率。",
+   "confidence": "high"
+  },
+  {
+   "id": "S010",
+   "page": 3,
+   "type": "body",
+   "section": "相关工作与预备知识（p.3–p.4）",
+   "heading": "2 RELATED WORK｜相关工作",
+   "original": "While the use of high-capacity Transformer models to learn robotic control policies is a fairly recent innovation, robotics has a long history of multi-task and language-conditioned learning, and RT-1 builds on these foundations. A significant body of work deals with learning policies and predictive models for robotic grasping (Saxena et al., 2006; Lenz et al., 2015; Pinto & Gupta, 2016; Gupta et al., 2018; Viereck et al., 2017), with the aim of generalizing to new objects. Prior works have sought to address robotic language understanding through pipelined approaches that combine language parsing, vision, and robotic control (MacMahon et al., 2006; Kollar et al., 2010; Tellex et al., 2011) and with end-to-end approaches (Mei et al., 2016; Stepputtis et al., 2020; Lynch & Sermanet, 2020; Ahn et al., 2022). Multi-task robotic learning has also been approached from the perspective of learning to reach goals (Chung et al., 2015; Raffin et al., 2019; Jurgenson et al., 2020; Huang et al., 2020), as well as learning policies that can perform tasks in a discrete set or some other parameterized form (Deisenroth et al., 2014; Devin et al., 2017; Fox et al., 2019; Kalashnikov et al., 2021a). A number of prior works in robotics have also focused on collecting datasets containing demonstrations or trials that illustrate a variety of different tasks (Sharma et al., 2018; Dasari et al., 2019; Yu et al., 2020; Singh et al., 2020; James et al., 2020). Our work adds further evidence in support of the power of multi-task, language-conditioned robotic learning, presenting experimental results at a larger scale and with a greater variety of behaviors, objects, and scenes and proposing new architectures and design choices that enable robotic learning at a significantly larger scale.",
+   "translation": "虽然用高容量 Transformer 模型学习机器人控制策略是相当晚近的创新，机器人领域却有着悠久的多任务学习与语言条件化学习的历史，RT-1 正是建立在这些基础之上。有大量工作研究面向机器人抓取（Saxena et al., 2006; Lenz et al., 2015; Pinto & Gupta, 2016; Gupta et al., 2018; Viereck et al., 2017）的策略与预测模型，目标是泛化到新物体。此前工作也试图通过\"语言解析 + 视觉 + 机器人控制\"的流水线方式（MacMahon et al., 2006; Kollar et al., 2010; Tellex et al., 2011），以及端到端方式（Mei et al., 2016; Stepputtis et al., 2020; Lynch & Sermanet, 2020; Ahn et al., 2022）来解决机器人语言理解问题。多任务机器人学习也曾从\"学习抵达目标\"的角度（Chung et al., 2015; Raffin et al., 2019; Jurgenson et al., 2020; Huang et al., 2020）被研究，也有工作学习能在离散集合或其他参数化形式中执行任务的策略（Deisenroth et al., 2014; Devin et al., 2017; Fox et al., 2019; Kalashnikov et al., 2021a）。此外，许多机器人领域的先前工作专注于采集包含示范或试验的数据集，用以体现多种不同任务（Sharma et al., 2018; Dasari et al., 2019; Yu et al., 2020; Singh et al., 2020; James et al., 2020）。我们的工作为\"多任务、语言条件化机器人学习\"的能力再添证据：给出规模更大、行为/物体/场景更多样的实验结果，并提出新的架构与设计选择，使机器人学习能够以显著更大的规模进行。 ### 3 PRELIMINARIES｜预备知识",
+   "confidence": "high"
+  },
+  {
+   "id": "S011",
+   "page": 3,
+   "type": "body",
+   "section": "相关工作与预备知识（p.3–p.4）",
+   "heading": "3 PRELIMINARIES｜预备知识",
+   "original": "Robot learning. We aim to learn robot policies to solve language-conditioned tasks from vision. Formally, we consider a sequential decision-making environment. At timestep $t = 0$, the policy $\\pi$ is presented with a language instruction $i$ and an initial image observation $x_0$. The policy produces an action distribution $\\pi(\\cdot \\mid i, x_0)$ from which an action $a_0$ is sampled and applied to the robot. This process continues, with the policy iteratively producing actions $a_t$ by sampling from a learned distribution $\\pi(\\cdot \\mid i, \\{x_j\\}_{j=0}^{t})$ and applying those actions to the robot. The interaction ends when a termination condition is achieved. The full interaction $i, \\{(x_j, a_j)\\}_{j=0}^{T}$ from from the starting step $t = 0$ to terminating step $T$ is referred to as an episode. At the end of an episode, the agent will be given a binary reward $r \\in \\{0, 1\\}$ indicating whether the robot performed the instruction $i$. The goal is to learn a policy $\\pi$ that maximizes the average reward, in expectation over a distribution of instructions, starting states $x_0$, and transition dynamics.",
+   "translation": "**机器人学习。** 我们的目标是学习机器人策略，从视觉出发解决语言条件化任务。形式上，我们考虑一个序贯决策环境。在时间步 $t = 0$，策略 $\\pi$ 接收到一条语言指令 $i$ 和一个初始图像观测 $x_0$。策略给出动作分布 $\\pi(\\cdot \\mid i, x_0)$，从中采样出动作 $a_0$ 并施加到机器人上。这一过程持续进行：策略通过从学习到的分布 $\\pi(\\cdot \\mid i, \\{x_j\\}_{j=0}^{t})$ 中采样，迭代地产生动作 $a_t$ 并施加给机器人。当满足终止条件时，交互结束。从起始步 $t = 0$ 到终止步 $T$ 的完整交互 $i, \\{(x_j, a_j)\\}_{j=0}^{T}$ 称为一个回合（episode）。回合结束时，智能体会收到一个二值奖励 $r \\in \\{0, 1\\}$，表示机器人是否完成了指令 $i$。目标是学到一个策略 $\\pi$，在指令分布、起始状态 $x_0$ 和转移动力学上的期望意义下，最大化平均奖励。 > 注：原文此处有两处笔误（\"from from the starting step\"、$\\{x_j\\}^t_{j=0}$ 的排版），上文中已按数学含义保留原样并作形式化整理。",
+   "confidence": "high"
+  },
+  {
+   "id": "S012",
+   "page": 4,
+   "type": "body",
+   "section": "相关工作与预备知识（p.3–p.4）",
+   "heading": "3 PRELIMINARIES｜预备知识",
+   "original": "Transformers. RT-1 uses a Transformer (Vaswani et al., 2017) to parameterize the policy $\\pi$. Generally speaking, a Transformer is a sequence model mapping an input sequence $\\{\\xi_h\\}_{h=0}^{H}$ to an output sequence $\\{y_k\\}_{k=0}^{K}$ using combinations of self-attention layers and fully-connected neural networks. While Transformers were originally designed for text sequences, where each input $\\xi_j$ and output $y_k$ represents a text token, they have been extended to images (Parmar et al., 2018) as well as other modalities (Lee et al., 2022a; Reed et al., 2022). As detailed in the next section, we parameterize $\\pi$ by first mapping inputs $i, \\{x_j\\}_{j=0}^{t}$ to a sequence $\\{\\xi_h\\}_{h=0}^{H}$ and action outputs $a_t$ to a sequence $\\{y_k\\}_{k=0}^{K}$ before using a Transformer to learn the mapping $\\{\\xi_h\\}_{h=0}^{H} \\rightarrow \\{y_k\\}_{k=0}^{K}$.",
+   "translation": "**Transformer。** RT-1 使用 Transformer（Vaswani et al., 2017）来参数化策略 $\\pi$。一般而言，Transformer 是一个序列模型，它通过自注意力层与全连接神经网络的组合，把输入序列 $\\{\\xi_h\\}_{h=0}^{H}$ 映射为输出序列 $\\{y_k\\}_{k=0}^{K}$。Transformer 最初是为文本序列设计的——每个输入 $\\xi_j$ 和输出 $y_k$ 都代表一个文本 token——后来被扩展到了图像（Parmar et al., 2018）以及其他模态（Lee et al., 2022a; Reed et al., 2022）。如下一节所述，我们这样参数化 $\\pi$：先把输入 $i, \\{x_j\\}_{j=0}^{t}$ 映射为序列 $\\{\\xi_h\\}_{h=0}^{H}$、把动作输出 $a_t$ 映射为序列 $\\{y_k\\}_{k=0}^{K}$，再用 Transformer 学习映射 $\\{\\xi_h\\}_{h=0}^{H} \\rightarrow \\{y_k\\}_{k=0}^{K}$。",
+   "confidence": "high"
+  },
+  {
+   "id": "S013",
+   "page": 4,
+   "type": "body",
+   "section": "相关工作与预备知识（p.3–p.4）",
+   "heading": "3 PRELIMINARIES｜预备知识",
+   "original": "Imitation learning. Imitation learning methods train the policy $\\pi$ on a dataset $\\mathcal{D}$ of demonstrations (Pomerleau, 1988; Zhang et al., 2018; Jang et al., 2021). Specifically, we assume access to a dataset $\\mathcal{D} = \\{(i^{(n)}, \\{(x_t^{(n)}, a_t^{(n)})\\}_{t=0}^{T^{(n)}})\\}_{n=0}^{N}$ of episodes, all of which are successful (i.e., have a final reward of 1). We learn $\\pi$ using behavioral cloning (Pomerleau, 1988), which optimizes $\\pi$ by minimizing the negative log-likelihood of actions $a_t$ given the images and language instructions.",
+   "translation": "**模仿学习。** 模仿学习方法在一个由示范构成的数据集 $\\mathcal{D}$ 上训练策略 $\\pi$（Pomerleau, 1988; Zhang et al., 2018; Jang et al., 2021）。具体来说，我们假设可以访问一个由回合构成的数据集 $\\mathcal{D} = \\{(i^{(n)}, \\{(x_t^{(n)}, a_t^{(n)})\\}_{t=0}^{T^{(n)}})\\}_{n=0}^{N}$，其中所有回合都是成功的（即最终奖励为 1）。我们用行为克隆（behavioral cloning, Pomerleau, 1988）来学习 $\\pi$：以图像和语言指令为条件，通过最小化动作 $a_t$ 的负对数似然来优化 $\\pi$。 ## 系统总览与 RT-1 模型（p.4–p.7） ### 4 SYSTEM OVERVIEW｜系统总览",
+   "confidence": "high"
+  },
+  {
+   "id": "S014",
+   "page": 4,
+   "type": "body",
+   "section": "系统总览与 RT-1 模型（p.4–p.7）",
+   "heading": "4 SYSTEM OVERVIEW｜系统总览",
+   "original": "The goal of this work is to build and demonstrate a general robot learning system that can absorb large amounts of data and generalize effectively. We use mobile manipulators from Everyday Robots, which have a 7 degree-of-freedom arm, a two-fingered gripper, and a mobile base (see Fig. 2 (d)). To collect data and evaluate our method, we use three kitchen-based environments: two real office kitchens and a training environment modelled off these real kitchens. The training environment, shown in Fig. 2 (a), consists of partial counters and is constructed for large scale data collection. The two real environments, shown in Fig. 2 (b, c), have similar counter tops to the training environment, but vary in lighting, background, and full kitchen geometry (e.g., there may be a cabinet instead of a drawer or a sink may be visible). We evaluate the performance of our policies across these different environments, measuring the policy's performance and ability to generalize.",
+   "translation": "本工作的目标是构建并展示一个通用机器人学习系统，它能够吸收大量数据并有效泛化。我们使用 Everyday Robots 的移动操作机器人，它有一条 7 自由度机械臂、一个两指夹爪和一个移动底盘（见图 2(d)）。为了采集数据并评测我们的方法，我们使用三个厨房场景：两个真实的办公室厨房，以及一个以这些真实厨房为原型搭建的训练环境。训练环境如图 2(a) 所示，由部分台面组成，专为大规模数据采集而搭建。两个真实环境如图 2(b, c) 所示，台面与训练环境相似，但在光照、背景以及整个厨房的几何结构上有差异（例如可能用柜子代替抽屉，或者能看见水槽）。我们在这些不同环境中评测策略的表现，衡量其性能与泛化能力。",
+   "confidence": "high"
+  },
+  {
+   "id": "S015",
+   "page": 4,
+   "type": "body",
+   "section": "系统总览与 RT-1 模型（p.4–p.7）",
+   "heading": "Fig. 2｜评测环境、机器人平台与物体集合",
+   "original": "Our training data consists of human-provided demonstrations, and we annotate each episode with a textual description of the instruction that the robot just performed. The instructions usually contain a verb and one or more nouns describing the target objects. To group these instructions together, we split them into a number of skills (e.g., verbs such as \"pick\", \"open\" or \"place upright\") and objects (e.g., nouns such as \"coke can\", \"apple\", or \"drawer\"). We describe the details of our data collection strategy at scale in Sec. 5.2. Our largest dataset contains over 130k individual demonstrations constituting over 700 distinct task instructions using a large variety of objects (see Fig. 2 (f)). We describe the details of the data collected in Sec. 5.2.",
+   "translation": "我们的训练数据由人类提供的示范构成，每个回合都会用一句文字描述标注机器人刚刚执行的指令。这些指令通常包含一个动词和一到多个描述目标物体的名词。为了把这些指令归类，我们将其拆分为若干\"技能\"（skill，例如 \"pick\"、\"open\"、\"place upright\" 这类动词）和\"物体\"（object，例如 \"coke can\"、\"apple\"、\"drawer\" 这类名词）。我们将在 §5.2 详述大规模数据采集策略。我们最大的数据集包含 130k 条以上的个体示范，构成 700 多条不同的任务指令，覆盖大量不同物体（见图 2(f)）。数据采集的细节见 §5.2。",
+   "confidence": "high"
+  },
+  {
+   "id": "S016",
+   "page": 4,
+   "type": "body",
+   "section": "系统总览与 RT-1 模型（p.4–p.7）",
+   "heading": "Fig. 2｜评测环境、机器人平台与物体集合",
+   "original": "One of the main contributions of our system is the network architecture, Robotics Transformer 1 (RT-1), an efficient model that can absorb large amounts of data, effectively generalize, and output actions at real-time rates for practical robotic control. RT-1 takes a short sequence of images and a natural language instruction as input and outputs an action for the robot at each time step. To this end, the architecture (shown in Figure 1a) leverages several elements: first the images and text are processed via an ImageNet pretrained convolutional network (Tan & Le, 2019) conditioned on a pretrained embedding of the instruction via FiLM (Perez et al., 2018), followed by a Token Learner (Ryoo et al., 2021) to compute a compact set of tokens, and finally a Transformer (Vaswani et al., 2017) to attend over these tokens and produce discretized action tokens. The actions consist of seven dimensions for the arm movement (x, y, z, roll, pitch, yaw, opening of the gripper), three dimensions for base movement (x, y, yaw) and a discrete dimension to switch between three modes: controlling the arm, the base, or terminating the episode. RT-1 performs closed-loop control and commands actions at 3 Hz until it either yields a \"terminate\" action or hits a pre-set time step limit.",
+   "translation": "我们系统的主要贡献之一是网络架构 Robotics Transformer 1（RT-1）：一个高效模型，能够吸收大量数据、有效泛化，并以实时频率输出动作，供实际机器人控制使用。RT-1 以一小段图像序列和一条自然语言指令为输入，在每个时间步为机器人输出一个动作。为此，该架构（见图 1a）利用了几个要素：首先，图像与文本经由一个 ImageNet 预训练的卷积网络（Tan & Le, 2019）处理，该网络通过 FiLM（Perez et al., 2018）以指令的预训练嵌入为条件；随后是一个 Token Learner（Ryoo et al., 2021），用于计算一组紧凑的 token；最后是一个 Transformer（Vaswani et al., 2017），在这些 token 上做注意力并产生离散化的动作 token。动作包括七个机械臂运动维度（x, y, z, roll, pitch, yaw、夹爪开合），三个底盘运动维度（x, y, yaw），以及一个用于在三种模式间切换的离散维度：控制机械臂、控制底盘、或终止回合。RT-1 执行闭环控制，以 3 Hz 下发动作，直到产生 \"terminate\" 动作或触及预设的时间步上限。 ### 5 RT-1: ROBOTICS TRANSFORMER｜RT-1：机器人 Transformer",
+   "confidence": "high"
+  },
+  {
+   "id": "S017",
+   "page": 4,
+   "type": "body",
+   "section": "系统总览与 RT-1 模型（p.4–p.7）",
+   "heading": "5 RT-1: ROBOTICS TRANSFORMER｜RT-1：机器人 Transformer",
+   "original": "In this section, we describe how we tokenize the images, text, and actions, and then discuss the RT-1 model architecture. We then describe how we attain the runtime speed required for real-time control. Lastly, we describe the data collection procedure and the skills and instructions in our dataset.",
+   "translation": "本节我们描述如何对图像、文本和动作进行 token 化，然后讨论 RT-1 的模型架构；接着说明我们如何达到实时控制所需的运行速度；最后描述数据采集流程，以及数据集中的技能与指令。 ### 5.1 M ODEL｜模型",
+   "confidence": "high"
+  },
+  {
+   "id": "S018",
+   "page": 5,
+   "type": "body",
+   "section": "系统总览与 RT-1 模型（p.4–p.7）",
+   "heading": "5.1 M ODEL｜模型",
+   "original": "Our model is built on a Transformer architecture (Vaswani et al., 2017) and takes a history of images and task description as input and directly outputs tokenized actions, as shown in Fig. 1a and in detail in Fig. 3. In the following we describe the components of the model, following the top-to-bottom order in Fig. 3. More detail on model selection at scale are provided in Appendix C.3.",
+   "translation": "我们的模型建立在 Transformer 架构（Vaswani et al., 2017）之上，以图像历史与任务描述为输入，直接输出 token 化的动作，如图 1a 所示，详细结构见图 3。下面我们按照图 3 从上到下的顺序描述模型的各个组件。关于规模化条件下模型选择的更多细节见附录 C.3。",
+   "confidence": "high"
+  },
+  {
+   "id": "S019",
+   "page": 5,
+   "type": "body",
+   "section": "系统总览与 RT-1 模型（p.4–p.7）",
+   "heading": "Fig. 3｜RT-1 架构图（图像与指令 token 化）",
+   "original": "Instruction and image tokenization. The RT-1 architecture relies on a data-efficient and compact tokenization of images and language instruction. RT-1 tokenizes a history of 6 images by passing images through an ImageNet pretrained EfficientNet-B3 (Tan & Le, 2019) model, which takes 6 images of resolution 300 × 300 as input and outputs a spatial feature map of shape 9 × 9 × 512 from the final convolutional layer. Unlike Reed et al. (2022), we do not patchify the images into visual tokens prior to feeding them to our Transformer backbone. We instead flatten the output feature map from the EfficientNet into 81 visual tokens which are passed on to the later layers of the network.",
+   "translation": "**指令与图像 token 化。** RT-1 的架构依赖于对图像和语言指令进行数据高效且紧凑的 token 化。RT-1 对一个长度为 6 的图像历史做 token 化：图像通过一个 ImageNet 预训练的 EfficientNet-B3（Tan & Le, 2019）模型，该模型以 6 张 300 × 300 分辨率的图像为输入，从最后一层卷积层输出形状为 9 × 9 × 512 的空间特征图。与 Reed et al. (2022) 不同，我们不在送入 Transformer 骨干之前把图像切分为视觉 patch。我们改为把 EfficientNet 的输出特征图展平为 81 个视觉 token，传给网络的后续层。",
+   "confidence": "high"
+  },
+  {
+   "id": "S020",
+   "page": 5,
+   "type": "body",
+   "section": "系统总览与 RT-1 模型（p.4–p.7）",
+   "heading": "Fig. 3｜RT-1 架构图（图像与指令 token 化）",
+   "original": "To include the language instruction, we condition the image tokenizer on the natural language instruction in the form of a pretrained language embedding, allowing extraction of task-relevant image features early on and improving performance of RT-1. The instruction is first embedded via Universal Sentence Encoder (Cer et al., 2018). This embedding is then used as input to identity-initialized FiLM layers (Perez et al., 2018) added to the pretrained EfficientNet to condition the image encoder. Normally, inserting a FiLM layer into the interior of a pretrained network would disrupt the intermediate activations and negate the benefit of using pretrained weights. To overcome this, we initialize the weights of the dense layers ($f_c$ and $h_C$) which produce the FiLM affine transformation to zero, allowing the FiLM layer to initially act as an identity and preserve the function of the pretrained weights. We find that identity-initialized FiLM also produces better results when training with an EfficientNet initialized from scratch, without ImageNet pretraining, but it does not surpass the initialization described above. The architecture of the image tokenizer is presented in Fig. 3.",
+   "translation": "为了把语言指令纳入进来，我们以预训练语言嵌入的形式，让自然语言指令对图像 token 化器进行条件化，从而能够在早期就提取与任务相关的图像特征，改善 RT-1 的性能。指令首先通过 Universal Sentence Encoder（USE，Cer et al., 2018）嵌入。然后该嵌入作为输入，送入加到预训练 EfficientNet 上的\"恒等初始化\"FiLM 层（Perez et al., 2018），以条件化图像编码器。通常情况下，把 FiLM 层插入预训练网络的内部会破坏中间激活，抵消使用预训练权重的好处。为克服这一点，我们把产生 FiLM 仿射变换的稠密层（$f_c$ 与 $h_C$）权重初始化为零，使 FiLM 层初始时充当恒等变换，从而保持预训练权重的功能。我们发现，当 EfficientNet 从零开始训练（不做 ImageNet 预训练）时，恒等初始化的 FiLM 同样能带来更好的结果，但仍不及上述初始化方式。图像 token 化器的架构见图 3。",
+   "confidence": "high"
+  },
+  {
+   "id": "S021",
+   "page": 5,
+   "type": "body",
+   "section": "系统总览与 RT-1 模型（p.4–p.7）",
+   "heading": "Fig. 3｜RT-1 架构图（图像与指令 token 化）",
+   "original": "RT-1's image and instruction tokenization via FiLM EfficientNet-B3 is a total of 16M parameters, with 26 layers of MBConv blocks and FiLM layers, which output 81 vision-language tokens.",
+   "translation": "RT-1 通过 FiLM EfficientNet-B3 实现的图像与指令 token 化，总计 16M 参数，包含 26 层 MBConv 模块与 FiLM 层，输出 81 个视觉-语言 token。",
+   "confidence": "high"
+  },
+  {
+   "id": "S022",
+   "page": 5,
+   "type": "body",
+   "section": "系统总览与 RT-1 模型（p.4–p.7）",
+   "heading": "Fig. 3｜RT-1 架构图（图像与指令 token 化）",
+   "original": "TokenLearner. To further compress the number of tokens that RT-1 needs to attend over and thus speed up inference, RT-1 uses TokenLearner (Ryoo et al., 2021). TokenLearner is an element-wise attention module that learns to map a large number of tokens into a much smaller number of tokens. This allows us to soft-select image tokens based on their information, passing only the important token combinations to the subsequent Transformer layers. The inclusion of TokenLearner subsamples the 81 visual tokens that come out of the pre-trained FiLM-EfficientNet layers to just 8 final tokens that are then passed on to our Transformer layers.",
+   "translation": "**TokenLearner。** 为进一步压缩 RT-1 需要做注意力的 token 数量、从而加速推理，RT-1 采用了 TokenLearner（Ryoo et al., 2021）。TokenLearner 是一个逐元素注意力模块，学习把大量 token 映射为少得多的 token。这使我们能够依据信息量对图像 token 做软选择，只把重要的 token 组合传给后续 Transformer 层。引入 TokenLearner 后，来自预训练 FiLM-EfficientNet 层的 81 个视觉 token 被降采样为仅 8 个最终 token，再送入我们的 Transformer 层。",
+   "confidence": "high"
+  },
+  {
+   "id": "S023",
+   "page": 6,
+   "type": "body",
+   "section": "系统总览与 RT-1 模型（p.4–p.7）",
+   "heading": "Fig. 3｜RT-1 架构图（图像与指令 token 化）",
+   "original": "Transformer. These 8 tokens per-image are then concatenated with the other images in the history, forming 48 total tokens (with added position encoding) to be fed into the Transformer backbone of RT-1. The Transformer is a decoder-only sequence model with 8 self-attention layers and 19M total parameters that outputs action tokens.",
+   "translation": "**Transformer。** 每张图像的这 8 个 token 随后与历史中的其他图像拼接，共形成 48 个 token（并加入位置编码），送入 RT-1 的 Transformer 骨干。该 Transformer 是一个仅解码器的序列模型，含 8 层自注意力、总计 19M 参数，输出动作 token。",
+   "confidence": "high"
+  },
+  {
+   "id": "S024",
+   "page": 6,
+   "type": "body",
+   "section": "系统总览与 RT-1 模型（p.4–p.7）",
+   "heading": "Fig. 3｜RT-1 架构图（图像与指令 token 化）",
+   "original": "Action tokenization. To tokenize actions, each action dimension in RT-1 is discretized into 256 bins. As mentioned previously, the action dimensions we consider include seven variables for the arm movement (x, y, z, roll, pitch, yaw, opening of the gripper), three variables for base movement (x, y, yaw) and a discrete variable to switch between three modes: controlling arm, base or terminating the episode. For each variable, we map the target to one of the 256 bins, where the bins are uniformly distributed within the bounds of each variable.",
+   "translation": "**动作 token 化。** 为对动作做 token 化，RT-1 把每个动作维度离散化为 256 个 bin。如前所述，我们考虑的动作维度包括七个机械臂变量（x, y, z, roll, pitch, yaw、夹爪开合），三个底盘运动变量（x, y, yaw），以及一个在三种模式间切换的离散变量：控制机械臂、控制底盘、或终止回合。对每个变量，我们把目标值映射到 256 个 bin 之一，这些 bin 在该变量的取值范围内均匀分布。",
+   "confidence": "high"
+  },
+  {
+   "id": "S025",
+   "page": 6,
+   "type": "body",
+   "section": "系统总览与 RT-1 模型（p.4–p.7）",
+   "heading": "Fig. 3｜RT-1 架构图（图像与指令 token 化）",
+   "original": "Loss. We use a standard categorical cross-entropy entropy objective and causal masking that was utilized in prior Transformer-based controllers (Reed et al., 2022; Lee et al., 2022a).",
+   "translation": "**损失。** 我们使用标准的类别式交叉熵目标与因果掩码（causal masking），这与此前基于 Transformer 的控制器一致（Reed et al., 2022; Lee et al., 2022a）。",
+   "confidence": "high"
+  },
+  {
+   "id": "S026",
+   "page": 6,
+   "type": "body",
+   "section": "系统总览与 RT-1 模型（p.4–p.7）",
+   "heading": "Fig. 3｜RT-1 架构图（图像与指令 token 化）",
+   "original": "Inference speed. In contrast to many applications of large models, such as natural language or image generation, one of the unique requirements for a model that needs to run on real robots in real time is fast and consistent inference speed. Given the human speeds of executing the instructions considered in this work (which we measured to be in the 2 - 4 secs range), we want the model to be not significantly slower than that. Based on our experiments this requirement corresponds to at least 3Hz control frequency and the resulting inference time budget for the model, given other latencies in the system, to be less than 100ms.",
+   "translation": "**推理速度。** 与大型模型的许多应用（例如自然语言或图像生成）不同，对于需要在真实机器人上实时运行的模型而言，一项独特要求是推理速度要快且稳定。考虑到本工作中这些指令的人类执行速度（我们测得在 2–4 秒区间），我们希望模型不要明显慢于这个水平。根据我们的实验，这一要求对应至少 3 Hz 的控制频率，因此，在考虑系统中其他延迟之后，模型可用的推理时间预算需小于 100 ms。",
+   "confidence": "high"
+  },
+  {
+   "id": "S027",
+   "page": 7,
+   "type": "body",
+   "section": "系统总览与 RT-1 模型（p.4–p.7）",
+   "heading": "Fig. 3｜RT-1 架构图（图像与指令 token 化）",
+   "original": "This requirement limits the size of the model that we can use. We further explore the impact of model size on inference speed in the experiments. We employ two techniques to speed up inference: (i) reduce the number of tokens generated by a pre-trained EfficientNet model by using TokenLearner (Ryoo et al., 2021), (ii) compute these tokens only once and reuse them for the following windows that overlap for the future inferences. Both of these allow us to speed up the model inference by 2.4 and 1.7 times, respectively. Additional details on model inference are in Appendix C.1.",
+   "translation": "这一要求限制了我们可使用的模型规模。我们在实验中进一步考察了模型规模对推理速度的影响。我们采用两项技术来加速推理：(i) 通过 TokenLearner（Ryoo et al., 2021）减少预训练 EfficientNet 产生的 token 数量；(ii) 这些 token 只计算一次，并复用于后续与未来推理相重叠的窗口。这两项技术分别使模型推理加速 2.4 倍和 1.7 倍。关于模型推理的更多细节见附录 C.1。 ### 5.2 D ATA｜数据",
+   "confidence": "high"
+  },
+  {
+   "id": "S028",
+   "page": 7,
+   "type": "body",
+   "section": "系统总览与 RT-1 模型（p.4–p.7）",
+   "heading": "5.2 D ATA｜数据",
+   "original": "Our goal is to build a system that exhibits high performance, generalization to new tasks, and robustness to distractors and backgrounds. We therefore aim to collect a large, diverse dataset of robot trajectories that includes multiple tasks, objects and environments. Our primary dataset consists of ∼130k robot demonstrations, collected with a fleet of 13 robots over the course of 17 months. We conducted this large-scale data collection in a series of office kitchen segments, which we refer to as robot classrooms, shown in Fig. 2. More details on data collection are in Appendix C.2.",
+   "translation": "我们的目标是构建一个兼具高性能、对新任务的泛化能力，以及对干扰物与背景的鲁棒性的系统。因此我们致力于采集一个规模大、内容多样的机器人轨迹数据集，涵盖多种任务、物体与环境。我们的主数据集由约 130k 条机器人示范构成，由 13 台机器人组成的机队历时 17 个月采集。这次大规模数据采集是在一系列办公室厨房片段中进行的，我们称之为\"机器人教室\"（robot classroom），如图 2 所示。数据采集的更多细节见附录 C.2。",
+   "confidence": "high"
+  },
+  {
+   "id": "S029",
+   "page": 7,
+   "type": "body",
+   "section": "系统总览与 RT-1 模型（p.4–p.7）",
+   "heading": "5.2 D ATA｜数据",
+   "original": "Skills and instructions. While the definition of a task remains inconsistent in the literature, in this work we count the number of language instructions that the system can perform, where an instruction corresponds to a verb surrounded by one or multiple nouns, such as \"place water bottle upright\", \"move the coke can to the green chip bag\" or \"open the drawer\". RT-1 is able to perform over 700 language instructions in multiple realistic office kitchen environments that we evaluate and describe in detail in the experiments. In order to group the evaluations and draw conclusions on the performance of the system, we group the instructions by the verbs used in them, which we refer to as skills. A more detailed list of instructions is shown in Table 1, with examples and the number of instructions per skill.",
+   "translation": "**技能与指令。** 尽管文献中对\"任务\"的定义尚不一致，在本工作中我们统计系统能够执行的语言指令数量，其中一条指令对应一个动词加上一到多个名词，例如 \"place water bottle upright\"（把水瓶竖直放置）、\"move the coke can to the green chip bag\"（把可乐罐移到绿色薯片袋旁）或 \"open the drawer\"（打开抽屉）。RT-1 能够在多个真实的办公室厨房环境中执行 700 多条语言指令，这些环境我们在实验部分做了评测与详细描述。为了对评测分组并据此就系统性能得出结论，我们按指令中使用的动词对指令分组，称这些动词为\"技能\"（skill）。更详细的指令列表见表 1，其中给出每类技能的示例与指令数量。",
+   "confidence": "high"
+  },
+  {
+   "id": "S030",
+   "page": 7,
+   "type": "body",
+   "section": "系统总览与 RT-1 模型（p.4–p.7）",
+   "heading": "Table 1｜RT-1 采集的技能列表",
+   "original": "The current set of skills includes picking, placing, opening and closing drawers, getting items in and out drawers, placing elongated items up-right, knocking them over, pulling napkins and opening jars. The skills were chosen to demonstrate multiple behaviors with many objects (seen in Fig. 2(e)) to test aspects of RT-1 such as generalization to new instructions and ability to perform many tasks. We then greatly expanded the object diversity for the \"pick\" skill to make sure that the skills generalize to varied objects (see the expanded set of objects in Fig. 2(f)). The skills were further expanded while we conducted the ablations to include instructions added in the last row of Table 1, which were used for the experiments described in Sec. 6.4 and 6.3. These additional skills focused on realistic, long-horizon instructions in an office kitchen. The entire process of adding tasks and data is described in the Appendix C.4. Since we do not make any assumptions about particular skills when adding new instructions, the system is easily extendable, and we can continuously provide more diverse data to improve its capabilities.",
+   "translation": "当前的技能集合包括抓取、放置、开合抽屉、把物品放进/取出抽屉、把细长物品竖直放置、把它们推倒、抽纸巾和开罐子。选择这些技能，是为了用许多物体（见图 2(e)）展示多种行为，以检验 RT-1 的若干方面，例如对新指令的泛化能力、以及执行大量任务的能力。随后我们大幅扩展了 \"pick\" 技能的物体多样性，以确保技能能泛化到不同物体（扩展后的物体集合见图 2(f)）。在开展消融实验期间，技能集合进一步扩展，纳入了表 1 最后一行的指令，用于 §6.4 和 §6.3 所述的实验。这些新增技能聚焦于办公室厨房中真实、长时程的指令。添加任务与数据的完整过程见附录 C.4。由于我们在添加新指令时并不对特定技能做任何假设，系统易于扩展，我们可以持续提供更多样化的数据来提升其能力。 ## 实验：主结果与泛化（p.8–p.11） ### 6 EXPERIMENTS｜实验",
+   "confidence": "high"
+  },
+  {
+   "id": "S031",
+   "page": 8,
+   "type": "body",
+   "section": "实验：主结果与泛化（p.8–p.11）",
+   "heading": "6 EXPERIMENTS｜实验",
+   "original": "Our experiments seek to answer the following questions: 1. Can an RT-1 learn to perform a large number of instructions, as well as to generalize in zero shot to new tasks, objects and environments? (Section 6.2) 2. Can we push the resulting model even further by incorporating heterogeneous data sources, such as simulated data or data from different robots? (Section 6.3) 3. How do various methods generalize to long-horizon robotic scenarios? (Section 6.4) 4. How do generalization metrics change with varying amounts of data quantity and data diversity? (Section 6.5) 5. What are the important and practical decisions in the design of the model and how do they affect performance and generalization? (Appendix Section D.4)",
+   "translation": "我们的实验试图回答以下问题： 1. RT-1 能否学会执行大量指令，并对新任务、新物体和新环境实现零样本泛化？（§6.2） 2. 能否通过引入异构数据源（例如仿真数据或其他机器人的数据）把所得模型推得更远？（§6.3） 3. 不同方法在长时程机器人场景中的泛化表现如何？（§6.4） 4. 泛化指标如何随数据量与数据多样性的变化而变化？（§6.5） 5. 模型设计中哪些重要且实际的决定会影响性能与泛化？（附录 D.4）",
+   "confidence": "high"
+  },
+  {
+   "id": "S032",
+   "page": 8,
+   "type": "body",
+   "section": "实验：主结果与泛化（p.8–p.11）",
+   "heading": "6 EXPERIMENTS｜实验",
+   "original": "Throughout this section we will compare to two baseline state of the art architectures, Gato (Reed et al., 2022) and BC-Z (Jang et al., 2021). Importantly both of these are trained on our data described in detail in Sec. 5.2 (which is an important part of our system) since the original models in these publications would not exhibit generalization properties required for our evaluation tasks. Gato is, similarly to RT-1, based on a Transformer architecture, but varies from RT-1 in multiple aspects. First, it computes image tokens without the notion of language and each image token embedding is computed separately for each image patch, as opposed to early language fusion and global image embedding in our model. Second, it does not use a pre-trained text embedding to encode the language string. It also does not include inference time considerations that are necessary for real robots as discussed in Sec. 5.1 such as TokenLearner and the removal of auto-regressive actions. In order to run Gato on real robots at a high enough frequency, we also limit the size of the model compared to the original publication, which was 1.2B parameters (resulting in on robot inference time of 1.9s), to be of similar size to RT-1 (37M parameters for Gato vs. 35M for RT-1). BC-Z is based on a ResNet architecture, and was used in SayCan (Ahn et al., 2022). BC-Z differs from RT-1 in that it is a feedforward model that does not use previous timesteps, and it uses continuous actions rather than discrete action tokens. In addition to the original BC-Z model size, we also compare our method to a larger version of BC-Z that has a similar number of parameters to RT-1 and refer to it as BC-Z XL. We study and analyze how each of these design decisions changes performance in Appendix Sections D.4 and D.5.",
+   "translation": "本节中我们将与两个基线（当前最先进架构）比较：Gato（Reed et al., 2022）与 BC-Z（Jang et al., 2021）。重要的一点是：这两个基线都训练在 §5.2 详述的**我们的数据**上（而数据是我们系统的重要组成部分），因为原论文中的模型不会表现出我们的评测任务所需的泛化能力。Gato 与 RT-1 一样基于 Transformer 架构，但在多个方面与 RT-1 不同。第一，它计算图像 token 时不考虑语言，且每个图像 token 嵌入是逐图像 patch 分别计算的；而我们的模型做的是早期语言融合与全局图像嵌入。第二，它不使用预训练文本嵌入来编码语言字符串。它也没有纳入 §5.1 讨论的、真实机器人所必需的推理时间考量，例如 TokenLearner 和去除自回归动作。为了在真实机器人上以足够高的频率运行 Gato，我们还把模型规模限制到与 RT-1 相近（Gato 37M 参数 vs. RT-1 35M），而原论文版本是 1.2B 参数（在机器人上的推理时间为 1.9 秒）。BC-Z 基于 ResNet 架构，曾在 SayCan（Ahn et al., 2022）中使用。BC-Z 与 RT-1 的不同之处在于：它是一个前馈模型，不使用之前的时间步；并且它使用连续动作，而非离散动作 token。除了原始规模的 BC-Z，我们还与一个参数量与 RT-1 相近的更大版本 BC-Z 比较，称之为 BC-Z XL。这些设计决策各自如何改变性能，我们在附录 D.4 与 D.5 中研究与分析。",
+   "confidence": "high"
+  },
+  {
+   "id": "S033",
+   "page": 8,
+   "type": "body",
+   "section": "实验：主结果与泛化（p.8–p.11）",
+   "heading": "6 EXPERIMENTS｜实验",
+   "original": "We evaluate the success rate in experiments to measure performance on training instructions, generalization to unseen instructions, robustness to backgrounds and distractors, and performance in long-horizon scenarios, as detailed below. Throughout this section, we evaluate our approach and baselines with over 3000 real-world trials, making one of the largest scale evaluation of a robot learning system to-date.",
+   "translation": "在实验中我们以成功率作为指标，衡量在训练指令上的性能、对未见指令的泛化、对背景与干扰物的鲁棒性，以及长时程场景下的表现，具体如下。本节中，我们用 3000 次以上的真实世界试验来评测我们的方法与各基线，这也是迄今规模最大的机器人学习系统评测之一。 ### 6.1 E XPERIMENTAL S ETUP｜实验设置",
+   "confidence": "high"
+  },
+  {
+   "id": "S034",
+   "page": 8,
+   "type": "body",
+   "section": "实验：主结果与泛化（p.8–p.11）",
+   "heading": "6.1 E XPERIMENTAL S ETUP｜实验设置",
+   "original": "As mentioned in Section 4, we evaluate RT-1 with a set of mobile manipulators from Everyday Robots in three environments: two real office kitchens and a training environment modelled off these real kitchens. The training environment, shown in Fig. 2 (a), consists of partial counters while the two real environments, shown in Fig. 2 (b, c), have similar counter tops to the training environment, but vary in lighting, background, and full kitchen geometry (e.g., there may be a cabinet instead of a drawer or a sink may be visible). The policies are evaluated for performance on training tasks as well as generalization to new tasks, robustness to unseen environments, and performance when chained together for long-horizon tasks, as detailed below.",
+   "translation": "如第 4 节所述，我们用 Everyday Robots 的一组移动操作机器人，在三个环境中评测 RT-1：两个真实的办公室厨房，以及一个以这些真实厨房为原型搭建的训练环境。训练环境如图 2(a) 所示，仅由部分台面组成；两个真实环境如图 2(b, c) 所示，台面与训练环境相似，但在光照、背景和整个厨房的几何结构上有差异（例如可能用柜子代替抽屉，或者能看见水槽）。策略的评测涵盖：在训练任务上的性能、对新任务的泛化、对未见环境的鲁棒性，以及将技能串联用于长时程任务时的表现，具体如下。",
+   "confidence": "high"
+  },
+  {
+   "id": "S035",
+   "page": 8,
+   "type": "body",
+   "section": "实验：主结果与泛化（p.8–p.11）",
+   "heading": "6.1 E XPERIMENTAL S ETUP｜实验设置",
+   "original": "Seen task performance. To evaluate performance on seen instructions, we evaluate performance on instructions sampled from the training set. Note, however, that this evaluation still involves varying the placement of objects and other factors of the setup (e.g., time of day, robot position), requiring the skills to generalize to realistic variability in the environment. In all, we test over 200 tasks in this evaluation: 36 for picking objects, 35 for knocking objects, 35 for placing things upright, 48 for moving objects, 18 for opening and closing various drawers, and 36 for picking out of and placing objects into drawers.",
+   "translation": "**已见任务性能。** 为评测在已见指令上的性能，我们在从训练集中采样的指令上做评测。但要注意，这一评测仍然会改变物体的摆放位置和其他设置因素（例如一天中的时段、机器人位置），因此要求技能对环境中的真实变化具备泛化能力。总体而言，这一评测测试了 200 多个任务：36 个抓取物体、35 个推倒物体、35 个竖直放置、48 个移动物体、18 个开合各种抽屉、以及 36 个从抽屉取出/放入物体。",
+   "confidence": "high"
+  },
+  {
+   "id": "S036",
+   "page": 8,
+   "type": "body",
+   "section": "实验：主结果与泛化（p.8–p.11）",
+   "heading": "6.1 E XPERIMENTAL S ETUP｜实验设置",
+   "original": "Unseen tasks generalization. To evaluate generalization to unseen tasks, we test 21 novel, unseen instructions. These instructions are distributed across skills and objects. This ensures that at least some instances of each object and skill were present in the training set but they will be combined in novel ways. For example, if \"pick up the apple\" is held out, then there are other training instructions that include the apple. The list of all unseen instructions can be found in the Appendix D.1.",
+   "translation": "**未见任务泛化。** 为评测对新任务的泛化，我们测试 21 条全新的未见指令。这些指令分布在不同的技能与物体上。这样可以确保每个物体与每项技能至少有部分实例出现在训练集中，但它们会以新的方式组合。例如，如果 \"pick up the apple\"（拿起苹果）被留出，训练集中仍有其他包含苹果的指令。全部未见指令的清单见附录 D.1。 > 注：正文此处写 21 条未见指令，而 §6.2 的评测与附录 D.1 / 表 8 给出的留出指令为 53 条（\"we exclude a total of 53 tasks\"）。两处口径不一致，原文如此，阅读时以表 8 的 53 条清单为准。",
+   "confidence": "high"
+  },
+  {
+   "id": "S037",
+   "page": 9,
+   "type": "body",
+   "section": "实验：主结果与泛化（p.8–p.11）",
+   "heading": "6.1 E XPERIMENTAL S ETUP｜实验设置",
+   "original": "Robustness. To evaluate robustness, we perform 30 real-world tasks for distractor robustness and 22 tasks for background robustness. The background robustness was tested by evaluating in new kitchens (which have different lighting and background visuals) and with different counter surfaces (e.g., a patterned table cloth). Example configurations of the robustness evaluation scenarios are depicted in Fig. 4.",
+   "translation": "**鲁棒性。** 为评测鲁棒性，我们针对干扰物鲁棒性执行了 30 个真实世界任务，针对背景鲁棒性执行了 22 个任务。背景鲁棒性通过在新厨房（光照与背景视觉不同）以及不同台面（例如带图案的桌布）中评测来测试。鲁棒性评测场景的示例配置见图 4。",
+   "confidence": "high"
+  },
+  {
+   "id": "S038",
+   "page": 9,
+   "type": "body",
+   "section": "实验：主结果与泛化（p.8–p.11）",
+   "heading": "Fig. 4｜鲁棒性与真实场景评测的配置",
+   "original": "Long-horizon scenarios. We also evaluate generalization to more realistic long-horizon scenarios, which each require executing a sequence of skills. The goal of this evaluation is to combine multiple generalization axes such as new tasks, objects, environments and test the overall generalization capabilities in realistic settings. These evaluations consist of 15 long-horizon instructions in two real kitchens, which require executing sequences of skills consisting of ∼ 10 distinct steps, with each step of roughly comparable scope as the training instructions. These steps are obtained automatically from higher level instructions, such as \"how would you throw away all the items on the table?\" by using the SayCan system (Ahn et al., 2022), as described in detail in Section 6.4 and Appendix D.3.",
+   "translation": "**长时程场景。** 我们还评测对更真实的长时程场景的泛化，每个场景都需要执行一系列技能。这一评测的目标是把多个泛化维度（如新任务、新物体、新环境）叠加起来，检验在真实场景下的整体泛化能力。评测包含两个真实厨房中的 15 条长时程指令，需要执行约 10 个不同步骤组成的技能序列，每个步骤的范围与训练指令大致相当。这些步骤是由更高层的指令（例如 \"how would you throw away all the items on the table?\"，你会怎样把桌上所有东西都扔掉？）通过 SayCan 系统（Ahn et al., 2022）自动得到的，详见 §6.4 与附录 D.3。 ### 6.2 C AN RT-1 LEARN TO PERFORM A LARGE NUMBER OF INSTRUCTIONS, AND TO GENERALIZE TO NEW TASKS, OBJECTS AND ENVIRONMENTS?｜RT-1 能否执行大量指令，并泛化到新任务、新物体与新环境？",
+   "confidence": "high"
+  },
+  {
+   "id": "S039",
+   "page": 9,
+   "type": "body",
+   "section": "实验：主结果与泛化（p.8–p.11）",
+   "heading": "6.2 C AN RT-1 LEARN TO PERFORM A LARGE NUMBER OF INSTRUCTIONS, AND TO GENERALIZE TO NEW TASKS, OBJECTS AND ENVIRONMENTS?｜RT-1 能否执行大量指令，并泛化到新任务、新物体与新环境？",
+   "original": "To answer our first question, we analyze the overall performance, generalization, and robustness capabilities of RT-1 compared to previously proposed models. Specifically, we compare to the model architectures used by Gato (Reed et al., 2022) and BC-Z (Jang et al., 2021), as well as a larger version of BC-Z, which we refer to as BC-Z XL. Note, however, that all models are trained on the same data as RT-1, and the evaluation only compares the model architectures, not the task sets, datasets, or overall robotic systems. The capabilities of RT-1 are determined to a large extent by the dataset and task set, which we believe improves significantly over prior works (e.g. BC-Z uses 100 tasks and the original Gato model trains a stacking task with various shapes), and thus this comparison should be viewed as rather favorable to the prior models, which also benefit from the large and diverse dataset and task set that we collected.",
+   "translation": "为回答第一个问题，我们分析 RT-1 相对于此前提出的模型在整体性能、泛化与鲁棒性方面的表现。具体来说，我们与 Gato（Reed et al., 2022）和 BC-Z（Jang et al., 2021）所用的模型架构比较，另加一个更大版本的 BC-Z，称为 BC-Z XL。但要注意，所有模型都训练在与 RT-1 相同的数据上，评测只比较**模型架构**，不比较任务集、数据集或整体机器人系统。RT-1 的能力在很大程度上由数据集与任务集决定，我们认为这两者相比此前工作有显著改进（例如 BC-Z 使用 100 个任务，原始 Gato 模型训练的是各种形状的堆叠任务），因此这一比较应当被视为对先前模型**相当有利**——它们同样受益于我们采集的大规模、多样化数据集与任务集。",
+   "confidence": "high"
+  },
+  {
+   "id": "S040",
+   "page": 9,
+   "type": "body",
+   "section": "实验：主结果与泛化（p.8–p.11）",
+   "heading": "6.2 C AN RT-1 LEARN TO PERFORM A LARGE NUMBER OF INSTRUCTIONS, AND TO GENERALIZE TO NEW TASKS, OBJECTS AND ENVIRONMENTS?｜RT-1 能否执行大量指令，并泛化到新任务、新物体与新环境？",
+   "original": "The results are shown in Table 2. Across each category, we find that RT-1 outperforms the prior models significantly. On seen tasks, RT-1 is able to perform 97% of the more than 200 instructions successfully, which is 25% more than BC-Z and 32% more than Gato. On unseen tasks, RT-1 shows it is capable of generalizing to novel instructions, performing 76% of the never-before-seen instructions, 24% more than the next best baseline. While such generalization to novel instructions is made possible due to natural language conditioning of the policy, as the policy is able to understand new combinations of previously seen concepts, all of the baselines are also conditioned on natural language and in principle enjoy the same benefits. We further ablate different components of RT-1 in the next section to better understand what aspects of our method contribute the most to this difference. On distractors and backgrounds, we find that RT-1 is quite robust, successfully executing 83% of the distractor robustness tasks and 59% of the background robustness tasks (36% and 18% higher than the next best alternative, respectively). Overall, we find that RT-1 has high general performance, while exhibiting impressive degrees of generalization and robustness. We show example trajectories of the RT-1 agent including instructions that cover different skills, environments and objects in Fig. 5. We also present additional trajectory examples for different generalization tests in the Appendix, which include backgrounds (Fig. 10), and distractors (Fig. 12).",
+   "translation": "结果见表 2。在每个类别上，我们都发现 RT-1 显著优于此前模型。在已见任务上，RT-1 能成功执行 200 多条指令中的 97%，比 BC-Z 高 25%、比 Gato 高 32%。在未见任务上，RT-1 展现出对新指令的泛化能力，能执行 76% 的此前从未见过的指令，比次优基线高 24%。这种对新指令的泛化之所以可能，是因为策略以自然语言为条件，能够理解此前见过的概念的新组合；不过所有基线同样以自然语言为条件，原则上也享有同样的好处。我们在下一节进一步消融 RT-1 的不同组件，以更好地理解方法的哪些方面对这一差距贡献最大。在干扰物与背景方面，我们发现 RT-1 相当稳健：成功执行了 83% 的干扰物鲁棒性任务、59% 的背景鲁棒性任务（分别比次优方案高 36% 与 18%）。总体而言，RT-1 具有很高的通用性能，同时展现出可观的泛化性与鲁棒性。我们在图 5 中展示 RT-1 智能体的示例轨迹，覆盖不同技能、环境和物体。附录中还给出了针对不同泛化测试的更多轨迹示例，包括背景（图 10）与干扰物（图 12）。",
+   "confidence": "high"
+  },
+  {
+   "id": "S041",
+   "page": 10,
+   "type": "body",
+   "section": "实验：主结果与泛化（p.8–p.11）",
+   "heading": "Fig. 5｜RT-1 在多种指令下的评测轨迹示例",
+   "original": "Generalization to realistic instructions. Next, we test whether our method generalizes enough across all the different axes that we evaluated previously to be deployed in a real kitchen, which poses multiple distribution shifts all at once such as new tasks combinations, object distractors as well as a novel environment. To evaluate our algorithm in realistic scenarios in a real kitchen, we construct task sequences to accomplish a number of realistic goals. The robot restocks several snacks in drawers, tidies up knocked over condiment bottles and closes drawers left open by humans, prepares a snack with an orange and a napkin and fetches lost sunglasses and an octopus toy from several places in the kitchen. The detailed instructions used in these scenarios are listed in the Appendix D.1. The office kitchen involves a dramatic shift from the training environment and we categorize tasks across these scenarios with varying levels of generalization: L1 for generalization to the new counter-top layout and lighting conditions, L2 for additionally generalization to unseen distractor objects, L3 for additional generalization to drastically new task settings, new task objects or objects in unseen locations such as near a sink. The three levels that correspond to the three tasks of restocking, preparing a snack and fetching a lost object in the real kitchen are depicted in the last row of Fig. 4. Example trajectories for different levels are presented in the Appendix in Fig. 11.",
+   "translation": "**对真实指令的泛化。** 接下来我们检验：我们的方法在各个此前评测过的维度上是否泛化得足够好，从而可以部署到真实厨房中——真实厨房会同时带来多种分布偏移，例如新任务组合、物体干扰物、以及一个全新环境。为在真实厨房的真实场景中评测算法，我们构造了若干任务序列来完成一些贴近现实的目标。机器人会把若干零食补货到抽屉里、把被碰倒的调料瓶摆正、关上人们忘记关的抽屉、用橙子和纸巾准备一份小食，并从厨房的多个位置取回丢失的墨镜和一个章鱼玩具。这些场景中使用的详细指令列于附录 D.1。办公室厨房相对训练环境构成显著偏移，我们按不同的泛化程度对这些场景中的任务分级：L1 表示泛化到新的台面布局与光照条件；L2 表示在此基础上进一步泛化到未见过的干扰物体；L3 表示进一步泛化到截然不同的任务设置、新的任务物体，或位于未见过位置（例如水槽附近）的物体。三个等级分别对应真实厨房中的补货、准备小食和取回失物这三类任务，见图 4 最后一行。不同等级的示例轨迹见附录图 11。",
+   "confidence": "high"
+  },
+  {
+   "id": "S042",
+   "page": 10,
+   "type": "body",
+   "section": "实验：主结果与泛化（p.8–p.11）",
+   "heading": "Fig. 5｜RT-1 在多种指令下的评测轨迹示例",
+   "original": "We report the per-task success rate in these realistic scenarios along with the varying generalization levels in Table 3 and find RT-1 to be the most robust on all levels. Gato generalizes fairly well at the first level but it performs significantly drops for the more difficult generalization scenarios. BC-Z and its XL equivalent perform fairly well at L2 level and better than Gato at L3 but they are still not at the generalization level of RT-1.",
+   "translation": "我们在表 3 中报告这些真实场景下按任务的成功率，以及不同泛化等级下的结果，发现 RT-1 在所有等级上都是最稳健的。Gato 在第一级上泛化得还不错，但在更难的泛化场景中性能显著下降。BC-Z 及其 XL 版本在 L2 上表现尚可，在 L3 上优于 Gato，但仍未达到 RT-1 的泛化水平。 > 注：原文 \"but it performs significantly drops\" 为笔误，语义上应为 \"its performance drops significantly\"（性能显著下降）。",
+   "confidence": "high"
+  },
+  {
+   "id": "S043",
+   "page": 10,
+   "type": "body",
+   "section": "实验：主结果与泛化（p.8–p.11）",
+   "heading": "6.3 C AN WE PUSH THE RESULTING MODEL FURTHER BY INCORPORATING HETEROGENEOUS DATA SOURCES SUCH AS SIMULATION OR DATA FROM DIFFERENT ROBOTS?｜能否通过引入仿真数据或不同机器人的数据把模型推得更远？",
+   "original": "Next, we explore the limits of RT-1 for utilizing highly heterogeneous data. We demonstrate how RT-1 can incorporate and learn from vastly different data sources and improve from such data without sacrificing its original-tasks performance across the varied tasks inherent in this data. To this end, we conduct two experiments: (1) RT-1 trained and tested on both real data and simulation data and (2) RT-1 trained across large datasets of different tasks, originally collected by different robots. More information on each is provided in Appendix D.2.",
+   "translation": "接下来，我们探索 RT-1 在利用高度异构数据方面的极限。我们展示 RT-1 如何纳入并学习来自差异极大的数据源，并在从这些数据中受益的同时，不牺牲其在数据所固有的各种任务上的原有性能。为此我们做了两个实验：(1) RT-1 同时在真实数据与仿真数据上训练和测试；(2) RT-1 在由不同机器人采集的、覆盖不同任务的大型数据集上训练。二者详情见附录 D.2。",
+   "confidence": "high"
+  },
+  {
+   "id": "S044",
+   "page": 11,
+   "type": "body",
+   "section": "实验：主结果与泛化（p.8–p.11）",
+   "heading": "6.3 C AN WE PUSH THE RESULTING MODEL FURTHER BY INCORPORATING HETEROGENEOUS DATA SOURCES SUCH AS SIMULATION OR DATA FROM DIFFERENT ROBOTS?｜能否通过引入仿真数据或不同机器人的数据把模型推得更远？",
+   "original": "Absorbing simulation data. Table 4 shows the ability of RT-1, and baselines, to absorb both real and simulation data. To test this, we take all of the real demonstration data but we also provide additional simulation data that includes objects that the robot has never seen in the real world. Specifically, we specify different generalization scenarios: for seen skills with real objects the training data has real data of that instruction (i.e., performance on seen tasks), for seen skills with sim objects the training data has sim data of that instruction (e.g. \"pick up a sim object\", which was present in sim), and for unseen skills with sim objects the training data has sim data of that object but there are no examples of the instruction describing the skill with that object either in sim or in real (e.g., \"move a sim object to apple\", even though the robot has only practiced in picking that sim object and not moving it near other objects). All evaluations are done in the real world but to limit the number of instructions evaluated, we focus on pick and move-to skills.",
+   "translation": "**吸收仿真数据。** 表 4 展示了 RT-1（及基线）吸收真实数据与仿真数据的能力。为测试这一点，我们使用全部真实示范数据，同时额外提供仿真数据——其中包含机器人在真实世界中从未见过的物体。具体来说，我们设定了几种泛化场景：对于\"已见技能 + 真实物体\"，训练数据中含有该指令的真实数据（即已见任务性能）；对于\"已见技能 + 仿真物体\"，训练数据中含有该指令的仿真数据（例如 \"pick up a sim object\"，该指令存在于仿真中）；对于\"未见技能 + 仿真物体\"，训练数据中含有该物体的仿真数据，但无论是在仿真还是真实数据中，都不存在把该技能与该物体组合起来的指令示例（例如 \"move a sim object to apple\"，尽管机器人只练习过抓取该仿真物体，而未练习过把它移动到其他物体旁）。所有评测都在真实世界中完成；为限制评测的指令数量，我们聚焦于抓取（pick）与移到近旁（move-to）两类技能。",
+   "confidence": "high"
+  },
+  {
+   "id": "S045",
+   "page": 12,
+   "type": "body",
+   "section": "实验：主结果与泛化（p.8–p.11）",
+   "heading": "Table 4｜引入仿真数据的实验结果",
+   "original": "We find in Table 4 that for RT-1, we do not lose performance adding simulation data compared to the Real Only dataset. We do however, see a significant increase in performance (from 23% to 87%) on objects and tasks seen only in simulation, to approximately the performance of the those in real, demonstrating an impressive degree of domain transfer. We also see a significant increase in performance on unseen instructions from 7% to 33%; impressive given the object in question has never been seen in real and the instruction never seen at all. Overall, we find that RT-1 is able to efficiently absorb new data, even from a very different domain.",
+   "translation": "从表 4 可以看到，对 RT-1 而言，相比仅在真实数据上训练，加入仿真数据并没有损失性能。而在仅在仿真中出现过的物体与任务上，我们观察到显著的性能提升（从 23% 到 87%），大致达到与真实物体相当的水平，体现出可观的域迁移程度。我们还看到在未见指令上的性能显著提升，从 7% 到 33%；考虑到该物体在真实世界中从未出现过、该指令也从未出现过，这一结果相当亮眼。总体而言，RT-1 能够高效吸收新数据，即使这些数据来自一个差异很大的领域。",
+   "confidence": "high"
+  },
+  {
+   "id": "S046",
+   "page": 12,
+   "type": "body",
+   "section": "实验：主结果与泛化（p.8–p.11）",
+   "heading": "Table 4｜引入仿真数据的实验结果",
+   "original": "Absorbing data from different robots. To push the data absorption limits of RT-1, we conduct an additional set of experiments where we combine two data sources that originate from different robots: Kuka IIWA as well as the Everyday Robots mobile manipulators used in the experiments so far. The Kuka data contains all the successful examples collected in QT-Opt (Kalashnikov et al., 2018), which corresponds to 209k episodes, where the robot was indiscriminately grasping objects in a bin (see an example of a Kuka episode in Table. 5). To test whether RT-1 can effectively absorb these two very different datasets, which we refer to as the standard \"Classroom eval\", as well as the performance on the newly constructed tasks that reflect the bin-picking setup present in the Kuka data, which we refer to as the \"Bin-picking eval\" (see Fig. 6).",
+   "translation": "**吸收来自不同机器人的数据。** 为进一步推进 RT-1 的数据吸收极限，我们做了另一组实验：把来自两种不同机器人的数据源混合起来——Kuka IIWA，以及前文实验中使用的 Everyday Robots 移动操作机器人。Kuka 数据包含 QT-Opt（Kalashnikov et al., 2018）中采集的全部成功样本，对应 209k 个回合；在那项工作中，机器人不加区分地抓取料箱中的物体（Kuka 回合示例见图 6 / 表 5）。我们评估 RT-1 能否有效吸收这两个差异极大的数据集：一是标准评测（我们称为 \"Classroom eval\"，即教室环境评测），二是针对反映 Kuka 数据中料箱抓取（bin-picking）设置的新构造任务的性能（我们称为 \"Bin-picking eval\"，见图 6）。 > 注：原文该句缺少主句谓语（\"To test whether ... (see Fig. 6).\" 是残句），中文已按语义补足\"我们评估……\"以保持可读，句子结构问题为原文所有。",
+   "confidence": "high"
+  },
+  {
+   "id": "S047",
+   "page": 12,
+   "type": "body",
+   "section": "实验：主结果与泛化（p.8–p.11）",
+   "heading": "Fig. 6｜用一个模型跨两个机器人平台训练（对应表 5）",
+   "original": "We would like to emphasize the difficulty of this setting by noting the major differences between the datasets. Not only are the robots that collected the data different in appearance and action space, but also the environment they were deployed in has different appearance and dynamics. In addition the QT-Opt data presents a completely different action distribution – it was collected by an RL agent as opposed to human demonstrations present in our dataset.",
+   "translation": "我们想通过指出这两个数据集之间的重大差异，来强调该设定之困难。不仅采集数据的机器人在外观与动作空间上不同，它们所部署的环境在外观与动力学上也不同。此外，QT-Opt 数据呈现的是完全不同的动作分布——它由一个强化学习智能体采集，而我们数据集中是人类的示范。",
+   "confidence": "high"
+  },
+  {
+   "id": "S048",
+   "page": 12,
+   "type": "body",
+   "section": "实验：主结果与泛化（p.8–p.11）",
+   "heading": "Fig. 6｜用一个模型跨两个机器人平台训练（对应表 5）",
+   "original": "The results are presented in Table 5. We observe that the model that mixes the RT-1 data and the Kuka data has only a minimal decrease in the original tasks' performance (i.e. Classroom eval), i.e. 2%. Even more importantly, in the Bin-picking eval, we observe that the model trained on multi-robot data performs at 39% compared to the 22% of the model that was trained only on the RT-1 data. This is a 17% performance difference (almost 2x). Additionally, RT-1 trained on Kuka bin-picking data and evaluated on the bin-picking tasks with the Everyday Robots (EDR) robot achieves 0% performance, confirming that it is difficult to transfer a behavior from another robot morphology. However, mixing the data from both robots allows RT-1 to infer the correct actions of the EDR robot even when faced with the states observed by Kuka robots. This is achieved without explicit demonstrations of bin-picking on EDR robot and by taking advantage of past experiences collected by Kuka robots. These results indicate that RT-1's absorption properties also include the ability to acquire new skills through observing other robots' experiences and present an exciting avenue of future work where we combine many more multi-robot datasets to enhance the robot capabilities.",
+   "translation": "结果见表 5。我们观察到，混合 RT-1 数据与 Kuka 数据的模型，在原有任务（即 Classroom eval）上的性能仅有极小下降，为 2%。更重要的是，在 Bin-picking eval 上，用多机器人数据训练的模型达到 39%，而仅在 RT-1 数据上训练的模型只有 22%。这是 17 个百分点的差距（接近 2 倍）。此外，仅在 Kuka 料箱抓取数据上训练、再在 Everyday Robots（EDR）机器人上评测料箱抓取任务时，RT-1 的性能为 0%，这证实了把行为从一个机器人形态迁移到另一个形态是困难的。然而，混合两个机器人的数据后，即使面对 Kuka 机器人所观测到的状态，RT-1 也能推断出 EDR 机器人的正确动作。这一点是在没有 EDR 机器人上料箱抓取的显式示范的条件下、通过利用 Kuka 机器人收集的过往经验实现的。这些结果表明，RT-1 的吸收能力还包括\"通过观察其他机器人的经验来获得新技能\"，并为未来工作指出了一条令人兴奋的方向：把更多多机器人数据集结合起来以增强机器人能力。",
+   "confidence": "high"
+  },
+  {
+   "id": "S049",
+   "page": 13,
+   "type": "body",
+   "section": "实验：主结果与泛化（p.8–p.11）",
+   "heading": "6.4 H OW DO VARIOUS METHODS GENERALIZE LONG-HORIZON ROBOTIC SCENARIOS?｜不同方法在长时程机器人场景中的泛化表现如何？",
+   "original": "In the next set of experiments we evaluate whether our method generalizes enough to be used in long-horizon realistic kitchen settings. To answer this question, we execute RT-1 and various baselines within the SayCan (Ahn et al., 2022) framework in two different real kitchens. Since SayCan combines many low-level instructions to perform high-level instructions, the number of possible high-level instructions increases combinatorially with skills, so the skill-breadth of RT-1 can be fully seen (for more details on the SayCan algorithm please refer to Ahn et al. (2022)). The success rate of long-horizon tasks also decreases exponentially with the length of the task, so high success rates in manipulation skills are particularly important. Furthermore, as mobile manipulation tasks require both navigation and manipulation, the policies ability to be robust to base position is crucial. More detail is provided in Appendix D.3.",
+   "translation": "下一组实验检验我们的方法是否泛化得足够好，从而可用于真实的长时程厨房场景。为回答这一问题，我们在两个不同的真实厨房中，把 RT-1 与各基线放在 SayCan（Ahn et al., 2022）框架里执行。由于 SayCan 会把多条低层指令组合起来完成高层指令，可能的高层指令数量随技能数量呈组合式增长，因此 RT-1 的技能广度能够被充分体现（关于 SayCan 算法的更多细节请参考 Ahn et al. (2022)）。此外，长时程任务的成功率会随任务长度指数下降，因此操作技能本身的高成功率尤为重要。同时，移动操作任务既需要导航也需要操作，策略对底盘位置的鲁棒性至关重要。更多细节见附录 D.3。",
+   "confidence": "high"
+  },
+  {
+   "id": "S050",
+   "page": 13,
+   "type": "body",
+   "section": "实验：主结果与泛化（p.8–p.11）",
+   "heading": "6.4 H OW DO VARIOUS METHODS GENERALIZE LONG-HORIZON ROBOTIC SCENARIOS?｜不同方法在长时程机器人场景中的泛化表现如何？",
+   "original": "Table 6 shows our results (on instructions in Appendix Table 12). Except for original SayCan, all methods get 87% as planning success rate, and RT-1 performs the best, with 67% execution success rate in Kitchen1. Kitchen2 constitutes a much more challenging generalization scene, since the Robot Classroom training scenes are modeled after Kitchen1 (see the pictures of the kitchens in Fig. 2). Due to this generalization difficulty, SayCan with Gato is not able to finish any long horizon task, and SayCan with BC-Z is able to achieve a success rate of 13%. The original SayCan paper did not evaluate performance in a new kitchen. Surprisingly, the manipulation performance does not see a visible drop from Kitchen1 to Kitchen2 for our method.",
+   "translation": "表 6 给出我们的结果（所用指令见附录表 12）。除原始 SayCan 之外，所有方法的规划成功率都是 87%，其中 RT-1 表现最好：在 Kitchen1 中执行成功率为 67%。Kitchen2 是更具挑战性的泛化场景，因为机器人教室的训练场景是照 Kitchen1 搭建的（见厨房照片，图 2）。由于这一泛化难度，SayCan + Gato 无法完成任何长时程任务，SayCan + BC-Z 的成功率为 13%。原始 SayCan 论文并未在新厨房中评测性能。令人意外的是，我们的方法从 Kitchen1 到 Kitchen2 在操作性能上并未出现可见的下降。",
+   "confidence": "high"
+  },
+  {
+   "id": "S051",
+   "page": 14,
+   "type": "body",
+   "section": "实验：主结果与泛化（p.8–p.11）",
+   "heading": "Table 6｜Kitchen1 与 Kitchen2 中的 SayCan 风格长时程任务",
+   "original": "In the supplementary video, we show that this enables us to operate unseen drawers in Kitchen2, and that we can use SayCan-RT1 to plan and execute ultra-long horizon tasks, with as many as 50 steps.",
+   "translation": "在补充视频中，我们展示了这使我们能够在 Kitchen2 中操作未见过的抽屉，并且可以用 SayCan-RT1 规划并执行超长时程任务，最多可达 50 个步骤。 ### 6.5 H OW DO GENERALIZATION METRICS CHANGE WITH VARYING AMOUNTS OF DATA QUANTITY AND DATA DIVERSITY?｜泛化指标如何随数据量与数据多样性的变化而变化？",
+   "confidence": "high"
+  },
+  {
+   "id": "S052",
+   "page": 14,
+   "type": "body",
+   "section": "实验：主结果与泛化（p.8–p.11）",
+   "heading": "6.5 H OW DO GENERALIZATION METRICS CHANGE WITH VARYING AMOUNTS OF DATA QUANTITY AND DATA DIVERSITY?｜泛化指标如何随数据量与数据多样性的变化而变化？",
+   "original": "While previous works have shown the scaling abilities of Transformer-based models (Lee et al., 2022a; Reed et al., 2022; Jiang et al., 2022) with the number of model parameters, in many robotics works the model size is often not the primary bottleneck, and the maximum size is limited by the latency requirement for running such models on real robots. Instead, in this study we focus on ablating the influence of dataset size and diversity, as they play an important role in the traditionally data-limited robot learning field. Since data collection is particularly expensive for real robots, it is important to quantify what kind of data our models need to achieve a certain performance and generalization. Thus, our last question focuses on the scaling properties of RT-1 with different data properties.",
+   "translation": "此前工作已经展示了基于 Transformer 的模型（Lee et al., 2022a; Reed et al., 2022; Jiang et al., 2022）在模型参数量上的扩展能力；但在许多机器人工作中，模型规模往往不是主要瓶颈，其上限受制于在真实机器人上运行这类模型所需的延迟要求。因此，本研究转而消融数据集规模与多样性的影响，因为它们在传统上受数据限制的机器人学习领域扮演着重要角色。由于真实机器人的数据采集尤其昂贵，量化\"我们的模型需要什么样的数据才能达到某种性能与泛化水平\"就非常重要。于是我们的最后一个问题聚焦于 RT-1 在不同数据属性下的扩展特性。",
+   "confidence": "high"
+  },
+  {
+   "id": "S053",
+   "page": 14,
+   "type": "body",
+   "section": "实验：主结果与泛化（p.8–p.11）",
+   "heading": "6.5 H OW DO GENERALIZATION METRICS CHANGE WITH VARYING AMOUNTS OF DATA QUANTITY AND DATA DIVERSITY?｜泛化指标如何随数据量与数据多样性的变化而变化？",
+   "original": "In Table 7 we show the performance, generalization, and robustness of RT-1 as we decrease the dataset size (% data) and the dataset diversity (% tasks). To separate the axes of dataset size and diversity, we create smaller datasets with the same task diversity by removing data from the tasks with the largest data, capping the number of examples per task at 200 (resulting in 51% of the data), 100 (37% of the data), and 50 (22.5% of the data). To create a narrow dataset, we remove the tasks with the least data, thus keeping 97% of the overall data but only 75% of the tasks. As we decrease dataset size, we see a general trend of decreasing performance and a steeper trend of decreasing generalization. As we make the dataset more narrow, we see much steeper performance reductions, particularly in terms of generalization. In fact, removing 25% of the tasks while keeping 97% of the data achieves an equivalent generalization performance to reducing the dataset size by as much as 49%. Our key takeaway is thus that data diversity is more essential than data quantity.",
+   "translation": "在表 7 中，我们展示了在削减数据集规模（% data）与数据集多样性（% tasks）时，RT-1 的性能、泛化与鲁棒性变化。为把\"数据规模\"与\"数据多样性\"两个轴分开，我们通过从数据量最大的任务中删减数据来构造规模更小但任务多样性不变的数据集：把每个任务的样本数上限设为 200（得到 51% 的数据）、100（37% 的数据）、50（22.5% 的数据）。为构造\"更窄\"的数据集，我们删除数据量最少的任务，从而保留 97% 的总数据、但只保留 75% 的任务。随着数据集规模下降，我们观察到性能总体下降、泛化下降更陡的趋势。而当我们让数据集变得更窄时，性能下降要陡得多，尤其在泛化方面。事实上，在保留 97% 数据的前提下删除 25% 的任务，其泛化性能与把数据集规模削减多达 49% 的效果相当。因此我们的核心结论是：**数据多样性比数据数量更关键。**",
+   "confidence": "high"
+  },
+  {
+   "id": "S054",
+   "page": 15,
+   "type": "body",
+   "section": "实验：主结果与泛化（p.8–p.11）",
+   "heading": "7 C ONCLUSIONS, L IMITATIONS AND F UTURE W ORK｜结论、局限与未来工作",
+   "original": "We presented Robotics Transformer 1, RT-1, a robot learning method that can effectively absorb large amounts of data and scales with data quantity and diversity. We trained RT-1 on a large dataset of demonstrations containing over 130k episodes collected over the course of 17 months with 13 robots. In our broad set of experiments, we demonstrated that our method that can perform over 700 instructions at 97% success rate and effectively generalize to new tasks, objects and environments better than previously published baselines. We also demonstrated that RT-1 can successfully absorb heterogeneous data from simulation and other robot morphologies without sacrificing original-tasks performance and while improving generalization to new scenarios. Lastly, we showed how this level of performance and generalization allowed us to execute very long-horizon tasks in the SayCan (Ahn et al., 2022) framework, with as many as 50 steps.",
+   "translation": "我们提出了 Robotics Transformer 1（RT-1）：一种能够有效吸收大量数据、并随数据数量与多样性扩展的机器人学习方法。我们在一个大规模示范数据集上训练 RT-1，该数据集包含 130k 个以上回合，由 13 台机器人历时 17 个月采集。在一系列广泛的实验中，我们证明该方法能以 97% 的成功率执行 700 多条指令，并且在泛化到新任务、新物体和新环境上优于此前发表的基线。我们还证明，RT-1 能够成功吸收来自仿真和其他机器人形态的异构数据，既不牺牲原有任务性能，又提升了对新场景的泛化。最后，我们展示了这样的性能与泛化水平如何使我们能够在 SayCan（Ahn et al., 2022）框架中执行极长时程任务，最多可达 50 个步骤。",
+   "confidence": "high"
+  },
+  {
+   "id": "S055",
+   "page": 15,
+   "type": "body",
+   "section": "实验：主结果与泛化（p.8–p.11）",
+   "heading": "7 C ONCLUSIONS, L IMITATIONS AND F UTURE W ORK｜结论、局限与未来工作",
+   "original": "While RT-1 presents a promising step towards large-scale robot learning with an data-absorbent model, it comes with a number of limitations. First, it is an imitation learning method, which inherits the challenges of that class of approaches such as the fact that it may not be able to surpass the performance of the demonstrators. Second, the generalization to new instructions is limited to the combinations of previously seen concepts and RT-1 is not yet able to generalize to a completely new motion that has not been seen before. Lastly, our method is presented on a large but not very dexterous set of manipulation tasks. We plan to continue extending the set of instructions that RT-1 enables and generalizes to to address this challenge.",
+   "translation": "尽管 RT-1 朝着\"用可吸收数据的模型进行大规模机器人学习\"迈出了有前景的一步，它仍有若干局限。第一，它是一种模仿学习方法，因而继承了这类方法的固有挑战，例如可能无法超越示教者的水平。第二，对新指令的泛化局限于\"已见概念的新组合\"，RT-1 尚不能泛化到此前从未见过的全新运动。最后，我们的方法是在一组数量大但灵巧性不高的操作任务上展示的。我们计划持续扩展 RT-1 能够执行并泛化的指令集合，以应对这一挑战。",
+   "confidence": "high"
+  },
+  {
+   "id": "S056",
+   "page": 15,
+   "type": "body",
+   "section": "实验：主结果与泛化（p.8–p.11）",
+   "heading": "7 C ONCLUSIONS, L IMITATIONS AND F UTURE W ORK｜结论、局限与未来工作",
+   "original": "As we explore future directions for this work, we hope to scale the number of robot skills faster by developing methods that allow non-experts to train the robot via directed data collection and model prompting. While the current version of RT-1 is fairly robust especially to distractor objects, its robustness to backgrounds and environments could be further improved by greatly increasing the environment diversity. We also hope to improve the reaction speeds and context retention of RT-1 through scalable attention and memory.",
+   "translation": "在探索本工作未来方向时，我们希望通过开发能让非专家借助定向数据采集与模型提示（prompting）来训练机器人的方法，更快地扩展机器人技能数量。当前版本的 RT-1 已相当稳健，尤其对干扰物体；而其针对背景与环境的鲁棒性，可通过大幅增加环境多样性进一步提升。我们还希望通过可扩展的注意力与记忆机制，改进 RT-1 的反应速度与上下文保持能力。",
+   "confidence": "high"
+  },
+  {
+   "id": "S057",
+   "page": 15,
+   "type": "body",
+   "section": "实验：主结果与泛化（p.8–p.11）",
+   "heading": "7 C ONCLUSIONS, L IMITATIONS AND F UTURE W ORK｜结论、局限与未来工作",
+   "original": "To allow the research community to build on top of this work, we have open-sourced the code for RT-1⁴, which we hope will provide researchers with a valuable resource for future research for scaling up robot learning.",
+   "translation": "为便于研究社区在本工作基础上继续推进，我们已开源 RT-1 的代码⁴，希望它能成为研究者未来扩展机器人学习的有价值资源。 > 脚注 4：http://github.com/google-research/robotics_transformer ### ACKNOWLEDGMENTS｜致谢",
+   "confidence": "high"
+  },
+  {
+   "id": "S058",
+   "page": 15,
+   "type": "body",
+   "section": "实验：主结果与泛化（p.8–p.11）",
+   "heading": "ACKNOWLEDGMENTS｜致谢",
+   "original": "We would like to acknowledge Aleksandra Faust, Andy Christiansen, Chuyuan Fu, Daniel Kappler, David Rendleman, Eric Jang, Jessica Gomez, Jessica Lin, Jie Tan, Josh Weaver, Justin Boyd, Krzysztof Choromanski, Matthew Bennice, Mengyuan Yan, Mrinal Kalakrishnan, Nik Stewart, Paul Wohlhart, Peter Pastor, Pierre Sermanet, Wenlong Lu, Zhen Yu Song, Zhuo Xu, and the greater teams at Robotics at Google and Everyday Robots for their feedback and contributions.",
+   "translation": "我们感谢 Aleksandra Faust、Andy Christiansen、Chuyuan Fu、Daniel Kappler、David Rendleman、Eric Jang、Jessica Gomez、Jessica Lin、Jie Tan、Josh Weaver、Justin Boyd、Krzysztof Choromanski、Matthew Bennice、Mengyuan Yan、Mrinal Kalakrishnan、Nik Stewart、Paul Wohlhart、Peter Pastor、Pierre Sermanet、Wenlong Lu、Zhen Yu Song、Zhuo Xu，以及 Robotics at Google 与 Everyday Robots 的更大团队给予的反馈与贡献。 ### R EFERENCES｜参考文献（p.15–p.19）",
+   "confidence": "high"
+  },
+  {
+   "id": "S059",
+   "page": 20,
+   "type": "body",
+   "section": "附录 A–B（p.20–p.21）",
+   "heading": "A A UTHOR C ONTRIBUTIONS｜作者贡献",
+   "original": "• Evaluations (ablations, designing procedures, implementations, and running ablations): Yevgen Chebotar, Keerthana Gopalakrishnan, Karol Hausman, Julian Ibarz, Brian Ichter, Alex Irpan, Isabel Leal, Kuang-Huei Lee, Yao Lu, Ofir Nachum, Kanishka Rao, Sumedh Sontakke, Austin Stone, Quan Vuong, Fei Xia, Ted Xiao, and Tianhe Yu. • Network Architecture (tokenizer, training, inference): Yevgen Chebotar, Keerthana Gopalakrishnan, Julian Ibarz, Alex Irpan, Kuang-Huei Lee, Yao Lu, Karl Pertsch, Kanishka Rao, Michael Ryoo, Sumedh Sontakke, Austin Stone, and Quan Vuong. • Developed Infrastructure (data, training, collect, simulation, evaluations, storage, and operations): Anthony Brohan, Keerthana Gopalakrishnan, Karol Hausman, Alex Herzog, Jasmine Hsu, Alex Irpan, Nikhil Joshi, Ryan Julian, Dmitry Kalashnikov, Yuheng Kuang, Isabel Leal, Yao Lu, Fei Xia, Ted Xiao, Peng Xu, Sichun Xu, and Tianhe Yu. • Leadership (managed or advised on the project): Chelsea Finn, Karol Hausman, Julian Ibarz, Sally Jesmonth, Sergey Levine, Yao Lu, Igor Mordatch, Carolina Parada, Kanishka Rao, Pannag Sanketi, Vincent Vanhoucke. • Paper (figures, vizualizations, writing): Keerthana Gopalakrishnan, Karol Hausman, Brian Ichter, Sergey Levine, Ofir Nachum, Karl Pertsch, Kanishka Rao, Austin Stone, Fei Xia, and Ted Xiao. • Data collection and evaluations: Noah Brown, Justice Carbajal, Joseph Dabis, Tomas Jackson, Utsav Malla, Deeksha Manjunath, Jodily Peralta, Emily Perez, Jornell Quiambao, Grecia Salazar, Kevin Sayed, Jaspiar Singh, Clayton Tan, Huong Tran, Steve Vega, and Brianna Zitkovich.",
+   "translation": "- **评测**（消融实验、流程设计、实现与运行消融）：Yevgen Chebotar、Keerthana Gopalakrishnan、Karol Hausman、Julian Ibarz、Brian Ichter、Alex Irpan、Isabel Leal、Kuang-Huei Lee、Yao Lu、Ofir Nachum、Kanishka Rao、Sumedh Sontakke、Austin Stone、Quan Vuong、Fei Xia、Ted Xiao、Tianhe Yu。 - **网络架构**（token 化器、训练、推理）：Yevgen Chebotar、Keerthana Gopalakrishnan、Julian Ibarz、Alex Irpan、Kuang-Huei Lee、Yao Lu、Karl Pertsch、Kanishka Rao、Michael Ryoo、Sumedh Sontakke、Austin Stone、Quan Vuong。 - **基础设施开发**（数据、训练、采集、仿真、评测、存储与运维）：Anthony Brohan、Keerthana Gopalakrishnan、Karol Hausman、Alex Herzog、Jasmine Hsu、Alex Irpan、Nikhil Joshi、Ryan Julian、Dmitry Kalashnikov、Yuheng Kuang、Isabel Leal、Yao Lu、Fei Xia、Ted Xiao、Peng Xu、Sichun Xu、Tianhe Yu。 - **领导**（项目管理或指导）：Chelsea Finn、Karol Hausman、Julian Ibarz、Sally Jesmonth、Sergey Levine、Yao Lu、Igor Mordatch、Carolina Parada、Kanishka Rao、Pannag Sanketi、Vincent Vanhoucke。 - **论文**（图表、可视化、写作）：Keerthana Gopalakrishnan、Karol Hausman、Brian Ichter、Sergey Levine、Ofir Nachum、Karl Pertsch、Kanishka Rao、Austin Stone、Fei Xia、Ted Xiao。 - **数据采集与评测**：Noah Brown、Justice Carbajal、Joseph Dabis、Tomas Jackson、Utsav Malla、Deeksha Manjunath、Jodily Peralta、Emily Perez、Jornell Quiambao、Grecia Salazar、Kevin Sayed、Jaspiar Singh、Clayton Tan、Huong Tran、Steve Vega、Brianna Zitkovich。 ### B M ODEL C ARD｜模型卡",
+   "confidence": "high"
+  },
+  {
+   "id": "S060",
+   "page": 20,
+   "type": "body",
+   "section": "附录 A–B（p.20–p.21）",
+   "heading": "B M ODEL C ARD｜模型卡",
+   "original": "We present the Model Card for RT-1 in Fig. 7.",
+   "translation": "我们在图 7 中给出 RT-1 的模型卡。",
+   "confidence": "high"
+  },
+  {
+   "id": "S061",
+   "page": 21,
+   "type": "body",
+   "section": "附录 A–B（p.20–p.21）",
+   "heading": "Fig. 7｜RT-1 模型卡",
+   "original": "Model Details — • Developed by researchers at Robotics at Google and Everyday Robots, 2022, v1. • Transformer-based model, built upon a FiLM-conditioned EfficientNet (Tan & Le, 2019), a TokenLearner (Ryoo et al., 2021), and a Transformer (Vaswani et al., 2017). • Trained with imitation learning with inputs of natural language tasks and images and output robot actions.",
+   "translation": "**模型详情** —— • 由 Robotics at Google 与 Everyday Robots 的研究人员开发，2022 年，v1。• 基于 Transformer 的模型，构建在一个经 FiLM 条件化的 EfficientNet（Tan & Le, 2019）、一个 TokenLearner（Ryoo et al., 2021）和一个 Transformer（Vaswani et al., 2017）之上。• 以模仿学习训练，输入为自然语言任务与图像，输出为机器人动作。",
+   "confidence": "high"
+  },
+  {
+   "id": "S062",
+   "page": 21,
+   "type": "body",
+   "section": "附录 A–B（p.20–p.21）",
+   "heading": "Fig. 7｜RT-1 模型卡",
+   "original": "Intended Use — • Intended to be used for controlling an Everyday Robot for manipulation tasks. • Unclear suitability as a learned representation for different robotic embodiments, environments, or significantly varied downstream tasks. • Not suitable for interaction with humans.",
+   "translation": "**预期用途** —— • 预期用于控制 Everyday Robot 执行操作任务。• 作为面向不同机器人形态、不同环境或差异显著的下游任务的学习表示，其适用性尚不明确。• 不适合与人类交互。",
+   "confidence": "high"
+  },
+  {
+   "id": "S063",
+   "page": 21,
+   "type": "body",
+   "section": "附录 A–B（p.20–p.21）",
+   "heading": "Fig. 7｜RT-1 模型卡",
+   "original": "Factors — • Factors include varying backgrounds, lighting, scenes, base position, and novel natural language tasks. Hardware factors include camera and robot embodiment.",
+   "translation": "**影响因素** —— • 因素包括不同的背景、光照、场景、底盘位置，以及全新的自然语言任务。硬件因素包括相机与机器人形态。",
+   "confidence": "high"
+  },
+  {
+   "id": "S064",
+   "page": 21,
+   "type": "body",
+   "section": "附录 A–B（p.20–p.21）",
+   "heading": "Fig. 7｜RT-1 模型卡",
+   "original": "Metrics — • Evaluation metrics include seen task performance, unseen task performance, robustness to backgrounds and distractors, and performance in long-horizon scenarios. Each measures the success rate of the model performing natural language specified tasks with randomized objects and object locations and varying scenes.",
+   "translation": "**指标** —— • 评测指标包括已见任务性能、未见任务性能、对背景与干扰物的鲁棒性，以及长时程场景下的性能。每一项衡量的都是模型在物体与物体位置随机化、场景各异的条件下执行自然语言指定任务的成功率。",
+   "confidence": "high"
+  },
+  {
+   "id": "S065",
+   "page": 21,
+   "type": "body",
+   "section": "附录 A–B（p.20–p.21）",
+   "heading": "Fig. 7｜RT-1 模型卡",
+   "original": "Training Data — • Trained on 130k tele-operation demonstrations over 13 robots and 744 tasks. [随后为技能表：Skill / Count / Description / Example Instruction —— Pick Object 130; Move Object Near Object 337; Place Object Upright 8; Knock Object Over 8; Open / Close Drawer 6; Place Object into Receptacle 84; Pick Object from Receptacle and Place on the Counter 162; Additional tasks 9; Total 744]",
+   "translation": "**训练数据** —— • 在 13 台机器人、744 个任务上的 130k 条遥操作示范上训练。[随后为技能表：技能 / 数量 / 描述 / 示例指令 —— 抓取物体 130；把物体移动到另一物体旁 337；竖直放置物体 8；推倒物体 8；开/关抽屉 6；把物体放入容器 84；从容器中取出物体并放到台面 162；附加任务 9；合计 744] > 注：模型卡中的技能表与正文表 1 基本一致，两处差异为：(1) 模型卡把 \"Open Drawer 3\" 与 \"Close Drawer 3\" 合并为 \"Open / Close Drawer 6\"；(2) 模型卡的 \"Additional tasks 9\" 对应正文表 1 的 \"Section 6.3 and 6.4 tasks 9\"。合计均为 744。",
+   "confidence": "high"
+  },
+  {
+   "id": "S066",
+   "page": 21,
+   "type": "body",
+   "section": "附录 A–B（p.20–p.21）",
+   "heading": "Fig. 7｜RT-1 模型卡",
+   "original": "Evaluation Data — • Evaluated on real-world randomized scenes and over 3000 total rollouts in the environment it was trained on as well as two new office kitchen environments.",
+   "translation": "**评测数据** —— • 在真实世界的随机化场景中、共 3000 多次 rollout 上评测，覆盖其训练环境以及两个新的办公室厨房环境。",
+   "confidence": "high"
+  },
+  {
+   "id": "S067",
+   "page": 21,
+   "type": "body",
+   "section": "附录 A–B（p.20–p.21）",
+   "heading": "Fig. 7｜RT-1 模型卡",
+   "original": "Quantitative Analyses — • RT-1 shows high-performance and robustness and can learn from heterogenous data.",
+   "translation": "**定量分析** —— • RT-1 表现出高性能与鲁棒性，并且能够从异构数据中学习。",
+   "confidence": "high"
+  },
+  {
+   "id": "S068",
+   "page": 21,
+   "type": "body",
+   "section": "附录 A–B（p.20–p.21）",
+   "heading": "Fig. 7｜RT-1 模型卡",
+   "original": "Ethical Considerations — • Early research, model has not yet been evaluated for suitability to use outside of its current research setting.",
+   "translation": "**伦理考量** —— • 属于早期研究，尚未评估该模型在其当前研究环境之外使用的适用性。",
+   "confidence": "high"
+  },
+  {
+   "id": "S069",
+   "page": 21,
+   "type": "body",
+   "section": "附录 A–B（p.20–p.21）",
+   "heading": "Fig. 7｜RT-1 模型卡",
+   "original": "Caveats and Recommendations — • While the current model covers only a small portion of possible robotic manipulation tasks, it presents a recipe for scalable robotic learning and an architecture that shows favorable generalization and data absorption properties.",
+   "translation": "**注意事项与建议** —— • 尽管当前模型只覆盖了可能的机器人操作任务中的一小部分，它提供了一条可扩展机器人学习的方法路径，以及一个展现出良好泛化与数据吸收特性的架构。 ## 附录 C：模型与数据（p.20–p.23） ### C M ODEL AND D ATA｜模型与数据 #### C.1 M ODEL INFERENCE｜模型推理",
+   "confidence": "high"
+  },
+  {
+   "id": "S070",
+   "page": 20,
+   "type": "body",
+   "section": "附录 C：模型与数据（p.20–p.23）",
+   "heading": "C.1 M ODEL INFERENCE｜模型推理",
+   "original": "In addition to the inference speed requirement, we need to ensure that our system outputs actions at a consistent frequency, avoiding jitter. To accomplish this, we introduce a fixed-time waiting mechanism that waits a certain amount of time (280ms, the max observed latency of all components) after the state, that was used to compute the next action, has been captured, but before applying the action, similarly to the procedure described by Xiao et al. (2020).",
+   "translation": "除了推理速度要求之外，我们还需要确保系统以稳定的频率输出动作，避免抖动。为此我们引入了一个固定时长等待机制：在用于计算下一个动作的状态被采集之后、动作被施加之前，等待一段固定时间（280 ms，即所有组件中观测到的最大延迟），这与 Xiao et al. (2020) 描述的过程类似。 #### C.2 D ATA COLLECTION AT SCALE｜大规模数据采集",
+   "confidence": "high"
+  },
+  {
+   "id": "S071",
+   "page": 20,
+   "type": "body",
+   "section": "附录 C：模型与数据（p.20–p.23）",
+   "heading": "C.2 D ATA COLLECTION AT SCALE｜大规模数据采集",
+   "original": "Each of the robots autonomously approaches its station at the beginning of the episode and communicates to the operator the instruction that they should demonstrate to the robot. To ensure a balanced dataset as well as randomization of the scene, we created a software module responsible for sampling the instructions to be demonstrated as well as the randomization of the background configuration. Each of the robots tells the demonstrator how to randomize the scene and which instruction to demonstrate. Demonstrations are collected with direct line-of-sight between operator and robot using 2 virtual reality remotes. We map remote controls onto our policy action space to preserve consistency of the transition-dynamics. 3D position and rotational displacements of the remote are mapped to 6d displacements of the robot tool. The x, y position of the joystick is mapped to a turning angle and driving distance of the mobile base. We compute and track trajectories to the target poses that we obtain from the joystick commands.",
+   "translation": "每个回合一开始时，各机器人会自主移动到自己的工作台，并把\"操作员应当向它演示哪条指令\"告知操作员。为确保数据集均衡以及场景随机化，我们实现了一个软件模块，负责采样待演示的指令以及背景配置的随机化。每台机器人会告诉示教者如何随机化场景、以及演示哪条指令。示范由操作员在能与机器人保持直接视线的条件下、使用两个虚拟现实手柄采集。我们把手柄的控制映射到策略的动作空间上，以保持转移动力学的一致性。手柄的 3D 位置与旋转位移被映射为机器人工具的 6 维位移；摇杆的 x、y 位置被映射为移动底盘的转向角与行驶距离。我们计算并跟踪到达由摇杆命令得到的目标位姿的轨迹。 #### C.3 M ODEL S ELECTION AT S CALE｜规模化条件下的模型选择",
+   "confidence": "high"
+  },
+  {
+   "id": "S072",
+   "page": 22,
+   "type": "body",
+   "section": "附录 C：模型与数据（p.20–p.23）",
+   "heading": "C.3 M ODEL S ELECTION AT S CALE｜规模化条件下的模型选择",
+   "original": "As robot learning systems become more capable and the number of instructions they can handle increases, evaluation of these models becomes difficult (Kalashnikov et al., 2021a; Jang et al., 2021). This is an important consideration not only for evaluating different model classes and data distributions during the development process, but also for selecting the most performant model checkpoints for a particular training run. While there have been a number of proposed solutions to this problem (Dudík et al., 2011; Irpan et al., 2019; Hanna et al., 2017), mostly known in the offline reinforcement learning literature as \"off-policy evaluation\", it still remains an open research challenge to evaluate multi-task robot learning systems at scale.",
+   "translation": "随着机器人学习系统能力增强、可处理的指令数量增加，这类模型的评测变得困难（Kalashnikov et al., 2021a; Jang et al., 2021）。这不仅在开发过程中评估不同模型类别与数据分布时是一个重要考量，在选择某次训练中最优性能的模型检查点时同样重要。针对这一问题已有若干解决方案（Dudík et al., 2011; Irpan et al., 2019; Hanna et al., 2017），在离线强化学习文献中多被称为\"离策略评估\"（off-policy evaluation），但大规模评测多任务机器人学习系统仍是一个开放的研究挑战。",
+   "confidence": "high"
+  },
+  {
+   "id": "S073",
+   "page": 22,
+   "type": "body",
+   "section": "附录 C：模型与数据（p.20–p.23）",
+   "heading": "C.3 M ODEL S ELECTION AT S CALE｜规模化条件下的模型选择",
+   "original": "In this work, we propose leveraging simulation for \"real to sim\" transfer as a scalable tool that provides an approximate estimate of model performance during training across many real tasks. We run policies trained from real data in a simulator to test the full rollout performance. Note that all of our training data comes from the real world (except the experiment in Section 6.3), and the simulator is used only for model selection. To accomplish this, we expand the simulation environment proposed by Lee et al. (2022b) to support 551 of the tasks described in Section 5.2. For each of these tasks, we define a set of scene setup randomizations, robot pose randomizations, and success detection criteria. To bridge the visual distribution shift between the real world and the simulation, we train a RetinaGAN (Ho et al., 2020) model that transforms simulated images into realistic looking images. Then, we deploy policies trained on real data directly into these simulation environments by applying RetinaGAN visual transformations at each timestep and measuring rollout simulated task success rates.",
+   "translation": "在本工作中，我们提出把仿真用于\"真实到仿真\"（real-to-sim）迁移，作为一项可扩展的工具，在训练期间为大量真实任务上的模型性能提供近似估计。我们把由真实数据训练得到的策略放进仿真器运行，以测试完整的 rollout 表现。注意：我们全部训练数据都来自真实世界（§6.3 的实验除外），仿真器仅用于模型选择。为此，我们扩展了 Lee et al. (2022b) 提出的仿真环境，使其支持 §5.2 所述 551 个任务。对其中每个任务，我们定义一组场景设置随机化、机器人位姿随机化以及成功判定标准。为弥合真实世界与仿真之间的视觉分布偏移，我们训练了一个 RetinaGAN（Ho et al., 2020）模型，把仿真图像转换为外观逼真的图像。随后，我们把在真实数据上训练的策略直接部署到这些仿真环境中——在每个时间步施加 RetinaGAN 视觉变换，并测量 rollout 的仿真任务成功率。",
+   "confidence": "high"
+  },
+  {
+   "id": "S074",
+   "page": 22,
+   "type": "body",
+   "section": "附录 C：模型与数据（p.20–p.23）",
+   "heading": "C.3 M ODEL S ELECTION AT S CALE｜规模化条件下的模型选择",
+   "original": "While models trained only on real world data perform better in the real world than they do in simulation, we find that the simulation success rates of high-performing real world policies are higher than the simulation success rates of low-performing real world policies. In other words, the ordering of simulation policy success rates are informative for predicting the ordering of real world policy success rates. We note that in this real-to-sim evaluation setting, we have a less strict requirement for simulation accuracy compared to sim-to-real settings; as long as simulation success rates are directionally correlated with real success rates, we can accept a moderate or even high gap between real and simulation success rates.",
+   "translation": "尽管仅在真实世界数据上训练的模型在真实世界中的表现优于其在仿真中的表现，我们发现：真实世界性能高的策略，其仿真成功率也高于真实世界性能低的策略。换言之，仿真中策略成功率的大小顺序，对于预测真实世界策略成功率的大小顺序是有信息量的。我们指出，在这种\"真实到仿真\"的评测设定中，对仿真精度的要求不如\"仿真到真实\"（sim-to-real）设定严格：只要仿真成功率与真实成功率在方向上相关，我们就能接受真实与仿真成功率之间存在中等甚至较大的差距。",
+   "confidence": "high"
+  },
+  {
+   "id": "S075",
+   "page": 22,
+   "type": "body",
+   "section": "附录 C：模型与数据（p.20–p.23）",
+   "heading": "C.3 M ODEL S ELECTION AT S CALE｜规模化条件下的模型选择",
+   "original": "We present example camera images from simulation as well as their RetinaGAN-based transformations in Fig. 8.",
+   "translation": "我们在图 8 中给出仿真相机图像的示例，以及它们经 RetinaGAN 变换后的结果。",
+   "confidence": "high"
+  },
+  {
+   "id": "S076",
+   "page": 23,
+   "type": "body",
+   "section": "附录 C：模型与数据（p.20–p.23）",
+   "heading": "C.4 D ATA COLLECTION PROCESS｜数据采集流程",
+   "original": "Figure 9 shows the growth of data, number of tasks, and the success rate of the policy over time. The number of tasks/instructions that our system is capable of grows over time as more data is collected. The same is true with the performance of seen tasks. One of the important aspects of the future work is develop techniques that allow us to grow the data as well as the robots performance and general capabilities at a faster rate.",
+   "translation": "图 9 展示了数据量、任务数量以及策略成功率随时间增长的情况。随着采集到更多数据，系统能处理的任务/指令数量随时间增长，已见任务的性能同样如此。未来工作的一个重要方面，是开发能让数据规模、机器人性能与通用能力以更快速度增长的技术。",
+   "confidence": "high"
+  },
+  {
+   "id": "S077",
+   "page": 23,
+   "type": "body",
+   "section": "附录 D：实验（p.23–p.31）",
+   "heading": "D.1 E VALUATION D ETAILS｜评测细节",
+   "original": "In Section 6.2, we study the zero-shot generalization capabilities of RT-1 to difficult scenarios not present in the training dataset. To fairly evaluate different ablations of RT-1 as well as baseline policies, we design standardized evaluation procedures that cover a range of incremental difficulty levels.",
+   "translation": "在 §6.2 中，我们研究 RT-1 对训练数据集中不存在的困难场景的零样本泛化能力。为公平评测 RT-1 的不同消融版本以及基线策略，我们设计了覆盖一系列递进难度等级的标准化评测流程。",
+   "confidence": "high"
+  },
+  {
+   "id": "S078",
+   "page": 23,
+   "type": "body",
+   "section": "附录 D：实验（p.23–p.31）",
+   "heading": "D.1 E VALUATION D ETAILS｜评测细节",
+   "original": "Seen tasks. We evaluate on 744 tasks present in the training dataset. The breakdown between 12 skills is shown in Table 1. For all \"Seen\" evaluations, we use the same classroom setting used for data collection as described in Section 5.2. For each policy, we report a single representative metric that takes a skill-weighted average across individual skill evaluations.",
+   "translation": "**已见任务。** 我们在训练数据集中存在的 744 个任务上评测，12 类技能之间的分布见表 1。对于所有\"已见\"评测，我们使用 §5.2 所述、与数据采集相同的教室环境。对每个策略，我们报告一个代表性指标，即各单项技能评测的技能加权平均。",
+   "confidence": "high"
+  },
+  {
+   "id": "S079",
+   "page": 23,
+   "type": "body",
+   "section": "附录 D：实验（p.23–p.31）",
+   "heading": "D.1 E VALUATION D ETAILS｜评测细节",
+   "original": "Unseen tasks. We evaluate policy performance on 53 tasks that are held out during training. While the unseen instructions' specific combinations of skills and objects are not seen during training, other combinations of the same skills and objects are present in the training set. We evaluate these unseen tasks in the same environment and the same randomization procedure as the Seen tasks. A full list of these unseen tasks is shown in Table 8.",
+   "translation": "**未见任务。** 我们在训练期间被留出的 53 个任务上评测策略性能。虽然这些未见指令中\"技能与物体\"的具体组合在训练中未出现过，但同样的技能与物体以其他组合形式存在于训练集中。我们在与已见任务相同的环境和相同的随机化流程下评测这些未见任务。这些未见任务的完整清单见表 8。 > 注：本节明确给出留出任务为 **53 个**，与 §6.2 正文中\"21 条未见指令\"的表述不一致；表 8 的清单为 53 条，可据此判断 §6.2 的 21 条应为笔误或指某一子集。",
+   "confidence": "high"
+  },
+  {
+   "id": "S080",
+   "page": 23,
+   "type": "body",
+   "section": "附录 D：实验（p.23–p.31）",
+   "heading": "Table 8｜§6.2 中使用的未见指令清单",
+   "original": "Distractor robustness. We test three tasks (\"pick coke can\", \"place coke can upright\", \"move coke can near green rice chip bag\") with incrementally more distractor objects added to the scene. The easy setting includes 0, 2, or 5 distractor objects. The medium setting includes 9 distractor objects, but the coke can is never obscured. The hard setting includes 9 distractor objects, but the scene is more crowded and the coke can is partially occluded. Both the medium are hard setting are more difficult than scenarios in the training dataset, which contained between 0 and 4 distractors. Examples of these difficulty settings and policy evaluation rollouts are shown in Figure 12.",
+   "translation": "**干扰物鲁棒性。** 我们测试三个任务（\"pick coke can\"、\"place coke can upright\"、\"move coke can near green rice chip bag\"），并在场景中逐步增加干扰物体。简单设置包含 0、2 或 5 个干扰物。中等设置包含 9 个干扰物，但可乐罐从不被遮挡。困难设置包含 9 个干扰物，且场景更拥挤、可乐罐被部分遮挡。中等到困难设置都比训练数据集中的场景更难——训练数据中只有 0 到 4 个干扰物。这些难度设置与策略评测 rollout 的示例见图 12。 > 注：原文 \"Both the medium are hard setting are more difficult\" 为笔误，应为 \"Both the medium and hard setting are more difficult\"。",
+   "confidence": "high"
+  },
+  {
+   "id": "S081",
+   "page": 23,
+   "type": "body",
+   "section": "附录 D：实验（p.23–p.31）",
+   "heading": "Fig. 12｜\"干扰物\"评测：简单 / 中等 / 困难",
+   "original": "Background robustness. We test six tasks (\"pick coke can\", \"move blue chip bag near orange\", \"knock redbull can over\", \"pick green jalapeno chip bag\", \"move sponge near brown chip bag\",\"place redbull can upright\") with incrementally more challenging backgrounds and counter textures. In the easy setting, we utilize the same background environments and counter textures as the training dataset. In the medium setting, we utilize the same background environment but add a patterned tablecloth to change the counter texture. In the hard setting, we utilize a brand new kitchen environment with a new countertop; this changes the counter texture, drawer material and color, and background visuals. Examples of these difficulty settings and policy evaluation rollouts are shown in Figure 10.",
+   "translation": "**背景鲁棒性。** 我们测试六个任务（\"pick coke can\"、\"move blue chip bag near orange\"、\"knock redbull can over\"、\"pick green jalapeno chip bag\"、\"move sponge near brown chip bag\"、\"place redbull can upright\"），背景与台面纹理的挑战性逐步提高。在简单设置中，我们使用与训练数据集相同的背景环境和台面纹理。在中等设置中，我们使用相同的背景环境，但加上带图案的桌布以改变台面纹理。在困难设置中，我们使用一个全新的厨房环境与新的台面，这会改变台面纹理、抽屉材质与颜色，以及背景视觉。这些难度设置与策略评测 rollout 的示例见图 10。",
+   "confidence": "high"
+  },
+  {
+   "id": "S082",
+   "page": 24,
+   "type": "body",
+   "section": "附录 D：实验（p.23–p.31）",
+   "heading": "Fig. 10｜\"背景\"评测：从相同背景到全新厨房",
+   "original": "Realistic instructions. To study how RT-1 performs in more realistic scenarios, we propose an evaluation setting in a real office kitchen that is a dramatic shift from the original training classroom environment. We propose a variety of skills that combine aspects of the previous zero-shot evaluations, including adding new distractors, including new backgrounds, and new combinations of objects with skills. We refer to the easiest scenario as L1 generalization, which introduces a new countertop and lighting condition but keeps the skills and objects the same. Next, L2 generalization additionally adds novel distractor objects such as kitchen jar containers. Finally, L3 generalization adds new objects or new locations such as near a sink. While some of these distribution shifts are tested in Section 6.2, these realistic instructions aim to test multiple dimensions simultaneously. Examples of these instructions are presented in Fig. 11.",
+   "translation": "**真实指令。** 为研究 RT-1 在更真实场景中的表现，我们提出一个在真实办公室厨房中的评测设置，它与原本的训练教室环境差异显著。我们设计了一组技能，把此前零样本评测的多个方面组合起来，包括加入新的干扰物、新的背景，以及物体与技能的新组合。我们把最简单的场景称为 L1 泛化：引入新的台面和光照条件，但技能与物体保持不变。其次，L2 泛化额外加入新的干扰物体，例如厨房用的罐子容器。最后，L3 泛化再加入新物体或新位置，例如水槽附近。虽然其中部分分布偏移已在 §6.2 中测试过，这些真实指令的目标是**同时**测试多个维度。这些指令的示例见图 11。",
+   "confidence": "high"
+  },
+  {
+   "id": "S083",
+   "page": 24,
+   "type": "body",
+   "section": "附录 D：实验（p.23–p.31）",
+   "heading": "D.2 H ETEROGENEOUS D ATA｜异构数据",
+   "original": "We also explore the limits of RT-1 for utilizing highly heterogeneous data. We demonstrate how RT-1 can incorporate and learn from vastly different data sources and improve from such data without sacrificing its original-tasks performance across the varied tasks inherent in this data. To this end, we conduct two experiments: (1) RT-1 trained and tested on both real data and simulation data and (2) RT-1 trained across large datasets of different tasks, originally collected by different robots.",
+   "translation": "我们还探索 RT-1 在利用高度异构数据方面的极限，展示 RT-1 如何纳入并学习来自差异极大的数据源，并在从这些数据中受益的同时，不牺牲其在这类数据固有的各种任务上的原有性能。为此我们做了两个实验：(1) RT-1 同时在真实数据与仿真数据上训练与测试；(2) RT-1 在由不同机器人采集的、覆盖不同任务的大型数据集上训练。 > 注：本段与正文 §6.3 开头（p.10–p.11 S043）内容基本重复，附录版本未包含\"More information on each is provided in Appendix D.2.\"一句。",
+   "confidence": "high"
+  },
+  {
+   "id": "S084",
+   "page": 26,
+   "type": "body",
+   "section": "附录 D：实验（p.23–p.31）",
+   "heading": "D.2 H ETEROGENEOUS D ATA｜异构数据",
+   "original": "Absorbing simulation data. Table 9 shows the ability of RT-1, and baselines, to absorb both real and simulation data. To test this, we take all of the real demonstration data but we also provide additional simulation data that includes objects that the robot has never seen in the real world. We add a set of sim objects and only show them on a subset of tasks, specifically the picking tasks, in simulation. To accomplish this, we run our real2sim method described in Sec. C.3 to bootstrap a simulation policy from the real world policy that is then trained with multi-task RL (Kalashnikov et al., 2021a) with additional objects in simulation. From this process, we extract 518k successful trajectories of picking new objects and mix them with the real data that was used in the previous experiments. The goal of this experiment is to demonstrate that by expanding the dataset of simulation trajectories, we can benefit RT-1's generalization capabilities without sacrificing the original training performance – a desired property of an absorbent model.",
+   "translation": "**吸收仿真数据。** 表 9 展示了 RT-1（及基线）吸收真实数据与仿真数据的能力。为测试这一点，我们使用全部真实示范数据，同时额外提供仿真数据，其中包含机器人在真实世界中从未见过的物体。我们加入一组仿真物体，并只在仿真中的一部分任务（具体来说是抓取任务）上展示它们。为此，我们运行 §C.3 所述的 real2sim 方法，从真实世界策略引导（bootstrap）出一个仿真策略，再用多任务强化学习（Kalashnikov et al., 2021a）在含额外物体的仿真中训练它。通过这一过程，我们抽取出 518k 条抓取新物体的成功轨迹，并与前文实验所用的真实数据混合。该实验的目标是证明：通过扩展仿真轨迹数据集，我们可以在不牺牲原有训练性能的前提下提升 RT-1 的泛化能力——这正是\"可吸收模型\"所期望具备的性质。",
+   "confidence": "high"
+  },
+  {
+   "id": "S085",
+   "page": 26,
+   "type": "body",
+   "section": "附录 D：实验（p.23–p.31）",
+   "heading": "D.2 H ETEROGENEOUS D ATA｜异构数据",
+   "original": "To evaluate the properties of this model, we specify different generalization scenarios: for seen skills with real objects the training data has real data of that instruction (i.e., performance on seen tasks), for seen skills with sim objects the training data has sim data of that instruction (e.g. \"pick up a sim object\", which was present in sim), and for unseen skills with sim objects the training data has sim data of that object but there are no examples of the instruction describing the skill with that object either in sim or in real (e.g., \"move a sim object to apple\", even though the robot has only practiced in picking that sim object and not moving it near other objects). All evaluations are done in the real world but to limit the number of instructions evaluated, we focus on pick and move-to skills.",
+   "translation": "为评估该模型的性质，我们设定了几种泛化场景：对于\"已见技能 + 真实物体\"，训练数据中含有该指令的真实数据（即已见任务性能）；对于\"已见技能 + 仿真物体\"，训练数据中含有该指令的仿真数据（例如 \"pick up a sim object\"，该指令存在于仿真中）；对于\"未见技能 + 仿真物体\"，训练数据中含有该物体的仿真数据，但无论仿真还是真实数据中都不存在把该技能与该物体组合起来的指令示例（例如 \"move a sim object to apple\"，尽管机器人只练习过抓取该仿真物体、并未练习过把它移动到其他物体旁）。所有评测都在真实世界中完成；为限制评测指令数量，我们聚焦于抓取（pick）与移到近旁（move-to）两类技能。",
+   "confidence": "high"
+  },
+  {
+   "id": "S086",
+   "page": 26,
+   "type": "body",
+   "section": "附录 D：实验（p.23–p.31）",
+   "heading": "D.2 H ETEROGENEOUS D ATA｜异构数据",
+   "original": "We find in Table 9 that for RT-1, we do not lose performance adding simulation data compared to the Real Only dataset. We do however, see a significant increase in performance (from 23% to 87%) on objects and tasks seen only in simulation, to approximately the performance of the those in real, demonstrating an impressive degree of domain transfer. We also see a significant increase in performance on unseen instructions from 7% to 33%; impressive given the object in question has never been seen in real and the instruction never seen at all. Overall, we find that RT-1 is able to efficiently \"sponge up\" new data, even from a very different domain.",
+   "translation": "从表 9 可以看到，对 RT-1 而言，相比仅在真实数据上训练，加入仿真数据并没有损失性能。而在仅在仿真中出现过的物体与任务上，我们观察到显著的性能提升（从 23% 到 87%），大致达到与真实物体相当的水平，体现出可观的域迁移程度。我们还看到在未见指令上的性能显著提升，从 7% 到 33%；考虑到该物体在真实世界中从未出现过、该指令也完全未出现过，这一结果相当亮眼。总体而言，RT-1 能够高效地\"吸收\"新数据，即使这些数据来自一个差异很大的领域。",
+   "confidence": "high"
+  },
+  {
+   "id": "S087",
+   "page": 27,
+   "type": "body",
+   "section": "附录 D：实验（p.23–p.31）",
+   "heading": "Table 9｜引入仿真数据的实验结果（与 Table 4 同表）",
+   "original": "Absorbing data from different robots. To push the data absorption limits of RT-1, we conduct an additional set of experiments where we combine two data sources that originate from different robots: Kuka IIWA as well as the Everyday Robots mobile manipulators used in the experiments so far. The Kuka data contains all the successful examples collected in QT-Opt (Kalashnikov et al., 2018), which corresponds to 209k episodes, where the robot was indiscriminately grasping objects in a bin (see an example of a Kuka episode in Table. 10). Our goal in this experiment is to analyze whether the performance on the RT-1 tasks drops when adding the additional data and, more importantly, whether we can observe any transfer from data collected by a different robot morphology.",
+   "translation": "**吸收来自不同机器人的数据。** 为进一步推进 RT-1 的数据吸收极限，我们做了另一组实验：把来自两种不同机器人的数据源混合起来——Kuka IIWA，以及前文实验中使用的 Everyday Robots 移动操作机器人。Kuka 数据包含 QT-Opt（Kalashnikov et al., 2018）中采集的全部成功样本，对应 209k 个回合；在那项工作中，机器人不加区分地抓取料箱中的物体（Kuka 回合示例见表 10）。本实验的目标是分析：加入额外数据后 RT-1 任务上的性能是否下降；更重要的是，能否观察到来自不同机器人形态所采集数据的任何迁移。",
+   "confidence": "high"
+  },
+  {
+   "id": "S088",
+   "page": 27,
+   "type": "body",
+   "section": "附录 D：实验（p.23–p.31）",
+   "heading": "Table 9｜引入仿真数据的实验结果（与 Table 4 同表）",
+   "original": "We would like to emphasize the difficulty of this setting by noting the major differences between the datasets. Not only are the robots that collected the data different in appearance and action space, but also the environment they were deployed in has different appearance and dynamics. In addition the QT-Opt data presents a completely different action distribution – it was collected by an RL agent as opposed to human demonstrations present in our dataset.",
+   "translation": "我们想通过指出两个数据集之间的重大差异，来强调该设定之困难。不仅采集数据的机器人在外观与动作空间上不同，它们所部署的环境在外观与动力学上也不同。此外，QT-Opt 数据呈现的是完全不同的动作分布——它由一个强化学习智能体采集，而我们数据集中是人类的示范。",
+   "confidence": "high"
+  },
+  {
+   "id": "S089",
+   "page": 27,
+   "type": "body",
+   "section": "附录 D：实验（p.23–p.31）",
+   "heading": "Table 9｜引入仿真数据的实验结果（与 Table 4 同表）",
+   "original": "To mix the Kuka data together with the RT-1 data, we first transform the original Kuka 4-DOF action space into the same action space as RT-1, namely we set the roll and pitch to 0, while keeping the yaw values that were present in the original Kuka data. In addition, we transform the binary gripper-close command into a continuous gripper-closedness command that is present in the RT-1 data. We also need text instructions corresponding to the task performed and since the Kuka data does not contain the name of the object that was grasped, we relabel all the data to the \"pick anything\" instruction. With these modifications, we mix both datasets with the 2:1 (RT-1 data : Kuka data) ratio and train RT-1 to obtain the final model.",
+   "translation": "为把 Kuka 数据与 RT-1 数据混合起来，我们先把原始的 Kuka 4 自由度动作空间变换到与 RT-1 相同的动作空间：即把 roll 与 pitch 置为 0，同时保留原始 Kuka 数据中的 yaw 值。此外，我们把二值的\"夹爪闭合\"命令转换为 RT-1 数据中使用的连续\"夹爪闭合程度\"命令。我们还需要与所执行任务对应的文本指令；由于 Kuka 数据不含被抓取物体的名称，我们把全部数据重新标注为 \"pick anything\"（抓取任意物体）指令。经过这些修改后，我们以 2:1 的比例（RT-1 数据 : Kuka 数据）混合两个数据集，训练 RT-1 得到最终模型。",
+   "confidence": "high"
+  },
+  {
+   "id": "S090",
+   "page": 27,
+   "type": "body",
+   "section": "附录 D：实验（p.23–p.31）",
+   "heading": "Table 9｜引入仿真数据的实验结果（与 Table 4 同表）",
+   "original": "To test whether RT-1 can effectively absorb these two very different datasets, we evaluate the performance on the original RT-1 tasks (in this case, we also focus on \"pick\" and \"move to\" skills), which we refer to as the standard \"Classroom eval\", as well as the performance on the newly constructed tasks that reflect the bin-picking setup present in the Kuka data, which we refer to as the \"Bin-picking eval\". For the Bin-picking eval to be close to the original dataset, we put in the same looking bin for the objects as well as modify the robot to be similar to the Kuka manipulators by adding extra wires and coloring the gripper gray. For all of the evaluations we use the Everyday Robots robot with the picking commands and evaluate it based on 72 grasping trials.",
+   "translation": "为测试 RT-1 能否有效吸收这两个差异极大的数据集，我们评测其在原有 RT-1 任务上的性能（在此我们也聚焦 \"pick\" 与 \"move to\" 技能），称之为标准的 \"Classroom eval\"；同时评测其在反映 Kuka 数据中料箱抓取设置的新构造任务上的性能，称之为 \"Bin-picking eval\"。为了让 Bin-picking eval 接近原始数据集，我们放入外观相同的料箱，并通过增加额外线缆、把夹爪涂成灰色来把机器人改装得更像 Kuka 机械臂。所有评测都使用 Everyday Robots 机器人以抓取指令进行，基于 72 次抓取试验来评估。",
+   "confidence": "high"
+  },
+  {
+   "id": "S091",
+   "page": 27,
+   "type": "body",
+   "section": "附录 D：实验（p.23–p.31）",
+   "heading": "Table 9｜引入仿真数据的实验结果（与 Table 4 同表）",
+   "original": "The results are presented in Table 10. We observe that the model that mixes the RT-1 data and the Kuka data has only a minimal decrease in the original tasks' performance (i.e. Classroom eval), i.e. 2%. Even more importantly, in the Bin-picking eval, we observe that the model trained on multi-robot data performs at 39% compared to the 22% of the model that was trained only on the RT-1 data. This is a 17% performance difference (almost 2x). Additionally, RT-1 trained on Kuka bin-picking data and evaluated on the bin-picking tasks with the Everyday Robots (EDR) robot achieves 0% performance, confirming that it is difficult to transfer a behavior from another robot morphology. However, mixing the data from both robots allows RT-1 to infer the correct actions of the EDR robot even when faced with the states observed by Kuka robots. This is achieved without explicit demonstrations of bin-picking on EDR robot and by taking advantage of past experiences collected by Kuka robots. These results indicate that RT-1's absorption properties also include the ability to acquire new skills through observing other robots' experiences and present an exciting avenue of future work where we combine many more multi-robot datasets to enhance the robot capabilities.",
+   "translation": "结果见表 10。我们观察到，混合 RT-1 数据与 Kuka 数据的模型在原有任务（即 Classroom eval）上的性能仅有极小下降，为 2%。更重要的是，在 Bin-picking eval 上，用多机器人数据训练的模型达到 39%，而仅在 RT-1 数据上训练的模型只有 22%。这是 17 个百分点的差距（接近 2 倍）。此外，仅在 Kuka 料箱抓取数据上训练、再在 Everyday Robots（EDR）机器人上评测料箱抓取任务时，RT-1 的性能为 0%，这证实了把行为从一个机器人形态迁移到另一个形态是困难的。然而，混合两个机器人的数据后，即使面对 Kuka 机器人所观测到的状态，RT-1 也能推断出 EDR 机器人的正确动作。这一点是在没有 EDR 机器人上料箱抓取的显式示范的条件下、通过利用 Kuka 机器人收集的过往经验实现的。这些结果表明，RT-1 的吸收能力还包括\"通过观察其他机器人的经验来获得新技能\"，并为未来工作指出了一条令人兴奋的方向：把更多多机器人数据集结合起来以增强机器人能力。",
+   "confidence": "high"
+  },
+  {
+   "id": "S092",
+   "page": 28,
+   "type": "body",
+   "section": "附录 D：实验（p.23–p.31）",
+   "heading": "D.3 L ONG-HORIZON E VALUATION D ETAILS｜长时程评测细节",
+   "original": "In addition to short-horizon individual skill evaluations shown in previous sections, we also evaluate how RT-1 performs in a long-horizon realistic kitchen setting that chains multiple manipulation and navigation skills to accomplish natural language instructions within the SayCan framework (Ahn et al., 2022). A list of long-horizon instructions used for these evaluations is listed in Table 12. The success rate of long-horizon tasks decreases exponentially with the length of the task, so high success rates in manipulation skills are particularly important. Furthermore, as mobile manipulation tasks require both navigation and manipulation, the policies ability to be robust to base position is crucial. Since SayCan combines many low-level instructions to perform high-level instructions, the number of possible high-level instructions increases combinatorially with instructions, so the skill-breadth of RT-1 can be fully seen.",
+   "translation": "除前几节展示的短时程单项技能评测之外，我们还评测 RT-1 在真实长时程厨房场景中的表现：在 SayCan 框架（Ahn et al., 2022）内，把多种操作与导航技能串联起来完成自然语言指令。这些评测所用的长时程指令清单见表 12。长时程任务的成功率随任务长度指数下降，因此操作技能的高成功率尤为重要。此外，移动操作任务既需要导航也需要操作，策略对底盘位置的鲁棒性至关重要。由于 SayCan 把许多低层指令组合起来完成高层指令，可能的高层指令数量随指令数量呈组合式增长，因此 RT-1 的技能广度能够被充分体现。",
+   "confidence": "high"
+  },
+  {
+   "id": "S093",
+   "page": 28,
+   "type": "body",
+   "section": "附录 D：实验（p.23–p.31）",
+   "heading": "Table 12｜§6.4 中评测的 SayCan 指令清单",
+   "original": "SayCan works by grounding language models in robotic affordances and it leverages few-shot prompting to break down a long horizon task expressed in natural language to a sequence of low level skills. An example of long horizon task would be \"Bring me two different sodas\", and one feasible plan would be \"1. find a coke, 2. pick up the coke, 3. bring it to you, 4. put down the coke, 5. find a pepsi, 6. pick up the pepsi, 7. bring it to you, 8. put down the pepsi, 9. done.\" To obtain the affordance function we use value functions trained with MT-OPT (Kalashnikov et al., 2021a). For a detailed description of SayCan algorithm please refer to (Ahn et al., 2022).",
+   "translation": "SayCan 的做法是把语言模型\"锚定\"在机器人的可供性（affordance）上，并利用少样本提示把一个用自然语言表述的长时程任务拆解为一系列低层技能。一个长时程任务的例子是 \"Bring me two different sodas\"（给我拿两听不同的汽水），一个可行的计划是：\"1. 找到一听可乐，2. 拿起可乐，3. 把它带给你，4. 放下可乐，5. 找到一听百事，6. 拿起百事，7. 把它带给你，8. 放下百事，9. 完成。\" 为得到可供性函数，我们使用经 MT-OPT（Kalashnikov et al., 2021a）训练的价值函数。SayCan 算法的详细描述请参见 (Ahn et al., 2022)。",
+   "confidence": "high"
+  },
+  {
+   "id": "S094",
+   "page": 28,
+   "type": "body",
+   "section": "附录 D：实验（p.23–p.31）",
+   "heading": "Table 12｜§6.4 中评测的 SayCan 指令清单",
+   "original": "Since the focus of this paper is acquisition of many generalizable skills, we focus our evaluation on one subset of tasks presented in Ahn et al. (2022). It is the long-horizon family of tasks, involving 15 instructions, each instruction requires an average of 9.6 steps to complete, and involves an average of 2.4 manipulation skills per instruction. A full list of the instructions can be found in Table 12. We compare against 3 baselines. 1) SayCan with BC-Z, which uses SayCan planning algorithm with BC-Z as manipulation policy, 2) SayCan with Gato, which uses SayCan planning algorithm with Gato as manipulation policy, 3) Originally reported SayCan results, which use SayCan planning algorithm with BC-Z, but since it uses a slightly different prompt, the planning success rate is lower. We reimplemented 3) in 1) for a fair comparison.",
+   "translation": "由于本文的重点是获得大量可泛化的技能，我们的评测聚焦于 Ahn et al. (2022) 中提出的一类任务子集，即长时程任务族：包含 15 条指令，每条指令平均需要 9.6 个步骤才能完成，每条指令平均涉及 2.4 项操作技能。指令的完整清单见表 12。我们与 3 个基线比较：1) SayCan + BC-Z，即用 SayCan 规划算法、以 BC-Z 作为操作策略；2) SayCan + Gato，即用 SayCan 规划算法、以 Gato 作为操作策略；3) 原始报告中给出的 SayCan 结果，它使用 SayCan 规划算法与 BC-Z，但由于使用了略有不同的提示词，规划成功率较低。为公平比较，我们已在 1) 中重新实现了 3)。",
+   "confidence": "high"
+  },
+  {
+   "id": "S095",
+   "page": 28,
+   "type": "body",
+   "section": "附录 D：实验（p.23–p.31）",
+   "heading": "Table 12｜§6.4 中评测的 SayCan 指令清单",
+   "original": "As shown in Table 11, except for original SayCan, all methods get 87% as planning success rate, and RT-1 performs the best, with 67% execution success rate in Kitchen1. Kitchen2 constitutes a much more challenging generalization scene, since the Robot Classroom training scenes are modeled after Kitchen1 (see the pictures of the kitchens in Fig. 2). Due to this generalization difficulty, SayCan with Gato is not able to finish any long horizon task, and SayCan with BC-Z is able to achieve a success rate of 13%. The original SayCan paper did not evaluate performance in a new kitchen. Surprisingly, the manipulation performance does not see a visible drop from Kitchen1 to Kitchen2 for our method.",
+   "translation": "如表 11 所示，除原始 SayCan 之外，所有方法的规划成功率都是 87%，其中 RT-1 表现最好：在 Kitchen1 中执行成功率为 67%。Kitchen2 是更具挑战性的泛化场景，因为机器人教室的训练场景是照 Kitchen1 搭建的（见厨房照片，图 2）。由于这一泛化难度，SayCan + Gato 无法完成任何长时程任务，SayCan + BC-Z 的成功率为 13%。原始 SayCan 论文并未在新厨房中评测性能。令人意外的是，我们的方法从 Kitchen1 到 Kitchen2 在操作性能上并未出现可见的下降。",
+   "confidence": "high"
+  },
+  {
+   "id": "S096",
+   "page": 29,
+   "type": "body",
+   "section": "附录 D：实验（p.23–p.31）",
+   "heading": "Table 11｜Kitchen1 与 Kitchen2 中的 SayCan 长时程任务（与 Table 6 同表）",
+   "original": "In the supplementary video, we show that this enables us to operate unseen drawers in Kitchen2, and that we can use SayCan-RT1 to plan and execute ultra-long horizon tasks, with as many as 50 steps.",
+   "translation": "在补充视频中，我们展示了这使我们能够在 Kitchen2 中操作未见过的抽屉，并且可以用 SayCan-RT1 规划并执行超长时程任务，最多可达 50 个步骤。 #### D.4 M ODEL A BLATIONS｜模型消融",
+   "confidence": "high"
+  },
+  {
+   "id": "S097",
+   "page": 29,
+   "type": "body",
+   "section": "附录 D：实验（p.23–p.31）",
+   "heading": "D.4 M ODEL A BLATIONS｜模型消融",
+   "original": "What are the important and practical decisions in the design of the model and how do they affect performance and generalization? To answer this question, we perform a set of ablations over different design decisions in RT-1. We aim to test a number of hypotheses that will help us disambiguate where the benefits of our method come from. Possible hypotheses about the source of improvement include: (i) the capacity and expressiveness of our model, which we verify by ablating the model size, trying other architectures (e.g., by removing the Transformer component); (ii) the particular action representation, which makes it easy to represent complex multi-modal action distributions, which we test by switching to continuous (normally distributed) actions, as well as by ablating the auto-regressive action representation; (iii) the ImageNet pre-trained initialization of the components, which we test by initializing the model's weights randomly; and (iv) access to the short history, which we test by excluding observation history. More concretely, we ablate our model by (1) decreasing the model size (from 35M to 21M parameters), (2) removing the Transformer architecture (using a pre-trained EfficientNet instead), (3) using a continuous instead of discrete action space (using an MSE loss and multivariate normal output), (4) auto-regressively conditioning on actions, (5) removing ImageNet pre-training of the FiLM EfficientNet, and (6) removing history (reducing the sequence of six images as input to a single image). For each ablation we compare on the axes of performance on seen tasks, performance on unseen tasks, as well as inference speed and robustness to distractors and backgrounds (with a more detailed description of each category in Section 6.1 and Appendix D.1).",
+   "translation": "模型设计中有哪些重要且实际的决定，它们又如何影响性能与泛化？为回答这一问题，我们对 RT-1 的不同设计决定做了一组消融。我们试图检验若干假设，以厘清我们方法的好处究竟来自哪里。关于改进来源的可能假设包括：(i) 模型的容量与表达能力——我们通过消融模型规模、尝试其他架构（例如去掉 Transformer 组件）来验证；(ii) 特定的动作表示方式，它使表示复杂的多模态动作分布变得容易——我们通过切换到连续（正态分布）动作、以及消融自回归动作表示来检验；(iii) 各组件的 ImageNet 预训练初始化——我们通过随机初始化模型权重来检验；(iv) 对短历史的访问——我们通过去掉观测历史来检验。更具体地说，我们通过以下方式消融模型：(1) 减小模型规模（从 35M 参数降到 21M）；(2) 去掉 Transformer 架构（改用预训练 EfficientNet）；(3) 用连续动作空间替代离散动作空间（使用 MSE 损失与多元正态输出）；(4) 自回归地以动作为条件；(5) 去掉 FiLM EfficientNet 的 ImageNet 预训练；(6) 去掉历史（把 6 张图像输入序列缩减为单张图像）。对每种消融，我们在已见任务性能、未见任务性能、推理速度，以及对干扰物与背景的鲁棒性这些维度上进行比较（各类别的更详细说明见 §6.1 与附录 D.1）。",
+   "confidence": "high"
+  },
+  {
+   "id": "S098",
+   "page": 29,
+   "type": "body",
+   "section": "附录 D：实验（p.23–p.31）",
+   "heading": "D.4 M ODEL A BLATIONS｜模型消融",
+   "original": "Table 13 shows the results of each ablation and the delta performance compared to the full RT-1. RT-1 achieves impressive performance on tasks and new environments, and particularly outperforms baselines on the most challenging robustness problems. We also find that each design decision is important, though at varying levels. We first evaluate a model that replaces the per-dimension discretized action representation in our model with a more standard continuous Gaussian distribution. We observe a significant decline in performance from this modification. The per-dimension discretization allows our model to represent complex multi-modal distributions, while the Gaussian distribution captures only a single mode. These results suggest that this standard and popular choice is highly suboptimal with the more complex and diverse demonstration data used by our system. ImageNet pre-training is particularly important for model generalization and robustness, decreasing the unseen task performance rate by 33%, as a result of the large and diverse visuals of the ImageNet dataset. Adding history has an impact primarily on generalization to distractors, while removing the Transformer component has a uniform but small negative impact across the seen tasks, unseen tasks and distractors. In order to keep the ImageNet pre-training while reducing the model size, we reduce the number of parameters only by 40% (from 31M to 25M). Resulting performance drops across training and generalization tasks but not as much as in other ablations. Finally, autoregressively conditioning on actions, as used in (Reed et al., 2022; Chen et al., 2021; Lee et al., 2022a), did not benefit performance and slowed inference by more than 2x.",
+   "translation": "表 13 给出每种消融的结果，以及相对于完整 RT-1 的性能变化量。RT-1 在任务与新环境上取得了令人印象深刻的性能，尤其在最具挑战性的鲁棒性问题上优于基线。我们还发现每个设计决定都重要，只是程度不同。我们首先评测一个把逐维离散动作表示替换为更标准的连续高斯分布的模型：我们观察到性能显著下降。逐维离散化使模型能够表示复杂的多模态分布，而高斯分布只能刻画单一模态。这些结果表明，在更复杂、更多样的示范数据下，这一标准且流行的选择是高度次优的。ImageNet 预训练对模型的泛化与鲁棒性尤其重要，它使未见任务性能下降 33%，这源于 ImageNet 数据集大而多样的视觉内容。加入历史的影响主要体现在对干扰物的泛化上；而去掉 Transformer 组件则在已见任务、未见任务和干扰物上都带来一致但较小的负面影响。为了在保留 ImageNet 预训练的同时减小模型规模，我们只把参数量减少 40%（从 31M 到 25M），由此在训练与泛化任务上都有性能下降，但没有其他消融那么严重。最后，像 (Reed et al., 2022; Chen et al., 2021; Lee et al., 2022a) 那样自回归地以动作为条件，并未带来性能收益，反而使推理慢了一倍以上。",
+   "confidence": "high"
+  },
+  {
+   "id": "S099",
+   "page": 30,
+   "type": "body",
+   "section": "附录 D：实验（p.23–p.31）",
+   "heading": "Table 13｜RT-1 的模型消融",
+   "original": "As described in Sec. 5.1, in order to run large Transformer models on real robots, we require a model that supports fast inference for real-time operation. Note that in order to achieve our target control rate of 3Hz (described in Sec. 5.1), we also need to consider other sources of latency in the pipeline, such as the camera latency and communication overhead. However, these factors will be constant for all the models, and therefore we focus our evaluation on just the network inference time. The last column of Table 13 shows the inference speed of all the models. RT-1 is almost an order of magnitude faster than Gato with a similar number of parameters, but it is also considerably slower than a ResNet-based BC-Z. In terms of the different ablations of our model, we observe that the biggest slow-down is caused by including auto-regressive actions (∼2x slow-down), and since this does not significantly influence the performance, the final version of RT-1 does not generate actions auto-regressively.",
+   "translation": "如 §5.1 所述，为了在真实机器人上运行大型 Transformer 模型，我们需要模型支持快速推理以实现实时运行。注意，要达到我们 3 Hz 的目标控制频率（见 §5.1），还必须考虑流水线中的其他延迟来源，例如相机延迟与通信开销。不过这些因素对所有模型都是恒定的，因此我们把评测聚焦在网络推理时间上。表 13 最后一列给出所有模型的推理速度。在参数量相近的情况下，RT-1 比 Gato 快将近一个数量级，但也明显慢于基于 ResNet 的 BC-Z。就我们模型的不同消融而言，最大的减速来自引入自回归动作（约 2 倍减速）；由于这并未显著影响性能，RT-1 的最终版本不采用自回归方式生成动作。 #### D.5 S UMMARY AND A NALYSIS｜总结与分析",
+   "confidence": "high"
+  },
+  {
+   "id": "S100",
+   "page": 31,
+   "type": "body",
+   "section": "附录 D：实验（p.23–p.31）",
+   "heading": "D.5 S UMMARY AND A NALYSIS｜总结与分析",
+   "original": "In this section, we summarize some of our findings and propose intuition for RT-1's high performance, generalization, and robustness. First, ImageNet pretraining (along with Universal Sentence Encoder language embedding) has a large impact particularly on unseen tasks. We observe that RT-1 inherits some of the knowledge that results from the generality and diversity of the datasets these models were trained on. Second, continuous actions have a large impact across all aspects of performance. This has been previously observed and may be due to the ability to represent more complex action distributions – the per-dimension discretization allows our model to represent complex multi-modal distributions, while the Gaussian distribution captures only a single mode. Third, given such expressive multitask models, data diversity has a larger impact than data size. Indeed, even datasets collected in simulated environments or from different robotic embodiments can be leveraged by RT-1, opening avenues for new regimes of data collection.",
+   "translation": "本节我们总结若干发现，并对 RT-1 的高性能、泛化与鲁棒性给出直觉解释。第一，ImageNet 预训练（连同 Universal Sentence Encoder 的语言嵌入）影响很大，尤其体现在未见任务上。我们观察到，RT-1 继承了这些模型所训练数据集的通用性与多样性所带来的一部分知识。第二，连续动作对性能的各个方面都有很大影响。这一点此前已被观察到，原因可能是它对更复杂动作分布的表达能力——逐维离散化让我们的模型能够表示复杂的多模态分布，而高斯分布只能刻画出单一模态。第三，在这种表达力强的多任务模型下，数据多样性的影响大于数据规模。事实上，即使在仿真环境中采集的数据、或来自不同机器人形态的数据，也能被 RT-1 利用，这为新的数据采集范式开辟了道路。 > 注：本条原文写作 \"Second, continuous actions have a large impact across all aspects of performance.\"，但其后解释（离散化表达多模态、高斯只表达单模态）以及表 13 的数值都指向\"**连续动作带来明显的负面影响**\"。此处按原文照译，语义上应理解为\"连续动作（这一替换）对性能各方面影响很大（且为负面）\"。",
+   "confidence": "high"
+  },
+  {
+   "id": "S101",
+   "page": 31,
+   "type": "body",
+   "section": "附录 D：实验（p.23–p.31）",
+   "heading": "D.5 S UMMARY AND A NALYSIS｜总结与分析",
+   "original": "Finally, RT-1 fuses language into the image pipeline early via FiLM conditioning, compared to e.g., Gato's late fusion. This enables image tokens that focus only on relevant features for the instruction at hand, which may be the cause of poor distractor performance for Gato. Figure 13 visualizes the attention during rollouts of RT-1. We see that the attention is focused on relevant features and particularly on interaction between the gripper and the object of interest. The bottleneck of attention layers such as these results in a compact representation which effectively ignores distractors and varying backgrounds.",
+   "translation": "最后，与例如 Gato 的\"晚期融合\"相比，RT-1 通过 FiLM 条件化把语言**早期**融入图像处理流水线。这使得图像 token 只聚焦于当前指令的相关特征，这可能正是 Gato 在干扰物上表现较差的原因。图 13 可视化了 RT-1 rollout 过程中的注意力。我们看到注意力集中在相关特征上，尤其集中在夹爪与目标物体之间的交互上。这类注意力层形成的瓶颈产生了紧凑表示，从而有效地忽略干扰物与变化的背景。",
+   "confidence": "high"
+  }
+ ],
+ "figures": [
+  {
+   "id": "F001",
+   "page": 2,
+   "asset": "assets/fig1.png",
+   "placed_near": "p.2 S007（首次被引用于此段末句）",
+   "caption_original": "(a) RT-1 takes images and natural language instructions and outputs discretized base and arm actions. Despite its size (35M parameters), it does this at 3 Hz, due to its efficient yet high-capacity architecture: a FiLM (Perez et al., 2018) conditioned EfficientNet (Tan & Le, 2019), a TokenLearner (Ryoo et al., 2021), and a Transformer (Vaswani et al., 2017). (b) RT-1's large-scale, real-world training (130k demonstrations) and evaluation (3000 real-world trials) show impressive generalization, robustness, and ability to learn from diverse data. Figure 1: A high-level overview of RT-1's architecture, dataset, and evaluation.",
+   "caption_zh": "(a) RT-1 以图像和自然语言指令为输入，输出离散化的底盘动作与机械臂动作。尽管规模达到 35M 参数，它仍能以 3 Hz 运行，这得益于其高效而高容量的架构：一个经 FiLM（Perez et al., 2018）条件化的 EfficientNet（Tan & Le, 2019）、一个 TokenLearner（Ryoo et al., 2021）和一个 Transformer（Vaswani et al., 2017）。 (b) RT-1 的大规模真实世界训练（130k 条示范）与评测（3000 次真实世界试验）展现出可观的泛化性、鲁棒性，以及从多样化数据中学习的能力。 图 1：RT-1 架构、数据集与评测的高层总览。"
+  },
+  {
+   "id": "F002",
+   "page": 5,
+   "asset": "assets/fig2.png",
+   "placed_near": "p.4 S014（首次被引用于 Fig. 2 (d)）",
+   "caption_original": "",
+   "caption_zh": ""
+  },
+  {
+   "id": "F003",
+   "page": 6,
+   "asset": "assets/fig3.png",
+   "placed_near": "p.5 S018（首次被引用于此段）",
+   "caption_original": "",
+   "caption_zh": ""
+  },
+  {
+   "id": "F004",
+   "page": 9,
+   "asset": "assets/fig4.png",
+   "placed_near": "p.9 S037（首次被引用于此段）",
+   "caption_original": "",
+   "caption_zh": ""
+  },
+  {
+   "id": "F005",
+   "page": 11,
+   "asset": "assets/fig5.png",
+   "placed_near": "p.10 S040（首次被引用于此段）",
+   "caption_original": "",
+   "caption_zh": ""
+  },
+  {
+   "id": "F006",
+   "page": 13,
+   "asset": "assets/fig6.png",
+   "placed_near": "p.12 S046（首次被引用于此段）",
+   "caption_original": "",
+   "caption_zh": ""
+  },
+  {
+   "id": "F007",
+   "page": 21,
+   "asset": "assets/fig7.png",
+   "placed_near": "p.20 S060（首次被引用于此段）",
+   "caption_original": "",
+   "caption_zh": ""
+  },
+  {
+   "id": "F008",
+   "page": 22,
+   "asset": "assets/fig8.png",
+   "placed_near": "p.22 S075（首次被引用于此段）",
+   "caption_original": "",
+   "caption_zh": ""
+  },
+  {
+   "id": "F009",
+   "page": 23,
+   "asset": "assets/fig9.png",
+   "placed_near": "p.23 S076（首次被引用于此段）",
+   "caption_original": "",
+   "caption_zh": ""
+  },
+  {
+   "id": "F012",
+   "page": 26,
+   "asset": "assets/fig12.png",
+   "placed_near": "p.23 S080（首次被引用于此段）",
+   "caption_original": "",
+   "caption_zh": ""
+  },
+  {
+   "id": "F010",
+   "page": 24,
+   "asset": "assets/fig10.png",
+   "placed_near": "p.24 S081（首次被引用于此段）",
+   "caption_original": "",
+   "caption_zh": ""
+  },
+  {
+   "id": "F011",
+   "page": 24,
+   "asset": "assets/fig11.png",
+   "placed_near": "p.24 S082（首次被引用于此段）",
+   "caption_original": "",
+   "caption_zh": ""
+  },
+  {
+   "id": "F013",
+   "page": 31,
+   "asset": "assets/fig13.png",
+   "placed_near": "p.31 S101（首次被引用于此段）",
+   "caption_original": "",
+   "caption_zh": "注：原文此处 \"graspable objets\" 为拼写错误，应为 \"objects\"。"
+  }
+ ],
+ "tables": [
+  {
+   "id": "T001",
+   "page": 7,
+   "asset": "assets/table1.png",
+   "placed_near": "p.7 S029（首次被引用于此段）",
+   "caption_original": "",
+   "caption_zh": ""
+  },
+  {
+   "id": "T002",
+   "page": 10,
+   "asset": "assets/table2.png",
+   "placed_near": "p.10 S040（首次被引用于此段）",
+   "caption_original": "",
+   "caption_zh": ""
+  },
+  {
+   "id": "T003",
+   "page": 11,
+   "asset": "assets/table3.png",
+   "placed_near": "p.10 S042（首次被引用于此段）",
+   "caption_original": "",
+   "caption_zh": ""
+  },
+  {
+   "id": "T004",
+   "page": 12,
+   "asset": "assets/table4.png",
+   "placed_near": "p.11 S044（首次被引用于此段）",
+   "caption_original": "",
+   "caption_zh": "表 4 右侧附有一张柱状图（\"Success Rate Compared to Real only\"），标注了 +64%、+26%、-2% 三个相对变化量，与上表最后一行括号内的数值一一对应。"
+  },
+  {
+   "id": "T005",
+   "page": 13,
+   "asset": "assets/table5.png",
+   "placed_near": "p.13 S048（首次被引用于此段）",
+   "caption_original": "",
+   "caption_zh": "表 5 右侧附有柱状图（\"Success Rate Compared to EDR Only\"），标注 +17% 与 -2% 两个相对变化量。"
+  },
+  {
+   "id": "T006",
+   "page": 14,
+   "asset": "assets/table6.png",
+   "placed_near": "p.14 S050（首次被引用于此段）",
+   "caption_original": "",
+   "caption_zh": ""
+  },
+  {
+   "id": "T007",
+   "page": 14,
+   "asset": "assets/table7.png",
+   "placed_near": "p.15 S053（首次被引用于此段）",
+   "caption_original": "",
+   "caption_zh": "表 7 中 \"All\"、\"Unseen Tasks\" 两列在原表中同为 \"Generalization\" 大列下的子列（原表用横线把 `% Tasks / % Data` 与 `Seen Tasks` 分隔开）。上表按原表数值逐项转录；表中另附一张柱状图，展示各消融相对完整 RT-1 的泛化变化。"
+  },
+  {
+   "id": "T008",
+   "page": 25,
+   "asset": "assets/table8.png",
+   "placed_near": "p.23 S079（首次被引用于此段）",
+   "caption_original": "",
+   "caption_zh": ""
+  },
+  {
+   "id": "T009",
+   "page": 27,
+   "asset": "assets/table9.png",
+   "placed_near": "p.26 S084/S086（附录版本，正文首次引用见 p.11 S044）",
+   "caption_original": "",
+   "caption_zh": "本表与正文 **Table 4**（p.12）为同一张表、同样数值（92 / 90(-2)；23 / 87(+64)；7 / 33(+26)），差别仅在附录版图注更短。数值与解读请回看 [Table 4](#T004) 区块。"
+  },
+  {
+   "id": "T010",
+   "page": 28,
+   "asset": "assets/table10.png",
+   "placed_near": "p.28 S091（附录版本，正文首次引用见 p.13 S048）",
+   "caption_original": "",
+   "caption_zh": "本表与正文 **Table 5**（p.13）为同一张表。差别在于附录版 Classroom eval 一列为 \"90\"（正文版为 \"90(-2)\"），Bin-picking eval 一列为 \"39\"（正文版为 \"39(+17)\"）——即附录版省略了括号内的相对变化量，数值本身一致。详见 [Table 5](#T005)。"
+  },
+  {
+   "id": "T012",
+   "page": 30,
+   "asset": "assets/table12.png",
+   "placed_near": "p.28 S092（首次被引用于此段）",
+   "caption_original": "",
+   "caption_zh": "中文大意（仅辅助理解，便于对照）：1) 你会怎样把能量棒和水瓶放到桌上；2) 你会怎样给我拿一听青柠汽水和一袋薯片；3) 你能把苹果扔掉再给我拿一听可乐吗；4) 你会怎样给我拿一听 7up 和一杯茶；5) 你会怎样把桌上所有东西都扔掉；6) 你会怎样把一袋杂粮薯片移到桌上、把苹果移到远处台面；7) 你会怎样把青柠汽水、海绵和水瓶移到桌上；8) 你会怎样给我拿两听汽水；9) 你会怎样把三听可乐移到垃圾桶；10) 你会怎样扔掉两听可乐；11) 你会怎样给我拿两听不同的汽水；12) 你会怎样给我拿一个苹果、一听可乐和一个水瓶；13) 我把可乐洒在桌上了，你会怎样把它清理掉、再给我拿点东西来擦干净；14) 我刚运动完，你能给我拿点喝的和小食恢复一下吗；15) 你会怎样给我拿一份水果、一听汽水和一袋薯片当午餐。"
+  },
+  {
+   "id": "T011",
+   "page": 29,
+   "asset": "assets/table11.png",
+   "placed_near": "p.29 S095（附录版本，正文首次引用见 p.14 S050）",
+   "caption_original": "",
+   "caption_zh": "本表与正文 **Table 6**（p.14）为同一张表，数值完全一致。详见 [Table 6](#T006)。"
+  },
+  {
+   "id": "T013",
+   "page": 30,
+   "asset": "assets/table13.png",
+   "placed_near": "p.29 S098（首次被引用于此段）",
+   "caption_original": "",
+   "caption_zh": "原表中 \"Distractors\" 与 \"Backgrounds\" 为两个大列，Distractors 下含 Easy / Medium / Hard 三个子列，Backgrounds 下含 All 一个子列；\"Inference Time (ms)\" 为最后一列。括号内为该行相对 RT-1 的变化量（如 \"-32\" 表示低 32 个百分点），完整 RT-1 行不带括号。"
+  }
+ ],
+ "reference_section": [
+  {
+   "id": "R001",
+   "pages": "p.15-p.19",
+   "source_line": "**Source:** p.15–p.19 R001",
+   "note": "书目条目保留英文原文，未逐条翻译；条目由 PDF 文本重建，编号为本阅读稿所加。"
+  }
+ ]
+}
