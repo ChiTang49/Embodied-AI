@@ -1,0 +1,2071 @@
+{
+  "paper": {
+    "title": "Fine-Tuning Vision-Language-Action Models: Optimizing Speed and Success",
+    "arxiv": "2502.19645v2",
+    "pdf_pages": 24,
+    "source_pdf": "F:\\AiWorkSpace\\Embodied-AI\\raw\\2502.19645v2.pdf",
+    "output_dir": "F:\\AiWorkSpace\\Embodied-AI\\outputs\\nature-reader\\2502.19645v2"
+  },
+  "blocks": [
+    {
+      "id": "M_ABS",
+      "page": 1,
+      "pages": [
+        1
+      ],
+      "sources": [
+        "S001"
+      ],
+      "type": "body",
+      "original": "Abstract—Recent vision-language-action models (VLAs) build upon pretrained vision-language models and leverage diverse robot datasets to demonstrate strong task execution, language following ability, and semantic generalization. Despite these successes, VLAs struggle with novel robot setups and require fine-tuning to achieve good performance, yet how to most effectively fine-tune them is unclear given many possible strategies. In this work, we study key VLA adaptation design choices such as different action decoding schemes, action representations, and learning objectives for fine-tuning, using OpenVLA as our representative base model. Our empirical analysis informs an Optimized Fine-Tuning (OFT) recipe that integrates parallel decoding, action chunking, a continuous action representation, and a simple L1 regression-based learning objective to altogether improve inference efficiency, policy performance, and flexibility in the model’s input-output specifications. We propose OpenVLA-OFT, an instantiation of this recipe, which sets a new state of the art on the LIBERO simulation benchmark, significantly boosting OpenVLA’s average success rate across four task suites from 76.5% to 97.1% while increasing action generation throughput by 26×. In real-world evaluations, our fine-tuning recipe enables OpenVLA to successfully execute dexterous, high-frequency control tasks on a bimanual ALOHA robot and outperform other VLAs (π0 and RDT-1B) fine-tuned using their default recipes, as well as strong imitation learning policies trained from scratch (Diffusion Policy and ACT) by up to 15% (absolute) in average success rate. We release code for OFT and pretrained model checkpoints at https://openvla-oft.github.io.",
+      "translation": "摘要——近期的视觉-语言-动作模型（VLA）以预训练的视觉-语言模型为基础，并借助多样化的机器人数据集，在任务执行、语言跟随能力和语义泛化方面展现出强劲表现。尽管取得了这些成功，VLA 在面对新的机器人平台时仍然表现吃力，需要通过微调才能取得良好性能；然而在众多可能的策略中，如何最有效地微调仍不明确。在本文中，我们以 OpenVLA 作为代表性基座模型，研究 VLA 适配中的关键设计选择，例如不同的动作解码方式、动作表示形式与微调学习目标。我们的实证分析促成了一个“优化微调”（Optimized Fine-Tuning, OFT）配方，它把并行解码、动作分块、连续动作表示以及一个简单的 L1 回归学习目标整合起来，从而整体提升推理效率、策略性能以及模型输入-输出规格上的灵活性。我们提出 OpenVLA-OFT，作为该配方的一个实例，它在 LIBERO 仿真基准上刷新了最优结果：将 OpenVLA 在四个任务套件上的平均成功率从 76.5% 显著提升到 97.1%，同时把动作生成吞吐量提高 26 倍。在真实世界评估中，我们的微调配方使 OpenVLA 能够在双机械臂 ALOHA 机器人上成功执行灵巧的高频控制任务，其表现优于使用各自默认配方微调的其他 VLA（π0 与 RDT-1B），并在平均成功率上超过从零训练的强模仿学习策略（Diffusion Policy 与 ACT）最多 15 个百分点（绝对值）。我们在 https://openvla-oft.github.io 公开了 OFT 的代码与预训练模型检查点。",
+      "translated": true
+    },
+    {
+      "id": "M_INT1",
+      "page": 1,
+      "pages": [
+        1
+      ],
+      "sources": [
+        "S002"
+      ],
+      "type": "body",
+      "original": "Recent vision-language-action models (VLAs)—robot policies built by fine-tuning pretrained vision-language models on large-scale robot datasets for low-level robotic control—have demonstrated strong task performance, semantic generalization, and language following abilities across diverse robots and tasks [4, 34, 24, 23, 7, 15, 8, 53, 58, 3]. Despite their strengths, fine-tuning is crucial for satisfactory deployment of VLAs on novel robots and tasks, yet it is unclear what the most effective approach for adaptation is given the large design space. A robotics practitioner who wishes to fine-tune a VLA to a new robot setup and task may default to using the same training recipe used for pretraining (or a parameter-efficient variant), but it is not obvious whether this would yield the best policy, and there is limited empirical analysis of alternative fine-tuning approaches in the literature.",
+      "translation": "近期的视觉-语言-动作模型（VLA）——通过在机器人数据集上微调预训练的视觉-语言模型而构建的低层机器人控制策略——已在多种机器人与任务上展现出强大的任务性能、语义泛化和语言跟随能力 [4, 34, 24, 23, 7, 15, 8, 53, 58, 3]。尽管 VLA 具备这些优势，要让它们在新的机器人和任务上获得令人满意的部署效果，微调仍然至关重要；但面对庞大的设计空间，究竟哪种适配方式最有效仍不清楚。希望把 VLA 微调到新机器人平台与任务的机器人从业者，可能会默认沿用预训练时的训练配方（或其参数高效变体），但这种做法是否会产生最优策略并不显然，而且文献中对替代微调方法的实证分析仍然有限。",
+      "translated": true
+    },
+    {
+      "id": "M_INT2",
+      "page": 1,
+      "pages": [
+        1
+      ],
+      "sources": [
+        "S003"
+      ],
+      "type": "body",
+      "original": "Prior work has begun exploring VLA adaptation strategies, with Kim et al. [23] proposing parameter-efficient fine-tuning via LoRA. However, their autoregressive action generation remains too slow (3-5 Hz) for high-frequency control (25-50+ Hz), and both LoRA and full fine-tuning of autoregressive VLAs often yield unsatisfactory performance in bimanual manipulation tasks [54, 27, 3]. While recent approaches improve efficiency through better action tokenization schemes [2, 38], achieving 2 to 13× speedups, significant latency between action chunks (e.g., 750 ms for the recent FAST approach [38]) still limits real-time deployment on high-frequency bimanual robots. Exploring alternative VLA adaptation approaches that achieve both satisfactory speed and quality remains an underexplored area of research.",
+      "translation": "已有工作开始探索 VLA 的适配策略：Kim et al. [23] 提出了基于 LoRA 的参数高效微调。然而其自回归动作生成仍然太慢（3-5 Hz），无法满足高频控制（25-50+ Hz）的需求；而且无论是 LoRA 还是全量微调，自回归 VLA 在双臂操作任务上往往都难以取得令人满意的性能 [54, 27, 3]。尽管近期一些方法通过更好的动作词元化方案 [2, 38] 实现了 2 到 13 倍的加速，但动作块之间的显著延迟（例如近期 FAST 方法的 750 ms [38]）仍然限制了其在高频双臂机器人上的实时部署。探索既能满足速度、又能保证质量的替代 VLA 适配方法，仍是一个研究不足的领域。",
+      "translated": true
+    },
+    {
+      "id": "M_INT3",
+      "page": 1,
+      "pages": [
+        1
+      ],
+      "sources": [
+        "S004"
+      ],
+      "type": "body",
+      "original": "In this work, we study key design decisions for adapting VLAs to novel robots and tasks using OpenVLA, a representative autoregressive VLA, as our base model. We examine three key design choices: action decoding scheme (autoregressive vs. parallel generation), action representation (discrete vs. continuous), and learning objective (next-token prediction vs. L1 regression vs. diffusion). Our study reveals several key insights that build on each other: (1) parallel decoding with action chunking not only boosts inference efficiency but also improves success rates on downstream tasks while enabling greater flexibility in the model’s input-output specifications; (2) continuous action representations further improve model quality compared to discrete representations; and (3) fine-tuning the VLA with an L1 regression objective yields comparable performance to diffusion-based fine-tuning while offering faster training convergence and inference speed.",
+      "translation": "在本文中，我们以 OpenVLA（一个具有代表性的自回归 VLA）作为基座模型，研究将 VLA 适配到新机器人和新任务时的关键设计决策。我们考察三个关键设计选择：动作解码方式（自回归 vs. 并行生成）、动作表示（离散 vs. 连续）以及学习目标（下一词元预测 vs. L1 回归 vs. 扩散）。我们的研究揭示出若干层层递进的关键洞见：(1) 并行解码加动作分块不仅提升了推理效率，还提高了下游任务的成功率，同时让模型的输入-输出规格更具灵活性；(2) 相比离散表示，连续动作表示进一步提升了模型质量；(3) 使用 L1 回归目标微调 VLA，可以获得与基于扩散的微调相当的性能，同时训练收敛更快、推理速度更高。",
+      "translated": true
+    },
+    {
+      "id": "F001",
+      "page": 2,
+      "pages": [
+        2
+      ],
+      "sources": [
+        "C001"
+      ],
+      "type": "figure",
+      "asset": "assets/fig01.png",
+      "label": "Fig. 1",
+      "title_zh": "双机械臂 ALOHA 机器人上的 OpenVLA-OFT+",
+      "original": "Fig. 1: OpenVLA-OFT+ on the bimanual ALOHA robot. Our Optimized Fine-Tuning (OFT) recipe enhances fine-tuned OpenVLA policies through improved inference efficiency, model quality, and input-output flexibility. The resulting OpenVLA-OFT+ policies execute diverse dexterous manipulation tasks on a real-world bimanual robot at high control frequencies (25 Hz). The “+” suffix indicates the integration of feature-wise linear modulation (FiLM) [37], which strengthens language grounding in tasks where accurate language understanding is critical for success.",
+      "translation": "Fig. 1：双机械臂 ALOHA 机器人上的 OpenVLA-OFT+。我们的“优化微调”（OFT）配方通过提升推理效率、模型质量与输入-输出灵活性，增强了微调后的 OpenVLA 策略。由此得到的 OpenVLA-OFT+ 策略在真实双臂机器人上以高控制频率（25 Hz）执行多样化的灵巧操作任务。名称中的 “+” 后缀表示加入了特征级线性调制（FiLM）[37]，它在需要准确理解语言才能成功的任务中增强了语言落地能力。",
+      "placed_near": "p.2 C001（正文首次引用 p.2 S006）",
+      "translated": true
+    },
+    {
+      "id": "M_INT4",
+      "page": 1,
+      "pages": [
+        1
+      ],
+      "sources": [
+        "S005"
+      ],
+      "type": "body",
+      "original": "Building on these insights, we introduce OpenVLA-OFT: an instantiation of an Optimized Fine-Tuning (OFT) recipe that integrates parallel decoding and action chunking, continuous action representations, and an L1 regression objective to enhance inference efficiency, task performance, and model input-output flexibility while maintaining algorithmic simplicity. We conduct experiments on both the standardized LIBERO simulation benchmark and dexterous tasks on a real bimanual ALOHA robot. In LIBERO, OpenVLA-OFT establishes a new state of the art by achieving 97.1% average success rate across four task suites, outperforming both fine-tuned OpenVLA policies [23] (76.5%) and π0 policies [3] (94.2%) while achieving a 26× speedup in action generation with 8-step action chunks. For real-world ALOHA tasks [56], we augment our recipe with FiLM [37] for enhanced language grounding,",
+      "translation": "在这些洞见的基础上，我们提出 OpenVLA-OFT：它是“优化微调”（OFT）配方的一个实例，把并行解码与动作分块、连续动作表示以及 L1 回归目标整合在一起，在保持算法简单性的同时提升推理效率、任务性能和模型输入-输出灵活性。我们在标准化的 LIBERO 仿真基准以及真机双机械臂 ALOHA 机器人的灵巧任务上开展实验。在 LIBERO 上，OpenVLA-OFT 取得了 97.1% 的四个任务套件平均成功率，创造了新的最优结果：既超过了微调后的 OpenVLA 策略 [23]（76.5%），也超过了 π0 策略 [3]（94.2%），同时在使用 8 步动作块时把动作生成速度提高了 26 倍。对于真实世界的 ALOHA 任务 [56]，我们在配方中加入 FiLM [37] 来增强语言落地，",
+      "translated": true
+    },
+    {
+      "id": "M_INT5",
+      "page": 2,
+      "pages": [
+        2
+      ],
+      "sources": [
+        "S006"
+      ],
+      "type": "body",
+      "original": "denoting the augmented recipe as OFT+. OpenVLA-OFT+ successfully executes dexterous bimanual tasks like folding clothes and manipulating target food items based on the user’s prompt (see Figure 1), outperforming both fine-tuned VLAs (π0 and RDT-1B) and prominent imitation learning policies trained from scratch (Diffusion Policy and ACT) by up to 15% (absolute) in average success rate. With 25-timestep action chunks, OpenVLA-OFT+ achieves 43× faster throughput than base OpenVLA, demonstrating that our new fine-tuning recipe enables real-time robot control with strong task performance and language following ability.",
+      "translation": "并把增强后的配方记作 OFT+。OpenVLA-OFT+ 能够成功执行诸如叠衣服、根据用户指令操作指定食物等灵巧双臂任务（参见 Figure 1），在平均成功率上比微调后的 VLA（π0 与 RDT-1B）以及从零训练的著名模仿学习策略（Diffusion Policy 与 ACT）高出最多 15 个百分点（绝对值）。在使用 25 步动作块时，OpenVLA-OFT+ 的吞吐量比基座 OpenVLA 快 43 倍，说明我们新的微调配方能够在保持强任务性能与语言跟随能力的同时，实现真正的实时机器人控制。",
+      "translated": true
+    },
+    {
+      "id": "M_NOTE1",
+      "page": 1,
+      "pages": [
+        1
+      ],
+      "sources": [
+        "N003"
+      ],
+      "type": "footnote",
+      "original": "1 Stanford University. Correspondence to: Moo Jin Kim <moojink@cs. stanford.edu>, Chelsea Finn <cbfinn@cs.stanford.edu>, Percy Liang <pliang@cs.stanford.edu>.",
+      "translation": "1 斯坦福大学。通讯作者：Moo Jin Kim <moojink@cs.stanford.edu>、Chelsea Finn <cbfinn@cs.stanford.edu>、Percy Liang <pliang@cs.stanford.edu>。",
+      "translated": true
+    },
+    {
+      "id": "M_REL1",
+      "page": 2,
+      "pages": [
+        2
+      ],
+      "sources": [
+        "S007"
+      ],
+      "type": "body",
+      "original": "Prior works have leveraged language and vision foundation models to enhance robotic capabilities, using them as pretrained visual representations that accelerate robotic policy learning [30, 33, 31, 20, 32], for object localization in robotics tasks [9, 47], and for high-level planning and reasoning [1, 17, 44, 16, 45, 18, 6]. More recently, researchers have explored fine-tuning vision-language models (VLMs) to directly predict low-level robotic control actions, producing “vision-language-action” models (VLAs) [4, 34, 24, 23, 7, 15, 8, 53, 58, 54, 3, 2], which have demonstrated effective language following [59] and generalization to out-of-distribution test conditions and unseen semantic concepts. These works focus primarily on model development, while we focus on developing a recipe for fine-tuning such models, justifying individual design decisions with insights that we gain from our empirical analysis.",
+      "translation": "已有工作利用语言与视觉基础模型增强机器人能力：把它们当作加速机器人策略学习的预训练视觉表示 [30, 33, 31, 20, 32]，用于机器人任务中的物体定位 [9, 47]，以及用于高层规划与推理 [1, 17, 44, 16, 45, 18, 6]。更近期，研究者开始探索微调视觉-语言模型（VLM）以直接预测低层机器人控制动作，产生“视觉-语言-动作”模型（VLA） [4, 34, 24, 23, 7, 15, 8, 53, 58, 54, 3, 2]，这些模型展示了有效的语言跟随能力 [59]，并能泛化到分布外测试条件与未见过的语义概念。这些工作主要关注模型本身的设计，而我们关注的是为这类模型开发一套微调配方，并通过实证分析为各项具体设计决策提供依据。",
+      "translated": true
+    },
+    {
+      "id": "M_REL2",
+      "page": 2,
+      "pages": [
+        2
+      ],
+      "sources": [
+        "S008"
+      ],
+      "type": "body",
+      "original": "Despite the importance of fine-tuning for real-world VLA deployment, empirical analysis of effective fine-tuning recipes remains limited. While Kim et al. [23] study various parameter update strategies and from their findings show that LoRA fine-tuning enables effective adaptation to single-arm robots operating at low control frequencies (< 10 Hz), their analysis does not extend to bimanual robots with high control frequencies (25-50+ Hz), a more complex control scenario. We address this gap by exploring VLA adaptation design decisions for fast inference and reliable task execution on a real-world bimanual manipulator with a 25 Hz controller.",
+      "translation": "尽管微调对 VLA 的真机部署至关重要，但关于有效微调配方的实证分析仍然有限。Kim et al. [23] 研究了多种参数更新策略，并发现 LoRA 微调能让模型有效适配单臂机器人在低频控制（< 10 Hz）下的运行；然而他们的分析并未扩展到高频控制（25-50+ Hz）的双臂机器人这一更复杂的控制场景。为填补这一空白，我们面向真机双臂机械臂上 25 Hz 控制器的快速推理与可靠任务执行，探索 VLA 的适配设计决策。",
+      "translated": true
+    },
+    {
+      "id": "M_REL3",
+      "page": 2,
+      "pages": [
+        2
+      ],
+      "sources": [
+        "S009"
+      ],
+      "type": "body",
+      "original": "Recent works by Belkhale and Sadigh [2] and Pertsch et al. [38] improve VLA efficiency through new action tokenization schemes, using vector quantization or discrete cosine transform-based compression to represent action chunks (sequences of actions) with fewer tokens than simple per-dimension binning (as used in RT-2 [4] and OpenVLA [23]). While these approaches achieve 2 to 13× speedups for autoregressive VLAs, we explore design decisions beyond autoregressive modeling, which remains inherently limited by iterative generation. Our parallel decoding approach, when paired with action chunking, achieves significantly greater speedups: 26× to 43× throughput with much lower latency (0.07 ms for single-arm tasks with one input image and 0.321 ms for bimanual tasks with three input images).",
+      "translation": "Belkhale and Sadigh [2] 和 Pertsch et al. [38] 通过新的动作词元化方案提升 VLA 效率，使用向量量化或离散余弦变换压缩来表示动作块（动作序列），所用词元数少于简单的逐维分箱（RT-2 [4] 与 OpenVLA [23] 中使用的做法）。这些方法为自回归 VLA 带来 2 到 13 倍的加速，而我们探索的是超越自回归建模的设计决策——自回归建模受限于迭代生成这一点是本质性的。我们的并行解码方法与动作分块结合后取得了显著更大的加速：吞吐量提升 26 到 43 倍，同时延迟大幅降低（单臂任务、单张输入图像时为 0.07 ms，双臂任务、三张输入图像时为 0.321 ms）。",
+      "translated": true
+    },
+    {
+      "id": "M_REL4",
+      "page": 2,
+      "pages": [
+        2,
+        3
+      ],
+      "sources": [
+        "S010",
+        "S011"
+      ],
+      "type": "body",
+      "original": "Another line of research [54, 27, 3] demonstrates effective VLA fine-tuning for high-frequency, bimanual manipulation using generative approaches like diffusion or flow match-ing. While these diffusion-based VLAs achieve higher action throughput than autoregressive VLAs by generating multi-timestep action chunks simultaneously, they introduce computational trade-offs through slower training and multiple denoising or integration steps at inference time. Furthermore, these diffusion VLAs vary considerably in architecture, learning algorithm, vision-language fusion approach, and input-output specifications—and which design elements most significantly impact performance remains unclear. Through controlled experiments, we show that policies fine-tuned with a simpler L1 regression objective can match more complex approaches in task performance while achieving significantly greater inference efficiency.",
+      "translation": "另一条研究路线 [54, 27, 3] 表明，使用扩散或流匹配等生成式方法，可以有效地把 VLA 微调到高频双臂操作任务上。这些基于扩散的 VLA 通过同时生成多个时间步的动作块，获得了比自回归 VLA 更高的动作吞吐量，但代价是训练更慢，且推理时需要多步去噪或积分。此外，这些扩散式 VLA 在架构、学习算法、视觉-语言融合方式以及输入-输出规格上差异很大，究竟哪些设计要素对性能影响最大仍不清楚。通过受控实验，我们表明用更简单的 L1 回归目标微调出的策略，在任务性能上可以媲美更复杂的方法，同时推理效率显著更高。",
+      "translated": true
+    },
+    {
+      "id": "M_REL5",
+      "page": 3,
+      "pages": [
+        3
+      ],
+      "sources": [
+        "S012"
+      ],
+      "type": "body",
+      "original": "Lastly, unlike prior work that relies on a separate faster low-level control policy in addition to a slower VLA [36], in this work we fine-tune the base VLA end-to-end with techniques that enable high efficiency without needing a separate controller. Further, unlike other works that collect online interaction data to continually update specialist policies via reinforcement learning [19], here we focus on the simpler imitation learning paradigm in which we develop high-performing policies just by training once offline on a fixed dataset of expert task demonstrations.",
+      "translation": "最后，与那些在较慢的 VLA 之外再依赖一个更快的低层控制策略的先前工作 [36] 不同，本文对基座 VLA 进行端到端微调，用相关技术在不引入独立控制器的情况下实现高效率。此外，与其他通过在线交互数据、用强化学习持续更新专家策略的工作 [19] 不同，我们采用更简单的模仿学习范式：只在一份固定的专家任务示范数据集上离线训练一次，就得到高性能策略。",
+      "translated": true
+    },
+    {
+      "id": "M_PRE1",
+      "page": 3,
+      "pages": [
+        3
+      ],
+      "sources": [
+        "S013"
+      ],
+      "type": "body",
+      "original": "Original OpenVLA formulation. We use OpenVLA [23] as our representative base VLA, a 7B-parameter manipulation policy created by fine-tuning the Prismatic VLM [21] on 1M episodes from the Open X-Embodiment dataset [34]. See Appendix A for architecture details. OpenVLA’s original training formulation uses autoregressive prediction of 7 discrete robot action tokens per timestep: 3 for position control, 3 for orientation control, and 1 for gripper control. It employs next-token prediction with cross-entropy loss as its learning objective, similar to language models. We explore alternative formulations including parallel decoding, continuous action representations, and learning objectives like L1 regression and diffusion modeling in the next few sections.",
+      "translation": "原始 OpenVLA 形式。我们使用 OpenVLA [23] 作为代表性基座 VLA：它是在 Open X-Embodiment 数据集 [34] 的 100 万条 episode 上微调 Prismatic VLM [21] 得到的 7B 参数操作策略。架构细节见 Appendix A。OpenVLA 的原始训练形式是每个时间步自回归地预测 7 个离散机器人动作词元：3 个用于位置控制、3 个用于姿态控制、1 个用于夹爪控制。它采用带交叉熵损失的下一词元预测作为学习目标，与语言模型类似。在接下来的几节中，我们将探索替代形式，包括并行解码、连续动作表示以及 L1 回归与扩散建模等学习目标。",
+      "translated": true
+    },
+    {
+      "id": "M_PRE2",
+      "page": 3,
+      "pages": [
+        3
+      ],
+      "sources": [
+        "S014",
+        "S015"
+      ],
+      "type": "body",
+      "original": "Action chunking. Prior works have shown that action chunking—i.e., predicting and executing a sequence of future actions without intermediate replanning—improves policy success rates across many manipulation tasks [56, 5, 28]. However, OpenVLA’s autoregressive generation scheme makes action chunking impractical, as generating even a single-timestep action takes 0.33 seconds on an NVIDIA A100 GPU. For a chunk size of K timesteps and action dimensionality D, OpenVLA requires KD sequential decoder forward passes versus just D passes without chunking. This K -fold increase in latency makes action chunking impractical for high-frequency robots under the original formulation. In the next section, we present a parallel generation scheme that enables efficient action chunking.",
+      "translation": "动作分块。已有工作表明，动作分块——即在不进行中间重规划的情况下预测并执行一段未来动作序列——能提升许多操作任务上的策略成功率 [56, 5, 28]。然而 OpenVLA 的自回归生成方式让动作分块变得不切实际，因为在 NVIDIA A100 GPU 上生成哪怕单个时间步的动作也需要 0.33 秒。对于块大小 K 与动作维度 D，OpenVLA 需要 KD 次顺序的解码器前向传播，而不分块时只需 D 次。这种 K 倍的延迟增长使得在原始形式下动作分块无法用于高频机器人。下一节我们提出一种并行生成方案，使动作分块变得高效。",
+      "translated": true
+    },
+    {
+      "id": "BODY_SEC4",
+      "page": 3,
+      "pages": [
+        3
+      ],
+      "sources": [
+        "heading line"
+      ],
+      "type": "body",
+      "original": "In this section, we first outline key design decisions for adapting VLAs to novel robot setups and tasks and provide details on their implementation.",
+      "translation": "本节首先概述把 VLA 适配到新机器人平台与任务时的关键设计决策，并说明其实现细节。",
+      "translated": true
+    },
+    {
+      "id": "M_IV1",
+      "page": 3,
+      "pages": [
+        3
+      ],
+      "sources": [
+        "S017"
+      ],
+      "type": "body",
+      "original": "Existing approaches that fine-tune VLAs using the base model’s autoregressive training recipe face two key limitations: slow inference speed (3-5 Hz) unsuitable for high-frequency control, and unreliable task execution on bimanual manipulators [54, 27, 3]. To address these challenges, we investigate three key design components for VLA fine-tuning: (a) Action generation strategy (Figure 2, left): We compare autoregressive generation, which requires sequential token-by-token processing, with parallel decoding, which generates all actions simultaneously and enables efficient action chunking. (b) Action representation (Figure 2, right): We examine discrete actions (256-bin discretization of normalized actions) processed through softmax-based token prediction, versus continuous actions directly generated by an MLP action head. For discrete actions, the final hidden states of the language model decoder are linearly projected into logits, which are processed by a softmax operation to form the probability distribution over action tokens. For continuous actions, the final hidden states are instead mapped directly to normalized continuous actions by a separate action head MLP. (c) Learning objective (Figure 2, right): We compare policies fine-tuned with next-token prediction for discrete actions, L1 regression for continuous actions [56], and conditional denoising diffusion [5] for continous actions (similar to Chi et al. [5]).",
+      "translation": "沿用基座模型自回归训练配方来微调 VLA 的现有做法面临两个关键限制：推理速度慢（3-5 Hz），无法满足高频控制；以及在双臂机械臂上任务执行不可靠 [54, 27, 3]。为应对这些挑战，我们研究 VLA 微调的三个关键设计组件：(a) 动作生成策略（Figure 2 左）：我们比较需要逐词元顺序处理的自回归生成，与能同时生成所有动作、从而实现高效动作分块的并行解码。(b) 动作表示（Figure 2 右）：我们考察通过与 softmax 词元预测处理的离散动作（对归一化动作做 256 桶离散化），以及由 MLP 动作头直接生成的连续动作。对于离散动作，语言模型解码器最终隐状态被线性投影为 logits，再经 softmax 得到动作词元上的概率分布；对于连续动作，最终隐状态则由一个单独的动作头 MLP 直接映射为归一化的连续动作。(c) 学习目标（Figure 2 右）：我们比较用下一词元预测（离散动作）、L1 回归（连续动作 [56]）以及条件去噪扩散（连续动作，与 Chi et al. [5] 类似）微调出的策略。",
+      "translated": true
+    },
+    {
+      "id": "F002",
+      "page": 3,
+      "pages": [
+        3
+      ],
+      "sources": [
+        "C002",
+        "C003"
+      ],
+      "type": "figure",
+      "asset": "assets/fig02.png",
+      "label": "Fig. 2",
+      "title_zh": "VLA 微调的关键设计选择",
+      "original": "Fig. 2: Key design decisions for VLA fine-tuning. Left: Comparison between autoregressive decoding, which generates actions sequentially, and parallel decoding, which leverages bidirectional attention and generates all actions in a single forward pass. Right: Comparison between discrete action tokens with next-token prediction and continuous action values with L1 regression or diffusion modeling objectives. The original OpenVLA training scheme includes autoregressive decoding, discrete actions, and next-token prediction.",
+      "translation": "Fig. 2：VLA 微调的关键设计选择。左：自回归解码（顺序生成动作）与并行解码（利用双向注意力在单次前向传播中生成所有动作）的对比。右：带下一词元预测的离散动作词元，与带 L1 回归或扩散建模目标的连续动作值之间的对比。原始 OpenVLA 训练方案包含自回归解码、离散动作与下一词元预测。",
+      "placed_near": "p.3 C002（正文首次引用 p.3 S017）",
+      "translated": true
+    },
+    {
+      "id": "M_IV2",
+      "page": 4,
+      "pages": [
+        4
+      ],
+      "sources": [
+        "S018"
+      ],
+      "type": "body",
+      "original": "We conduct our study using OpenVLA [23] as the base model, adapting it via LoRA fine-tuning [14] due to our relatively small training datasets (500 demonstrations versus 1M demonstrations for pretraining).",
+      "translation": "我们的研究以 OpenVLA [23] 为基座模型，并由于训练数据集相对较小（500 条示范，而预训练使用了 100 万条示范），采用 LoRA 微调 [14] 进行适配。",
+      "translated": true
+    },
+    {
+      "id": "M_IV3",
+      "page": 4,
+      "pages": [
+        4
+      ],
+      "sources": [
+        "S019"
+      ],
+      "type": "body",
+      "original": "The base OpenVLA model originally employs autoregressive generation of discrete action tokens optimized via nexttoken prediction. We implement alternative design decisions for fine-tuning while keeping the original pretraining unchanged. We describe the key implementation aspects below, with further details explained in Appendix B.",
+      "translation": "基座 OpenVLA 模型原本采用通过下一词元预测优化的离散动作词元自回归生成。我们在保持原有预训练不变的前提下，实现用于微调的替代设计决策。下面描述关键的实现要点，更多细节见 Appendix B。",
+      "translated": true
+    },
+    {
+      "id": "M_IV4",
+      "page": 4,
+      "pages": [
+        4
+      ],
+      "sources": [
+        "S020"
+      ],
+      "type": "body",
+      "original": "Parallel decoding and action chunking. Unlike autoregressive generation which requires sequential token prediction, parallel decoding enables the model to map input embeddings to the predicted output sequence in a single forward pass. We modify the model to receive empty action embeddings as input and replace the causal attention mask with bidirectional attention, allowing the decoder to predict all actions simultaneously. This reduces action generation from D sequential passes to a single pass, where D is the action dimensionality.",
+      "translation": "并行解码与动作分块。与需要顺序预测词元的自回归生成不同，并行解码让模型在单次前向传播中把输入嵌入映射为预测的输出序列。我们修改模型，使其接收空的动作嵌入作为输入，并把因果注意力掩码替换为双向注意力，从而让解码器能够同时预测所有动作。这把动作生成从 D 次顺序前向传播降到 1 次，其中 D 是动作维度。",
+      "translated": true
+    },
+    {
+      "id": "M_IV5",
+      "page": 4,
+      "pages": [
+        4
+      ],
+      "sources": [
+        "S021"
+      ],
+      "type": "body",
+      "original": "Parallel decoding naturally extends to action chunking: to predict actions for multiple future timesteps, we simply insert additional empty action embeddings in the decoder’s inputs, which are then mapped to a chunk of future actions. For chunk size K, the model predicts KD actions in one forward pass, increasing throughput K -fold with minimal latency impact. While parallel decoding may theoretically be less expressive than autoregressive approaches, our experiments show no performance degradation across diverse tasks.",
+      "translation": "并行解码可以自然地扩展到动作分块：要预测未来多个时间步的动作，只需在解码器输入中插入更多空动作嵌入，它们会被映射为一段未来动作块。对于块大小 K，模型在一次前向传播中预测 KD 个动作，吞吐量提升 K 倍而延迟影响极小。虽然理论上并行解码的表达能力可能弱于自回归方法，但我们的实验显示在多种任务上并没有性能退化。",
+      "translated": true
+    },
+    {
+      "id": "M_IV6",
+      "page": 4,
+      "pages": [
+        4
+      ],
+      "sources": [
+        "S022"
+      ],
+      "type": "body",
+      "original": "Continuous action representations. OpenVLA originally uses discrete action tokens where each action dimension is normalized to [−1, +1] and uniformly discretized into 256 bins. While this approach is convenient since it requires no architectural modifications to the underlying VLM, the discretization process can sacrifice fine-grained action details. We study continuous action representations with two learning objectives drawn from prominent imitation learning approaches:",
+      "translation": "连续动作表示。OpenVLA 原本使用离散动作词元，每个动作维度被归一化到 [−1, +1] 并均匀离散化为 256 个桶。这种做法无需修改底层 VLM 架构，因而很方便，但离散化过程可能损失细粒度的动作细节。我们研究两种取自著名模仿学习方法的连续动作表示与学习目标组合：",
+      "translated": true
+    },
+    {
+      "id": "M_IV7",
+      "page": 4,
+      "pages": [
+        4
+      ],
+      "sources": [
+        "S023"
+      ],
+      "type": "body",
+      "original": "First, similar to Zhao et al. [56], we implement L1 regression by replacing the decoder’s output embedding layer with an MLP action head that directly maps final decoder layer hidden states to continuous action values. The model is trained to minimize the mean L1 difference between predicted and ground-truth actions, maintaining the efficiency benefits of parallel decoding while potentially improving action precision.",
+      "translation": "第一，与 Zhao et al. [56] 类似，我们通过把解码器的输出嵌入层替换为一个 MLP 动作头来实现 L1 回归，该动作头把解码器最后一层的隐状态直接映射为连续动作值。模型被训练为最小化预测动作与真值动作之间的平均 L1 差异，在保留并行解码效率优势的同时，有望提升动作精度。",
+      "translated": true
+    },
+    {
+      "id": "M_IV8",
+      "page": 4,
+      "pages": [
+        4
+      ],
+      "sources": [
+        "S024"
+      ],
+      "type": "body",
+      "original": "Second, inspired by Chi et al. [5], we implement conditional denoising diffusion modeling where the model learns to predict noise added to action samples during forward diffusion. During inference, the policy gradually denoises noisy action samples via reverse diffusion to produce real actions. While this approach offers potentially more expressive action modeling, it requires multiple forward passes during inference (50 diffusion steps in our implementation), impacting deployment latency even with parallel decoding.",
+      "translation": "第二，受 Chi et al. [5] 启发，我们实现条件去噪扩散建模：模型学习预测前向扩散过程中加入动作样本的噪声。推理时，策略通过反向扩散逐步对带噪动作样本去噪，得到真实动作。这种方法可能带来更强的动作建模能力，但推理时需要多次前向传播（我们的实现中使用 50 个扩散步），即便配合并行解码也会影响部署延迟。",
+      "translated": true
+    },
+    {
+      "id": "M_IV9",
+      "page": 4,
+      "pages": [
+        4
+      ],
+      "sources": [
+        "S025"
+      ],
+      "type": "body",
+      "original": "Additional model inputs and outputs. While the original OpenVLA processes a single camera view, some robot setups include multiple viewpoints and additional robot state information. We implement a flexible input processing pipeline: For camera images, we use OpenVLA’s dual vision encoder to extract 256 patch embeddings per view, which are projected into the language embedding space with a shared projector network. For low-dimensional robot state inputs (e.g., joint angles and gripper state), we employ a separate projection network to map these into the same embedding space as one additional input embedding.",
+      "translation": "额外的模型输入与输出。原始 OpenVLA 只处理单路相机视角，而一些机器人平台包含多个视角以及额外的机器人状态信息。我们实现了一条灵活的输入处理流水线：对于相机图像，使用 OpenVLA 的双视觉编码器为每个视角提取 256 个 patch 嵌入，并通过共享的投影网络把它们投影到语言嵌入空间；对于低维机器人状态输入（例如关节角与夹爪状态），我们使用一个单独的投影网络把它们映射到同一嵌入空间，作为一个额外的输入嵌入。",
+      "translated": true
+    },
+    {
+      "id": "M_IV10",
+      "page": 4,
+      "pages": [
+        4
+      ],
+      "sources": [
+        "S026"
+      ],
+      "type": "body",
+      "original": "All input embeddings—visual features, robot state, and language tokens—are concatenated along the sequence dimension before being passed to the decoder. This unified latent representation enables the model to attend to all available information when generating actions. Combined with parallel decoding and action chunking, this architecture can efficiently process rich multimodal inputs while generating multiple timesteps of actions, as illustrated in Figure 1.",
+      "translation": "所有输入嵌入——视觉特征、机器人状态与语言词元——在序列维度上拼接后再送入解码器。这种统一的潜在表示让模型在生成动作时能够关注到全部可用信息。结合并行解码与动作分块，该架构可以在生成多个时间步动作的同时高效处理丰富的多模态输入，如图 Figure 1 所示。",
+      "translated": true
+    },
+    {
+      "id": "M_IV11",
+      "page": 4,
+      "pages": [
+        4
+      ],
+      "sources": [
+        "S028",
+        "S029"
+      ],
+      "type": "body",
+      "original": "Challenges with language following. When deploying on the ALOHA robot setup with multiple viewpoints including from wrist-mounted cameras, we observe that policies can struggle with language following due to spurious correlations in visual inputs. During training, policies may learn to latch onto such spurious correlations when predicting actions, rather than properly attending to the language instructions, resulting in poor adherence to the user’s commands at test time. Furthermore, language inputs may only be critical at specific moments in a task—for example, after grasping the spoon and deciding which ingredient to scoop in the “scoop X into bowl” task discussed in Section VI. Therefore, without special techniques, training the model to appropriately focus on language inputs can be particularly challenging.",
+      "translation": "语言跟随方面的挑战。在包含腕部相机等多个视角的 ALOHA 机器人平台上部署时，我们观察到策略可能因为视觉输入中的虚假相关而难以跟随语言。训练过程中，策略在预测动作时可能学会依赖这类虚假相关，而不是正确地关注语言指令，导致测试时对用户命令的遵循度很差。此外，语言输入可能只在任务的特定时刻才关键——例如在第 VI 节讨论的 “scoop X into bowl” 任务中，抓取勺子之后决定舀取哪种食材的时刻。因此，如果不采用特殊技术，要让模型恰当地关注语言输入可能特别困难。",
+      "translated": true
+    },
+    {
+      "id": "M_IV12",
+      "page": 4,
+      "pages": [
+        4
+      ],
+      "sources": [
+        "S030"
+      ],
+      "type": "body",
+      "original": "FiLM. To enhance language following, we employ featurewise linear modulation (FiLM) [37], which infuses language embeddings into the visual representations so that the model pays more attention to the language inputs. We compute the average of the language embeddings x from the task description and project it to obtain scaling and shifting vectors γ and β. These vectors modulate the visual features F through an affine transformation:",
+      "translation": "FiLM。为增强语言跟随，我们采用特征级线性调制（FiLM）[37]，它把语言嵌入注入视觉表示，使模型更多地关注语言输入。我们计算任务描述语言嵌入 x 的平均值，并投影得到缩放向量 γ 与偏移向量 β。这两个向量通过仿射变换调制视觉特征 F：",
+      "translated": true
+    },
+    {
+      "id": "M_EQ1",
+      "page": 4,
+      "pages": [
+        4
+      ],
+      "sources": [
+        "S032"
+      ],
+      "type": "equation",
+      "original": "FiLM(F | γ, β) = F̂ = (1 + γ) ⊙ F + β",
+      "translation": "FiLM(F | γ, β) = F̂ = (1 + γ) ⊙ F + β",
+      "translated": true
+    },
+    {
+      "id": "M_IV13",
+      "page": 4,
+      "pages": [
+        4,
+        5
+      ],
+      "sources": [
+        "S033",
+        "S034"
+      ],
+      "type": "body",
+      "original": "A crucial implementation detail is the choice of what represents a “feature” for modulation in vision transformers. While one might naturally consider treating individual patch embeddings as features to be modulated, we find that this approach results in poor language following. Instead, drawing from how FiLM operates in convolutional networks, where modulation applies spatially-agnostically by scaling and shifting entire feature maps, we apply each element of γ and β to the corresponding hidden unit across all visual patch embeddings so that γ and β influence all patch embeddings. Concretely, this makes γ and β D_ViT -dimensional vectors, where D_ViT is the number of hidden dimensions (i.e., the number of elements in each of the patch embeddings in the vision transformer’s latent representations).",
+      "translation": "一个关键的实现细节是：在视觉 Transformer 中，究竟把什么当作被调制的“特征”。人们很自然会考虑把单个 patch 嵌入视作待调制的特征，但我们发现这种做法会导致很差的语言跟随。相反，借鉴 FiLM 在卷积网络中的运作方式——调制在整个特征图上做与空间无关的缩放与偏移——我们把 γ 与 β 的每个元素作用到所有视觉 patch 嵌入中对应的隐藏单元上。具体来说，这使 γ 与 β 成为 D_ViT 维向量，其中 D_ViT 是隐藏维度数（即视觉 Transformer 潜在表示中每个 patch 嵌入的元素个数）。",
+      "translated": true
+    },
+    {
+      "id": "M_IV14",
+      "page": 5,
+      "pages": [
+        5
+      ],
+      "sources": [
+        "S035"
+      ],
+      "type": "body",
+      "original": "We apply FiLM after the self-attention layer and before the feedforward layer in each vision transformer block, with separate projectors for each block (see [Figure 8](#F008)). Additional implementation details are provided in Appendix C. We only use FiLM for the ALOHA experiments discussed in Section VI, where multiple camera viewpoints lead to a larger presence of spurious correlations in visual inputs.",
+      "translation": "我们在每个视觉 Transformer 块中把 FiLM 施加在自注意力层之后、前馈层之前，并为每个块学习单独的投影器（见 Figure 8）。更多实现细节见 Appendix C。我们只在第 VI 节讨论的 ALOHA 实验中使用 FiLM，因为那里的多相机视角导致视觉输入中存在更多虚假相关。",
+      "translated": true
+    },
+    {
+      "id": "M_V1",
+      "page": 5,
+      "pages": [
+        5
+      ],
+      "sources": [
+        "S037"
+      ],
+      "type": "body",
+      "original": "In this section, we evaluate the effects of our proposed VLA adaptation design decisions through controlled experiments aimed at answering three key questions:",
+      "translation": "本节通过受控实验评估我们所提出的 VLA 适配设计决策的效果，实验旨在回答三个关键问题：",
+      "translated": true
+    },
+    {
+      "id": "M_V0",
+      "page": 5,
+      "pages": [
+        5
+      ],
+      "sources": [
+        "S038",
+        "S039",
+        "S040",
+        "S041",
+        "S042",
+        "S043"
+      ],
+      "type": "list",
+      "original": "1) How does each design decision affect the fine-tuned policy’s success rate on downstream tasks? 2) How does each design decision affect model inference efficiency (action generation throughput and latency)? 3) How do the alternative fine-tuning formulations affect flexibility in model input-output specifications?",
+      "translation": "1) 每个设计决策如何影响微调策略在下游任务上的成功率？\n2) 每个设计决策如何影响模型推理效率（动作生成吞吐量与延迟）？\n3) 这些替代微调形式如何影响模型输入-输出规格上的灵活性？",
+      "translated": true
+    },
+    {
+      "id": "M_V2",
+      "page": 5,
+      "pages": [
+        5
+      ],
+      "sources": [
+        "S044"
+      ],
+      "type": "body",
+      "original": "We evaluate on the LIBERO simulation benchmark [26], which features a Franka Emika Panda arm in simulation with demonstrations containing camera images, robot state, task annotations, and delta end-effector pose actions. We use four task suites—LIBERO-Spatial, LIBERO-Object, LIBERO-Goal, and LIBERO-Long—each providing 500 expert demonstrations across 10 tasks to assess policy generalization to different spatial layouts, objects, goals, and long-horizon tasks.",
+      "translation": "我们在 LIBERO 仿真基准 [26] 上评估，该基准在仿真中包含一个 Franka Emika Panda 机械臂，示范数据包含相机图像、机器人状态、任务标注以及末端执行器位姿增量动作。我们使用四个任务套件——LIBERO-Spatial、LIBERO-Object、LIBERO-Goal 与 LIBERO-Long——每个套件在 10 个任务上提供 500 条专家示范，用于评估策略对不同空间布局、物体、目标与长时程任务的泛化能力。",
+      "translated": true
+    },
+    {
+      "id": "F003",
+      "page": 5,
+      "pages": [
+        5
+      ],
+      "sources": [
+        "C004"
+      ],
+      "type": "figure",
+      "asset": "assets/fig03.png",
+      "label": "Fig. 3",
+      "title_zh": "LIBERO 仿真基准的任务套件",
+      "original": "Fig. 3: LIBERO simulation benchmark [26] task suites. We study VLA fine-tuning design decisions using four representative task suites. Here we depict two of ten tasks per suite.",
+      "translation": "Fig. 3：LIBERO 仿真基准 [26] 的任务套件。我们使用四个具有代表性的任务套件来研究 VLA 微调的设计决策。这里展示每个套件十个任务中的两个。",
+      "placed_near": "p.5 C004（正文首次引用 p.5 S044）",
+      "translated": true
+    },
+    {
+      "id": "M_V3",
+      "page": 5,
+      "pages": [
+        5
+      ],
+      "sources": [
+        "S045",
+        "S046"
+      ],
+      "type": "body",
+      "original": "Following Kim et al. [23], we filter unsuccessful demonstrations and fine-tune OpenVLA via LoRA [14] on each task suite independently. We train for 50-150K gradient steps for non-diffusion methods and 100-250K steps for diffusion methods (which converge slower), using a batch size of 64-128 across 8 A100/H100 GPUs. We test checkpoints every 50K steps and report the best performance for each run. Unless specified otherwise, policies receive one third-person image and language instruction as input. For methods using action chunking, we set chunk size to K = 8 to match the Diffusion Policy baseline [5], and execute full chunks before replanning, which we find improves both speed and performance. See Appendix D for hyperparameter details.",
+      "translation": "参照 Kim et al. [23]，我们过滤掉不成功的示范，并用 LoRA [14] 在每个任务套件上独立微调 OpenVLA。非扩散方法训练 50-150K 梯度步，扩散方法训练 100-250K 步（其收敛更慢），在 8 张 A100/H100 GPU 上使用 64-128 的批大小。我们每 50K 步测试一次检查点，并报告每次运行的最佳性能。除非另行说明，策略的输入是一张第三人称图像加语言指令。对于使用动作分块的方法，我们把块大小设为 K = 8 以匹配 Diffusion Policy 基线 [5]，并在重规划前执行完整个动作块——我们发现这样能同时提升速度与性能。超参数细节见 Appendix D。",
+      "translated": true
+    },
+    {
+      "id": "M_V4",
+      "page": 5,
+      "pages": [
+        5
+      ],
+      "sources": [
+        "S047"
+      ],
+      "type": "body",
+      "original": "Our primary baseline in this study is the base OpenVLA model fine-tuned using the original fine-tuning recipe. However, for broader comparison, we also include LIBERO results from prior state-of-the-art imitation learning methods, such as Diffusion Policy [5], Octo [49], DiT Policy [13], Seer [50], MDT [40], and π0 [3]. Note that Seer uses additional LIBERO- 90 pretraining data.",
+      "translation": "本研究的主要基线是使用原始微调配方微调的基座 OpenVLA 模型。为进行更广泛的比较，我们还引入了先前最先进模仿学习方法在 LIBERO 上的结果，例如 Diffusion Policy [5]、Octo [49]、DiT Policy [13]、Seer [50]、MDT [40] 与 π0 [3]。需要注意的是 Seer 使用了额外的 LIBERO-90 预训练数据。",
+      "translated": true
+    },
+    {
+      "id": "M_V5",
+      "page": 5,
+      "pages": [
+        5
+      ],
+      "sources": [
+        "S048"
+      ],
+      "type": "body",
+      "original": "For satisfactory deployment, robot policies must demonstrate reliable task execution. We first assess how different VLA fine-tuning design decisions affect success rates on the LIBERO benchmark.",
+      "translation": "要让机器人策略能够令人满意地部署，它必须展示出可靠的任务执行能力。我们首先评估不同的 VLA 微调设计决策如何影响 LIBERO 基准上的成功率。",
+      "translated": true
+    },
+    {
+      "id": "M_V6",
+      "page": 5,
+      "pages": [
+        5
+      ],
+      "sources": [
+        "S049"
+      ],
+      "type": "body",
+      "original": "Our efficiency analysis (which we discuss later) reveals that parallel decoding (PD) and action chunking (AC) together are necessary for high-frequency control (25-50+ Hz), especially for bimanual robots with double the amount of action dimensions. We therefore evaluate OpenVLA policies with both techniques used jointly, comparing variants using discrete actions, continuous actions with L1 regression, and continuous actions with diffusion.",
+      "translation": "我们的效率分析（后文讨论）显示，并行解码（PD）与动作分块（AC）结合起来是实现高频控制（25-50+ Hz）的必要条件，对动作维度翻倍的双臂机器人尤其如此。因此我们评估同时使用这两种技术的 OpenVLA 策略，并比较使用离散动作、连续动作加 L1 回归、以及连续动作加扩散的变体。",
+      "translated": true
+    },
+    {
+      "id": "M_V7",
+      "page": 5,
+      "pages": [
+        5
+      ],
+      "sources": [
+        "S050"
+      ],
+      "type": "body",
+      "original": "Results in Table I show that parallel decoding and action chunking not only increase throughput but also improve performance significantly, raising average success rates by 14% (absolute) over autoregressive OpenVLA policies. This improvement is particularly pronounced in LIBERO-Long, suggesting that action chunking helps capture temporal dependencies [28] and reduce compounding errors [41], which ultimately leads to smoother and more reliable task execution. In addition, we find that using continuous action variants further improves success rates by 5% (absolute) over the discrete action variant, likely due to higher precision in the action predictions. L1 regression and diffusion variants achieve comparable performance, indicating that the high-capacity OpenVLA model can effectively model the multi-task action distribution even with simple L1 regression.",
+      "translation": "Table I 的结果显示，并行解码与动作分块不仅提升了吞吐量，还显著提升了性能：相比自回归 OpenVLA 策略，平均成功率提高了 14 个百分点（绝对值）。这一提升在 LIBERO-Long 上尤其明显，说明动作分块有助于捕捉时序依赖 [28] 并减少误差累积 [41]，最终带来更平滑、更可靠的任务执行。此外，我们发现使用连续动作变体可以在离散动作变体基础上再提高 5 个百分点（绝对值）的成功率，这很可能源于动作预测精度的提高。L1 回归与扩散变体的性能相当，说明高容量的 OpenVLA 模型即使使用简单的 L1 回归，也能有效建模多任务动作分布。",
+      "translated": true
+    },
+    {
+      "id": "T001",
+      "page": 6,
+      "pages": [
+        6
+      ],
+      "sources": [
+        "C005",
+        "C006"
+      ],
+      "type": "table",
+      "asset": "assets/tab01.png",
+      "label": "Table I",
+      "title_zh": "LIBERO 任务性能结果",
+      "original": "TABLE I: LIBERO task performance results. Success rates (SR) across LIBERO benchmark task suites [26]. Results include policies fine-tuned from pretrained base models (Octo, DiT Policy, Seer, π0), models trained from scratch (Diffusion Policy, Seer (scratch), MDT), and OpenVLA variants using different fine-tuning design decisions: parallel decoding (PD), action chunking (AC, chunk size K = 8 timesteps), and continuous actions with L1 regression (Cont-L1) or with diffusion (Cont-Diffusion). Unless otherwise specified, OpenVLA diffusion policies use 50 diffusion steps at both train and test time. OpenVLA results from this work are averaged over 500 trials for each task suite (10 tasks × 50 episodes). Our full OpenVLA-OFT method with additional inputs achieves state-of-the-art 97.1% average success rate. Baseline results are from the original papers, except for Diffusion Policy, Octo, and the original OpenVLA policies, whose results are reported by Kim et al. [23]. Bold and underlined values indicate best and second-best performance. We separate the comparisons based on which inputs the policies receive as well as whether or not they were trained using modified datasets following Kim et al. [23] (in the modified versions, actions with near-zero magnitude and unsuccessful demonstrations are filtered out). *: MDT results with 100% language annotations were obtained through direct correspondence with the authors.",
+      "translation": "TABLE I：LIBERO 任务性能结果。各 LIBERO 基准任务套件 [26] 上的成功率（SR）。结果涵盖由预训练基座模型微调而来的策略（Octo、DiT Policy、Seer、π0）、从零训练的策略（Diffusion Policy、Seer (scratch)、MDT），以及采用不同微调设计决策的 OpenVLA 变体：并行解码（PD）、动作分块（AC，块大小 K = 8 个时间步）、以及配合 L1 回归（Cont-L1）或扩散（Cont-Diffusion）的连续动作。除非另行说明，OpenVLA 扩散策略在训练与测试时都使用 50 个扩散步。本工作中的 OpenVLA 结果在每个任务套件上取 500 次试验的平均（10 个任务 × 50 个 episode）。我们加入额外输入后的完整 OpenVLA-OFT 方法取得 97.1% 的最优平均成功率。除 Diffusion Policy、Octo 与原始 OpenVLA 策略的结果由 Kim et al. [23] 报告外，其余基线结果来自各自原始论文。加粗与下划线数值分别表示最好与次好性能。我们按照策略所接收的输入以及是否使用修改后的数据集（参照 Kim et al. [23]；在修改版本中过滤掉幅度接近零的动作与不成功的示范）来分组比较。*：带 100% 语言标注的 MDT 结果通过直接联系作者获得。",
+      "placed_near": "p.6 C005（正文首次引用 p.5 S050）",
+      "translated": true
+    },
+    {
+      "id": "M_V8",
+      "page": 5,
+      "pages": [
+        5,
+        6
+      ],
+      "sources": [
+        "S051",
+        "S052"
+      ],
+      "type": "body",
+      "original": "Efficient inference is crucial for deploying VLAs on highfrequency control robots. We now evaluate how parallel decoding (PD), action chunking (AC), and continuous action representations affect model inference speed. We measure average latency (time to generate one robot action or action chunk) and throughput (total actions generated per second) by querying each model variant 100 times on an NVIDIA A100 GPU. Each query processes a 224 x 224 px image and a sample LIBERO language instruction (“pick up the alphabet soup and place it in the basket”).",
+      "translation": "高效推理对把 VLA 部署到高频控制机器人上至关重要。我们接下来评估并行解码（PD）、动作分块（AC）与连续动作表示如何影响模型推理速度。我们在 NVIDIA A100 GPU 上对每个模型变体查询 100 次，测量平均延迟（生成一个机器人动作或一个动作块所需的时间）与吞吐量（每秒生成的动作总数）。每次查询处理一张 224 x 224 px 的图像以及一条 LIBERO 语言指令（“pick up the alphabet soup and place it in the basket”）示例。",
+      "translated": true
+    },
+    {
+      "id": "M_V9",
+      "page": 6,
+      "pages": [
+        6
+      ],
+      "sources": [
+        "S053",
+        "S054",
+        "S055"
+      ],
+      "type": "body",
+      "original": "Results in Table II show that parallel decoding reduces latency and increases throughput by 4× by replacing 7 sequential forward passes through the decoder portion of the policy with a single pass. Adding action chunking (K = 8) increases latency by 17% due to longer attention sequences in the decoder, but when combined with parallel decoding, it dramatically improves throughput, achieving a 26× speedup over baseline OpenVLA. The continuous actions variant with L1 regression shows negligible difference in efficiency since the additional MLP action head adds minimal computational cost compared to the base model. The primary diffusion variant requires 50 denoising steps (since this is the number of steps specified at train time) and thus suffers from high latency. However, it still achieves the same effective throughput as baseline OpenVLA due to parallel decoding and action chunking. This means that despite longer pauses between action chunks, the 50-step diffusion variant still completes robot episodes at the same speed as the original autoregressive variant. We also test the OpenVLA diffusion variant using less than 50 denoising steps at inference time (enabled by the DDIM sampler [46]), matching state-of-theart diffusion and flow matching methods that use 5-10 steps at inference time [40, 27, 3]. These configurations result in much greater inference efficiency, as shown in Table II. However, the success rates decrease with fewer denoising steps due to reduced model quality.",
+      "translation": "Table II 的结果显示，把解码器部分的 7 次顺序前向传播替换为单次前向传播后，并行解码把延迟降低、吞吐量提升 4 倍。加入动作分块（K = 8）会因为解码器中更长的注意力序列而让延迟增加 17%，但与并行解码结合后，它显著提升了吞吐量，相比基座 OpenVLA 实现 26 倍加速。使用 L1 回归的连续动作变体在效率上几乎没有差别，因为额外的 MLP 动作头相比基座模型只增加了极少计算量。主要的扩散变体需要 50 个去噪步（因为这是训练时指定的步数），因此延迟较高；不过由于并行解码与动作分块，它的有效吞吐量仍与基座 OpenVLA 相当。这意味着尽管动作块之间的停顿更长，50 步扩散变体完成机器人 episode 的速度仍与原始自回归变体相同。我们还测试了在推理时使用少于 50 个去噪步（借助 DDIM 采样器 [46]）的 OpenVLA 扩散变体，与在推理时使用 5-10 步的最先进扩散与流匹配方法 [40, 27, 3] 相匹配。如 Table II 所示，这些配置带来了高得多的推理效率；但随着去噪步数减少，模型质量下降，成功率也随之降低。",
+      "translated": true
+    },
+    {
+      "id": "T002",
+      "page": 6,
+      "pages": [
+        6
+      ],
+      "sources": [
+        "C007"
+      ],
+      "type": "table",
+      "asset": "assets/tab02.png",
+      "label": "Table II",
+      "title_zh": "LIBERO 推理效率结果",
+      "original": "TABLE II: LIBERO inference efficiency results. Action generation throughput and latency for 7-dimensional actions, averaged over 100 queries on an NVIDIA A100 GPU. Each query processes a 224× 224 px image and a LIBERO task command (“pick up the alphabet soup and place it in the basket”). We compare OpenVLA variants with parallel decoding (PD), action chunking (K = 8 timesteps), and continuous actions using L1 regression or diffusion objectives. For the diffusion variants, we report inference efficiency measurements with varying numbers of denoising steps at test time using the DDIM sampler [46], along with the corresponding success rates in the LIBERO-Long task suite. In the final row, we report the inference efficiency of our proposed OpenVLA-OFT formulation with additional inputs, such as wrist camera image and robot state.",
+      "translation": "TABLE II：LIBERO 推理效率结果。7 维动作的动作生成吞吐量与延迟，在 NVIDIA A100 GPU 上对 100 次查询取平均。每次查询处理一张 224 × 224 px 图像与一条 LIBERO 任务指令（“pick up the alphabet soup and place it in the basket”）。我们比较使用并行解码（PD）、动作分块（K = 8 个时间步）以及 L1 回归或扩散目标的连续动作的 OpenVLA 变体。对于扩散变体，我们报告使用 DDIM 采样器 [46] 在测试时采用不同去噪步数时的推理效率测量值，并给出 LIBERO-Long 任务套件上对应的成功率。最后一行报告我们提出的、带额外输入（腕部相机图像与机器人状态）的 OpenVLA-OFT 形式的推理效率。",
+      "placed_near": "p.6 C007（正文首次引用 p.6 S053）",
+      "translated": true
+    },
+    {
+      "id": "M_V10",
+      "page": 7,
+      "pages": [
+        7
+      ],
+      "sources": [
+        "S056"
+      ],
+      "type": "body",
+      "original": "As explained in Section IV-B and validated by our efficiency evaluations in the prior section, parallel decoding enables OpenVLA to generate action chunks with minimal latency increase, thereby enhancing flexibility in model outputs. The significant speedup realized by parallel decoding and action chunking creates headroom for processing additional model inputs as well. We demonstrate this by fine-tuning OpenVLA with additional inputs such as robot proprioceptive state and a robot wrist-mounted camera image, which doubles the number of visual patch embeddings being passed into the language model decoder, from 256 to 512. Despite this substantial increase in input sequence length, the fine-tuned OpenVLA policy maintains high throughput (71.4 Hz) and low latency (0.112 sec), as shown in Table II.",
+      "translation": "如第 IV-B 节所述，并由上一节的效率评估所证实，并行解码让 OpenVLA 能在延迟几乎不增加的情况下生成动作块，从而增强了模型输出的灵活性。并行解码与动作分块带来的显著加速，也为处理更多模型输入创造了余量。我们通过用额外输入（例如机器人本体状态与一路腕部相机图像）微调 OpenVLA 来证明这一点，这使送入语言模型解码器的视觉 patch 嵌入数量从 256 翻倍到 512。尽管输入序列长度大幅增加，如表 Table II 所示，微调后的 OpenVLA 策略仍保持高吞吐（71.4 Hz）与低延迟（0.112 秒）。",
+      "translated": true
+    },
+    {
+      "id": "M_V11",
+      "page": 7,
+      "pages": [
+        7
+      ],
+      "sources": [
+        "S057"
+      ],
+      "type": "body",
+      "original": "Evaluating these policies with additional inputs on the LIBERO benchmark reveals further improvements in average success rate across all task suites (Table I). Notably, our enhanced fine-tuned OpenVLA policies outperform even the best fine-tuned π0 policies [3, 38]—which benefit from a base model with larger-scale pretraining and a more sophisticated learning objective (flow matching [25])—as well as Multimodal Diffusion Transformer (MDT) [40] and Seer [50] policies. Even with a simpler base model pretrained on less data than more recent VLAs, we find that our alternative VLA adaptation design decisions empower fine-tuned OpenVLA policies to establish a new state of the art on the LIBERO benchmark.",
+      "translation": "在 LIBERO 基准上评估这些带额外输入的策略后发现，所有任务套件的平均成功率都有进一步提升（Table I）。值得注意的是，我们增强后的微调 OpenVLA 策略甚至超过了最佳的微调 π0 策略 [3, 38]——后者受益于更大规模预训练的基座模型以及更精细的学习目标（流匹配 [25]）——也超过了多模态扩散 Transformer（MDT）[40] 与 Seer [50] 策略。即使基座模型比更新的 VLA 更简单、预训练数据更少，我们发现替代的 VLA 适配设计决策仍能让微调后的 OpenVLA 策略在 LIBERO 基准上创造新的最优结果。",
+      "translated": true
+    },
+    {
+      "id": "M_V12",
+      "page": 7,
+      "pages": [
+        7
+      ],
+      "sources": [
+        "S058"
+      ],
+      "type": "body",
+      "original": "Based on the demonstrated improvements in task performance, inference efficiency, and model input-output flexibility, we propose an Optimized Fine-Tuning (OFT) recipe for VLA adaptation that combines three key components:",
+      "translation": "基于在任务性能、推理效率与模型输入-输出灵活性方面展示出的改进，我们提出一个用于 VLA 适配的“优化微调”（OFT）配方，它组合了三个关键组件：",
+      "translated": true
+    },
+    {
+      "id": "M_V13",
+      "page": 7,
+      "pages": [
+        7
+      ],
+      "sources": [
+        "S059",
+        "S060",
+        "S061"
+      ],
+      "type": "list",
+      "original": "1) parallel decoding with action chunking 2) continuous action representation 3) L1 regression objective",
+      "translation": "1) 并行解码加动作分块\n2) 连续动作表示\n3) L1 回归目标",
+      "translated": true
+    },
+    {
+      "id": "M_V14",
+      "page": 7,
+      "pages": [
+        7
+      ],
+      "sources": [
+        "S062"
+      ],
+      "type": "body",
+      "original": "These design choices work together to produce strong policies that can be deployed at high frequencies while maintaining algorithmic simplicity. We denote policies fine-tuned from the OpenVLA base model using our OFT recipe as OpenVLA-OFT. In Section VI, we evaluate OpenVLA-OFT’s capabilities on dexterous, bimanual manipulation tasks in the real world using a high-frequency control robot.",
+      "translation": "这些设计选择共同作用，产生出可以在高频下部署、同时保持算法简单性的强策略。我们把用 OFT 配方从 OpenVLA 基座模型微调得到的策略记作 OpenVLA-OFT。在第 VI 节中，我们在真机上使用高频控制机器人评估 OpenVLA-OFT 在灵巧双臂操作任务上的能力。",
+      "translated": true
+    },
+    {
+      "id": "M_V15",
+      "page": 7,
+      "pages": [
+        7
+      ],
+      "sources": [
+        "S063",
+        "S064"
+      ],
+      "type": "body",
+      "original": "Given that the alternative fine-tuning formulation, along with additional model inputs and outputs, induces a distribution shift between the base VLA’s pretraining and fine-tuning, one reasonable question is whether the base VLA’s pretrained representations are helpful and have any influence on the results we have reported. We conduct an ablation study in Appendix G2 to address this question, ablating the OpenVLA pretraining phase and directly fine-tuning the underlying pretrained VLM with the OFT recipe. As shown in [Table XV](#T015), the base OpenVLA pretrained representations are indeed still beneficial for robotic policy learning, as removing them leads to a 5.2% drop in average success rate (absolute) in our LIBERO evaluation suite.",
+      "translation": "考虑到替代微调形式以及额外的模型输入输出，会在基座 VLA 的预训练与微调之间引入分布偏移，一个合理的问题是：基座 VLA 的预训练表示是否有帮助、是否影响我们报告的结果。我们在 Appendix G2 中进行消融研究来回答这个问题：去掉 OpenVLA 的预训练阶段，直接用 OFT 配方微调底层的预训练 VLM。如 Table XV 所示，基座 OpenVLA 的预训练表示确实仍然有益，因为去掉它会使我们在 LIBERO 评估套件上的平均成功率下降 5.2 个百分点（绝对值）。",
+      "translated": true
+    },
+    {
+      "id": "M_V16",
+      "page": 7,
+      "pages": [
+        7
+      ],
+      "sources": [
+        "S065"
+      ],
+      "type": "body",
+      "original": "(See Appendix G for other additional experiments, including scaling OpenVLA-OFT up to larger datasets—in both the LIBERO simulation setting as well as a real-world single-arm robot manipulation setting with over 50K demonstrations from the BridgeData V2 dataset [52].)",
+      "translation": "（其他附加实验见 Appendix G，包括把 OpenVLA-OFT 扩展到更大数据集——既包括 LIBERO 仿真设置，也包括使用 BridgeData V2 数据集 [52] 中超过 50K 条示范的真机单臂机器人操作设置。）",
+      "translated": true
+    },
+    {
+      "id": "M_VI1",
+      "page": 7,
+      "pages": [
+        7
+      ],
+      "sources": [
+        "S067"
+      ],
+      "type": "body",
+      "original": "While our experimental results in the prior section demonstrate OpenVLA-OFT’s effectiveness in simulation, successful deployment in the real world, on robot platforms that differ substantially from those seen during pretraining, is crucial for showing broad applicability. We thus assess the efficacy of our optimized fine-tuning recipe on the ALOHA robot setup [56], a real bimanual manipulation platform operating at a high control frequency. We evaluate on novel dexterous manipulation tasks that have never been encountered before during OpenVLA’s pretraining (which only involves singlearm robot data).",
+      "translation": "虽然上一节的实验结果证明了 OpenVLA-OFT 在仿真中的有效性，但要在与预训练时差异巨大的机器人平台上成功部署，才是证明其广泛适用性的关键。因此我们在 ALOHA 机器人平台 [56] 上评估这套优化微调配方的效果——这是一个以高控制频率运行的真机双臂操作平台。我们评估的是 OpenVLA 预训练期间从未遇到过的新灵巧操作任务（其预训练只涉及单臂机器人数据）。",
+      "translated": true
+    },
+    {
+      "id": "M_VI2",
+      "page": 7,
+      "pages": [
+        7
+      ],
+      "sources": [
+        "S068"
+      ],
+      "type": "body",
+      "original": "Prior works [54, 27, 3] have shown that vanilla LoRA fine-tuning with autoregressive VLAs [23] is impractical for such tasks, as its throughput (3-5 Hz for single-arm robots and even lower for bimanual tasks) falls well below the 25-50 Hz required for real-time deployment. We therefore exclude this baseline from our experiments and compare more effective methods that we discuss shortly.",
+      "translation": "先前工作 [54, 27, 3] 表明，用自回归 VLA [23] 做普通的 LoRA 微调对这类任务并不实用，因为其吞吐量（单臂机器人 3-5 Hz，双臂任务更低）远低于实时部署所需的 25-50 Hz。因此我们把该基线排除在实验之外，转而比较随后讨论的更有效方法。",
+      "translated": true
+    },
+    {
+      "id": "M_VI3",
+      "page": 7,
+      "pages": [
+        7
+      ],
+      "sources": [
+        "S069"
+      ],
+      "type": "body",
+      "original": "In this section, we use an augmented version of our VLA fine-tuning recipe (OFT+) that additionally includes featurewise linear modulation (FiLM) for enhanced language grounding, as described in Section IV-C. We denote the OpenVLA policy instantiated through this augmented fine-tuning recipe as OpenVLA-OFT+.",
+      "translation": "在本节中，我们使用 VLA 微调配方的增强版本（OFT+），它额外加入了用于增强语言落地的特征级线性调制（FiLM），如第 IV-C 节所述。我们把通过这一增强配方实例化得到的 OpenVLA 策略记作 OpenVLA-OFT+。",
+      "translated": true
+    },
+    {
+      "id": "M_VI4",
+      "page": 7,
+      "pages": [
+        7
+      ],
+      "sources": [
+        "S070"
+      ],
+      "type": "body",
+      "original": "The ALOHA platform comprises two ViperX 300 S arms, three camera viewpoints (one top-down, two wrist-mounted), and robot state inputs (14-dimensional joint angles). It operates at 25 Hz (reduced from the original 50 Hz to enable faster training while still maintaining smooth robotic control), with actions representing target absolute joint angles. This setup differs significantly from OpenVLA’s pretraining, which includes single-arm robot data only, a single camera viewpoint from a third-person camera, no robot state inputs, low-frequency control (3-10 Hz), and relative end-effector pose actions. The distribution shift poses a challenge to the adaptation of this model.",
+      "translation": "ALOHA 平台包含两个 ViperX 300 S 机械臂、三个相机视角（一个俯视、两个腕部）以及机器人状态输入（14 维关节角）。它以 25 Hz 运行（从原始 50 Hz 降下来，以便在保持平滑机器人控制的同时加快训练），动作表示目标绝对关节角。这一设置与 OpenVLA 的预训练差别很大：后者只包含单臂机器人数据、仅一路第三人称相机视角、没有机器人状态输入、低频控制（3-10 Hz）以及相对末端执行器位姿动作。这种分布偏移给该模型的适配带来了挑战。",
+      "translated": true
+    },
+    {
+      "id": "M_VI5",
+      "page": 7,
+      "pages": [
+        7
+      ],
+      "sources": [
+        "S071"
+      ],
+      "type": "body",
+      "original": "We design four representative tasks testing deformable object manipulation, long-horizon skills, tool usage, and language-driven control:",
+      "translation": "我们设计了四个具有代表性的任务，覆盖可形变物体操作、长时程技能、工具使用与语言驱动控制：",
+      "translated": true
+    },
+    {
+      "id": "M_VI6",
+      "page": 7,
+      "pages": [
+        7
+      ],
+      "sources": [
+        "S072",
+        "S073",
+        "S074"
+      ],
+      "type": "list",
+      "original": "1) “fold shorts”: Fold white shorts on a table with two consecutive bimanual folds. Training: 20 demonstrations. Evaluation: 10 trials.",
+      "translation": "1) “fold shorts”：在桌面上以两次连续的双臂折叠动作叠好白色短裤。训练：20 条示范；评估：10 次试验。",
+      "translated": true
+    },
+    {
+      "id": "M_VI7",
+      "page": 8,
+      "pages": [
+        8
+      ],
+      "sources": [
+        "S075",
+        "S076",
+        "S077",
+        "S078"
+      ],
+      "type": "list",
+      "original": "2) “fold shirt”: Fold white T-shirt through multiple synchronized bimanual folds, testing contact-rich, long-horizon manipulation. Training: 30 demonstrations. Evaluation: 10 trials.",
+      "translation": "2) “fold shirt”：通过多次同步的双臂折叠动作叠好白色 T 恤，考验接触丰富、长时程的操作能力。训练：30 条示范；评估：10 次试验。",
+      "translated": true
+    },
+    {
+      "id": "M_VI8",
+      "page": 8,
+      "pages": [
+        8
+      ],
+      "sources": [
+        "S079",
+        "S080",
+        "S081",
+        "S082",
+        "S083"
+      ],
+      "type": "list",
+      "original": "3) “scoop X into bowl”: Move bowl to center of table with left arm, scoop specified ingredient (“raisins,” “almonds and green M&Ms,” or “pretzels”) with right arm using metal spoon. Training: 45 demonstrations (15 per ingredient). Evaluation: 12 trials (4 per ingredient).",
+      "translation": "3) “scoop X into bowl”：用左臂把碗移到桌面中央，用右臂持金属勺舀取指定食材（“raisins”、“almonds and green M&Ms” 或 “pretzels”）倒入碗中。训练：45 条示范（每种食材 15 条）；评估：12 次试验（每种食材 4 次）。",
+      "translated": true
+    },
+    {
+      "id": "M_VI9",
+      "page": 8,
+      "pages": [
+        8
+      ],
+      "sources": [
+        "S084",
+        "S085",
+        "S086",
+        "S087",
+        "S088"
+      ],
+      "type": "list",
+      "original": "4) “put X into pot”: Open pot with left arm, place specified item (“green pepper,” “red pepper,” or “yellow corn”) with right arm, close pot. Training: 300 demonstrations (100 per object). Evaluation: 24 trials (12 in-distribution, 12 out-of-distribution).",
+      "translation": "4) “put X into pot”：用左臂打开锅盖，用右臂把指定物品（“green pepper”、“red pepper” 或 “yellow corn”）放入锅中，再盖上锅盖。训练：300 条示范（每种物体 100 条）；评估：24 次试验（12 次分布内、12 次分布外）。",
+      "translated": true
+    },
+    {
+      "id": "M_VI10",
+      "page": 8,
+      "pages": [
+        8
+      ],
+      "sources": [
+        "S089"
+      ],
+      "type": "body",
+      "original": "We fine-tune OpenVLA using OFT+ on each task independently for 50-150K gradient steps (total batch size 32 with 8 A100/H100-80GB GPUs) with action chunk size K = 25. At inference time, we execute the full action chunk before requerying the model for the next chunk.",
+      "translation": "我们用 OFT+ 在每个任务上独立微调 OpenVLA，训练 50-150K 梯度步（总批大小 32，使用 8 张 A100/H100-80GB GPU），动作块大小 K = 25。推理时，我们在向模型请求下一个动作块之前先执行完整个动作块。",
+      "translated": true
+    },
+    {
+      "id": "M_VI11",
+      "page": 8,
+      "pages": [
+        8
+      ],
+      "sources": [
+        "S090"
+      ],
+      "type": "body",
+      "original": "The ALOHA tasks present a significant adaptation challenge for OpenVLA as the base model, given the substantial differences from its pretraining platforms in terms of control frequency, action space, and input modalities. For this reason, we compare OpenVLA-OFT+ against more recent VLAs—RDT-1B [27] and π0 [3]—that were pretrained on bimanual manipulation data and might reasonably be expected to perform better on these downstream tasks. We evaluate these models after fine-tuning them using their authors’ recommended recipes, and these methods serve as important points of comparison. Additionally, to provide comparisons with computationally efficient alternatives, we evaluate two popular imitation learning baselines: ACT [56] and Diffusion Policy [5], trained from scratch on each task.",
+      "translation": "ALOHA 任务对作为基座模型的 OpenVLA 构成了显著的适配挑战，因为其控制频率、动作空间与输入模态都与预训练平台存在实质差异。因此我们把 OpenVLA-OFT+ 与更新的 VLA——RDT-1B [27] 与 π0 [3]——进行比较，后者在双臂操作数据上做过预训练，理应在这类下游任务上表现更好。我们使用这些模型作者推荐的配方微调后再评估，这些方法是重要的比较对象。此外，为与计算高效的替代方案对比，我们评估了两个流行的模仿学习基线：ACT [56] 与 Diffusion Policy [5]，它们在每个任务上从零训练。",
+      "translated": true
+    },
+    {
+      "id": "M_VI12",
+      "page": 8,
+      "pages": [
+        8
+      ],
+      "sources": [
+        "S091"
+      ],
+      "type": "body",
+      "original": "To enable language following in these baseline methods, we use language-conditioned implementations. For ACT, we modify EfficientNet-B0 [48] to process CLIP [39] language embeddings via FiLM [37, 43]. * For Diffusion Policy, we use the DROID dataset [22] implementation that conditions action denoising on DistilBERT [42] language embeddings, modified to support bimanual control and multiple image inputs.",
+      "translation": "为使这些基线方法具备语言跟随能力，我们使用语言条件化的实现。对于 ACT，我们修改 EfficientNet-B0 [48]，通过 FiLM [37, 43] 处理 CLIP [39] 语言嵌入。* 对于 Diffusion Policy，我们使用 DROID 数据集 [22] 的实现，它以 DistilBERT [42] 语言嵌入为条件对动作去噪，我们对其修改以支持双臂控制与多路图像输入。",
+      "translated": true
+    },
+    {
+      "id": "M_VI13",
+      "page": 8,
+      "pages": [
+        8
+      ],
+      "sources": [
+        "S092"
+      ],
+      "type": "body",
+      "original": "We evaluate all methods—ACT, Diffusion Policy, RDT-1B, π0, and OpenVLA-OFT+—on our four ALOHA tasks. To provide fine-grained assessment, we use a predetermined rubric that assigns scores for partial task completion (see Appendix F for details). [Figure 4](#F004) shows aggregate performance scores, while [Figure 5](#F005) specifically tracks language following ability for the language-dependent tasks.",
+      "translation": "我们在四个 ALOHA 任务上评估所有方法——ACT、Diffusion Policy、RDT-1B、π0 与 OpenVLA-OFT+。为提供细粒度评估，我们使用预先确定的分阶段评分标准，对任务的部分完成情况给予分数（细节见 Appendix F）。Figure 4 给出总体性能得分，Figure 5 则专门追踪依赖语言的任务上的语言跟随能力。",
+      "translated": true
+    },
+    {
+      "id": "F004",
+      "page": 8,
+      "pages": [
+        8
+      ],
+      "sources": [
+        "C008"
+      ],
+      "type": "figure",
+      "asset": "assets/fig04.png",
+      "label": "Fig. 4",
+      "title_zh": "ALOHA 任务性能结果",
+      "original": "Fig. 4: ALOHA task performance results. Comparison between policies trained from scratch (ACT, Diffusion Policy) and fine-tuned VLAs (RDT-1B, π0, OpenVLA-OFT+) across four ALOHA manipulation tasks. OpenVLA-OFT+ enhances the base model with parallel decoding, action chunking, continuous actions, L1 regression, and FiLM [37] for language grounding. Fine-tuned VLAs consistently outperform from-scratch methods, with OpenVLA-OFT+ achieving the highest average performance. Scores represent average percent completion of each task (see rubrics and detailed results in Appendix F2).",
+      "translation": "Fig. 4：ALOHA 任务性能结果。比较从零训练的策略（ACT、Diffusion Policy）与微调后的 VLA（RDT-1B、π0、OpenVLA-OFT+）在四个 ALOHA 操作任务上的表现。OpenVLA-OFT+ 在基座模型上加入了并行解码、动作分块、连续动作、L1 回归以及用于语言落地的 FiLM [37]。微调后的 VLA 一致优于从零训练的方法，其中 OpenVLA-OFT+ 取得最高的平均性能。分数表示各任务的平均完成度百分比（评分标准与详细结果见 Appendix F2）。",
+      "placed_near": "p.8 C008（正文首次引用 p.8 S092）",
+      "translated": true
+    },
+    {
+      "id": "M_VI14",
+      "page": 8,
+      "pages": [
+        8
+      ],
+      "sources": [
+        "S093"
+      ],
+      "type": "body",
+      "original": "Performance of non-VLA baselines. The baseline methods trained from scratch show varying levels of success. ACT, while able to complete basic tasks, produces less precise actions and achieves the lowest overall performance. Diffusion Policy demonstrates stronger capabilities, matching or exceeding RDT-1B’s reliability on the clothes folding and scooping tasks. However, it struggles with the “put X into pot” task which has a larger training dataset, suggesting limited scalability compared to VLA-based approaches.",
+      "translation": "非 VLA 基线的表现。从零训练的基线方法展现出不同程度的成功。ACT 虽然能完成基本任务，但动作精度较差，总体性能最低。Diffusion Policy 能力更强，在叠衣物与舀取任务上与 RDT-1B 的可靠性相当甚至更好；但它在训练数据集更大的 “put X into pot” 任务上表现不佳，说明其可扩展性相比基于 VLA 的方法有限。",
+      "translated": true
+    },
+    {
+      "id": "M_VI15",
+      "page": 8,
+      "pages": [
+        8,
+        9
+      ],
+      "sources": [
+        "S094",
+        "S095"
+      ],
+      "type": "body",
+      "original": "Performance of fine-tuned VLAs. Fine-tuned VLA policies generally outperform the from-scratch baselines in both task execution and language following, consistent with prior findings [27, 3]. Among VLAs, we observe distinct characteristics: RDT-1B achieves good language following through its “Alternating Condition Injection” scheme [27], but shows a limitation in handling closed-loop feedback. As visualized in [Figure 6](#F006), it often fails to correct mistakes in the “scoop X into bowl” task—for instance, continuing to pour ingredients into an imaginary bowl after missing the actual bowl, suggesting over-reliance on proprioceptive state over visual feedback. On the other hand, π0 demonstrates more robust execution with smoother motions and better reactivity to feedback, often successfully recovering from initial failures (as shown in [Figure 6](#F006)). While its language following slightly trails RDT-1B’s, π0 achieves better overall task completion, making it the strongest baseline. Finally, OpenVLA-OFT+ achieves the highest performance across both task execution and language following (see [Figure 7](#F007) for examples of successful task rollouts). This is particularly noteworthy given that the base OpenVLA model was pretrained only on single-arm data, while RDT-1B and π0 were pretrained on substantial bimanual",
+      "translation": "微调 VLA 的表现。微调后的 VLA 策略在任务执行与语言跟随两方面总体上都优于从零训练的基线，这与已有发现一致 [27, 3]。在 VLA 之间，我们观察到各自鲜明的特点：RDT-1B 通过其 “Alternating Condition Injection” 机制 [27] 获得了不错的语言跟随能力，但在处理闭环反馈上存在局限。如 Figure 6 所示，它在 “scoop X into bowl” 任务中往往无法纠正错误——例如在没对准实际碗的情况下继续向空处倒料，说明它更依赖本体状态而忽视了视觉反馈。另一方面，π0 的执行更稳健，动作更平滑、对反馈的反应更好，常常能从最初的失败中恢复（如 Figure 6 所示）。虽然它的语言跟随略逊于 RDT-1B，但 π0 的整体任务完成度更高，是最强的基线。最终，OpenVLA-OFT+ 在任务执行与语言跟随两方面都取得最高性能（成功 rollout 示例见 Figure 7）。这一点尤其值得注意：基座 OpenVLA 只在单臂数据上预训练，而 RDT-1B 与 π0 分别在大量双臂数据上预训练",
+      "translated": true
+    },
+    {
+      "id": "F006",
+      "page": 9,
+      "pages": [
+        9
+      ],
+      "sources": [
+        "C009"
+      ],
+      "type": "figure",
+      "asset": "assets/fig06.png",
+      "label": "Fig. 6",
+      "title_zh": "RDT-1B 与 π0 的错误处理对比示例",
+      "original": "Fig. 6: Sample rollouts contrasting RDT-1B and π0 error handling in ALOHA tasks. Top: In some cases, RDT-1B fails to respond to missed bowl placement, continuing to pour ingredients into empty space. Bottom: π0 demonstrates adaptive behavior by reattempting green pepper grasp after initial failure, highlighting better visual feedback integration. See our website for videos.",
+      "translation": "Fig. 6：对比 RDT-1B 与 π0 在 ALOHA 任务中错误处理方式的示例 rollout。上排：某些情况下 RDT-1B 未能响应碗被移动的情况，继续把食材倒向空处。下排：π0 在最初抓取失败后重新尝试抓取青椒，展现出适应性的行为，说明它能更好地整合视觉反馈。视频见我们的网站。",
+      "placed_near": "p.9 C009（正文首次引用 p.9 S094）",
+      "translated": true
+    },
+    {
+      "id": "F005",
+      "page": 9,
+      "pages": [
+        9
+      ],
+      "sources": [
+        "C009"
+      ],
+      "type": "figure",
+      "asset": "assets/fig05.png",
+      "label": "Fig. 5",
+      "title_zh": "ALOHA 语言跟随结果",
+      "original": "Fig. 5: ALOHA language following results. Success rates in approaching language-specified target objects for language-dependent tasks. Fine-tuned VLAs follow the user’s command more frequently than policies trained from scratch. OpenVLA-OFT+ shows the strongest language grounding, though removing FiLM [37] reduces success to chance level.",
+      "translation": "Fig. 5：ALOHA 语言跟随结果。依赖语言的任务中，策略接近语言指定目标物体的成功率。微调后的 VLA 比从零训练的策略更频繁地遵循用户指令。OpenVLA-OFT+ 展现出最强的语言落地，而移除 FiLM [37] 后成功率降到随机水平。",
+      "placed_near": "p.9 C009（正文首次引用 p.9 S092、S097）",
+      "translated": true
+    },
+    {
+      "id": "M_VI16",
+      "page": 9,
+      "pages": [
+        9
+      ],
+      "sources": [
+        "S096"
+      ],
+      "type": "body",
+      "original": "datasets (6K episodes and 8K hours of bimanual data, respectively). This suggests that the fine-tuning technique can be more crucial than pretraining data coverage for downstream performance.",
+      "translation": "（分别为 6K 条 episode 与 8K 小时的双臂数据）。这说明对下游性能而言，微调技术可能比预训练数据覆盖更重要。",
+      "translated": true
+    },
+    {
+      "id": "M_VI17",
+      "page": 9,
+      "pages": [
+        9
+      ],
+      "sources": [
+        "S097"
+      ],
+      "type": "body",
+      "original": "Ablation study of FiLM. We evaluate the importance of FiLM in our OpenVLA-OFT+ approach by ablating it and assessing the policies’ language following ability on the last two tasks, which require good language grounding for successful execution. As shown in [Figure 5](#F005), language following drops to 33% in both tasks—equal to randomly choosing the correct instruction. This demonstrates that FiLM is essential for preventing the model from overfitting to spurious visual features and ensuring proper attention to language inputs.",
+      "translation": "FiLM 消融研究。我们通过消融 FiLM 并评估策略在最后两个任务上的语言跟随能力，来检验 FiLM 在 OpenVLA-OFT+ 方法中的重要性——这两个任务需要良好的语言落地才能成功完成。如 Figure 5 所示，两个任务上的语言跟随都降到 33%，等同于随机选择正确指令。这表明 FiLM 对于防止模型过拟合到虚假视觉特征、确保恰当关注语言输入是必不可少的。",
+      "translated": true
+    },
+    {
+      "id": "F007",
+      "page": 9,
+      "pages": [
+        9
+      ],
+      "sources": [
+        "C010"
+      ],
+      "type": "figure",
+      "asset": "assets/fig07.png",
+      "label": "Fig. 7",
+      "title_zh": "OpenVLA-OFT+ 的成功 rollout 示例",
+      "original": "Fig. 7: Sample successful OpenVLA-OFT+ rollouts on the ALOHA robot. OpenVLA-OFT+ can fold clothes, use a metal spoon to scoop and pour targeted trail mix ingredients into a bowl, and place targeted objects into a pot. See our website for videos.",
+      "translation": "Fig. 7：OpenVLA-OFT+ 在 ALOHA 机器人上的成功 rollout 示例。OpenVLA-OFT+ 能够叠衣物、用金属勺舀取指定混合坚果食材倒入碗中，以及把目标物品放入锅中。视频见我们的网站。",
+      "placed_near": "p.9 C010（正文首次引用 p.9 S095）",
+      "translated": true
+    },
+    {
+      "id": "M_VI18",
+      "page": 9,
+      "pages": [
+        9
+      ],
+      "sources": [
+        "S098"
+      ],
+      "type": "body",
+      "original": "Please see the project website for ALOHA robot rollout videos and an in-depth qualitative analysis of all methods: https://openvla-oft.github.io",
+      "translation": "ALOHA 机器人 rollout 视频以及所有方法的深入定性分析请见项目网站：https://openvla-oft.github.io",
+      "translated": true
+    },
+    {
+      "id": "M_VI19",
+      "page": 9,
+      "pages": [
+        9
+      ],
+      "sources": [
+        "S099",
+        "S100"
+      ],
+      "type": "body",
+      "original": "We evaluate inference efficiency by measuring action generation throughput and latency across 100 queries for each method. We report the results in Table III. The original OpenVLA formulation, even with just the additional wrist camera inputs, shows poor efficiency with 1.8 Hz throughput and 0.543 sec latency. In contrast, OpenVLA-OFT+ achieves 77.9 Hz throughput, though its latency is higher compared to the policies in the prior LIBERO experiments since it must process two additional input images.",
+      "translation": "我们通过测量每种方法在 100 次查询上的动作生成吞吐量与延迟来评估推理效率。结果报告在 Table III 中。原始 OpenVLA 形式即使只加入一路额外的腕部相机输入，效率也很差：吞吐量仅 1.8 Hz，延迟 0.543 秒。相比之下，OpenVLA-OFT+ 达到 77.9 Hz 的吞吐量，不过由于它必须额外处理两路输入图像，其延迟高于前面 LIBERO 实验中的那些策略。",
+      "translated": true
+    },
+    {
+      "id": "T003",
+      "page": 10,
+      "pages": [
+        10
+      ],
+      "sources": [
+        "C011"
+      ],
+      "type": "table",
+      "asset": "assets/tab03.png",
+      "label": "Table III",
+      "title_zh": "ALOHA 机器人推理效率结果",
+      "original": "TABLE III: ALOHA robot inference efficiency results. Throughput and latency measurements averaged over 100 queries on an NVIDIA A100 GPU. Each query processes three 224× 224 px images, 14-D robot state, and a task command (“scoop raisins into bowl”). All methods use action chunk size K=25, except Diffusion Policy (K=24, as a multiple of 4 is required) and the original OpenVLA (K=1, no chunking). RDT-1B predicts 64 actions, but we execute the first 25 only for fair comparison. All implementations use PyTorch except π0 (JAX). Bold and underlined values show best and second-best performance.",
+      "translation": "TABLE III：ALOHA 机器人推理效率结果。在 NVIDIA A100 GPU 上对 100 次查询取平均的吞吐量与延迟。每次查询处理三张 224 × 224 px 图像、14 维机器人状态与一条任务指令（“scoop raisins into bowl”）。除 Diffusion Policy（K=24，因为要求为 4 的倍数）与原始 OpenVLA（K=1，不分块）外，所有方法都使用 K=25 的动作块大小。RDT-1B 预测 64 个动作，但为公平比较我们只执行前 25 个。除 π0（JAX）外，所有实现都使用 PyTorch。加粗与下划线数值分别表示最好与次好性能。",
+      "placed_near": "p.10 C011（正文首次引用 p.9 S099）",
+      "translated": true
+    },
+    {
+      "id": "M_VI20",
+      "page": 9,
+      "pages": [
+        9,
+        10
+      ],
+      "sources": [
+        "S101",
+        "S102"
+      ],
+      "type": "body",
+      "original": "Other methods demonstrate higher throughput than OpenVLA-OFT+ due to their smaller architectures: ACT (84M parameters), Diffusion Policy (157M), RDT-1B (1.2B), and π0 (3.3B)—while OpenVLA has 7.5B parameters. ACT achieves the highest speed by combining L1 regression-based single-pass action generation (like OpenVLA-OFT+) with its compact architecture. Also, despite its larger size, π0 outperforms both RDT-1B and Diffusion Policy in speed thanks to its optimized JAX implementation (all other methods are implemented in PyTorch).",
+      "translation": "由于架构更小，其他方法展现出比 OpenVLA-OFT+ 更高的吞吐量：ACT（84M 参数）、Diffusion Policy（157M）、RDT-1B（1.2B）、π0（3.3B）——而 OpenVLA 有 7.5B 参数。ACT 通过把基于 L1 回归的单步动作生成（与 OpenVLA-OFT+ 类似）与紧凑架构结合，取得了最高速度。此外，π0 尽管规模更大，但凭借其优化过的 JAX 实现（其他方法都用 PyTorch 实现），在速度上超过了 RDT-1B 与 Diffusion Policy。",
+      "translated": true
+    },
+    {
+      "id": "M_VI21",
+      "page": 10,
+      "pages": [
+        10
+      ],
+      "sources": [
+        "S103"
+      ],
+      "type": "body",
+      "original": "Notably, OpenVLA-OFT+’s throughput (77.9 Hz) approaches RDT-1B’s (84.1 Hz) despite being 7× larger, as it generates actions in a single forward pass rather than requiring multiple denoising steps as in RDT-1B.",
+      "translation": "值得注意的是，OpenVLA-OFT+ 的吞吐量（77.9 Hz）接近 RDT-1B（84.1 Hz），尽管模型大了 7 倍，因为它用单次前向传播生成动作，而 RDT-1B 需要多步去噪。",
+      "translated": true
+    },
+    {
+      "id": "M_NOTE2",
+      "page": 8,
+      "pages": [
+        8
+      ],
+      "sources": [
+        "N004"
+      ],
+      "type": "footnote",
+      "original": "* We use this FiLM-EfficientNet implementation only for language-dependent tasks (“scoop X into bowl” and “put X into pot”). For clothes folding tasks, we use the original ResNet-18 [10] backbone as in [57].",
+      "translation": "* 我们只对依赖语言的任务（“scoop X into bowl” 与 “put X into pot”）使用这种 FiLM-EfficientNet 实现。对于叠衣物任务，我们按 [57] 使用原始 ResNet-18 [10] 主干。",
+      "translated": true
+    },
+    {
+      "id": "M_VII1",
+      "page": 10,
+      "pages": [
+        10
+      ],
+      "sources": [
+        "S105"
+      ],
+      "type": "body",
+      "original": "Our study on VLA fine-tuning design decisions reveals how different components impact inference efficiency, task performance, model input-output flexibility, and language following ability. These insights lead to our Optimized Fine-Tuning (OFT) recipe, which enables effective VLA adaptation to novel robots and tasks through parallel decoding, action chunking, continuous actions, L1 regression, and (optionally) FiLM language conditioning. The success of OFT is particularly noteworthy with OpenVLA: despite having no exposure to bimanual robots or multi-view image inputs during pretraining, OpenVLA fine-tuned with OFT can adapt to such configurations and match or even outperform more recent diffusion-based VLAs (π0 and RDT-1B) which have encountered bimanual manipulators and multiple input images during pretraining. This demonstrates that a well-designed fine-tuning recipe can have a significant impact on final performance, and existing VLAs can be successfully adapted to new robotic systems without extensive retraining from scratch. Moreover, our results show that a simple L1 regression-based approach with a high-capacity model such as OpenVLA is quite effective for adapting to novel robots and tasks. This approach offers practical advantages over diffusion-based methods: the simpler algorithm leads to faster training convergence and inference speed while maintaining strong performance, making it particularly suitable for real-world robotics applications.",
+      "translation": "我们对 VLA 微调设计决策的研究揭示了不同组件如何影响推理效率、任务性能、模型输入-输出灵活性与语言跟随能力。这些洞见促成了我们的“优化微调”（OFT）配方：通过并行解码、动作分块、连续动作、L1 回归以及（可选的）FiLM 语言条件化，实现对新型机器人与任务的有效 VLA 适配。OFT 在 OpenVLA 上的成功尤其值得注意：尽管 OpenVLA 在预训练时从未接触过双臂机器人或多视角图像输入，用 OFT 微调后它仍能适配这类配置，并追平甚至超过更新的扩散式 VLA（π0 与 RDT-1B）——后者在预训练时已经见过双臂机械臂与多路输入图像。这说明精心设计的微调配方能对最终性能产生显著影响，现有 VLA 无需从零大规模重训即可成功适配新机器人系统。此外，我们的结果表明，对于 OpenVLA 这类高容量模型，简单的 L1 回归方法在适配新机器人与新任务时相当有效。相比基于扩散的方法，这一做法具有实际优势：更简单的算法带来更快的训练收敛与推理速度，同时保持强劲性能，因此特别适合真实世界的机器人应用。",
+      "translated": true
+    },
+    {
+      "id": "M_VII2",
+      "page": 10,
+      "pages": [
+        10
+      ],
+      "sources": [
+        "S106"
+      ],
+      "type": "body",
+      "original": "While our Optimized Fine-Tuning (OFT) recipe shows promise for adapting VLAs to novel robots and tasks, several important questions remain.",
+      "translation": "虽然我们的“优化微调”（OFT）配方在把 VLA 适配到新机器人与新任务上展现出前景，但仍有一些重要问题尚待回答。",
+      "translated": true
+    },
+    {
+      "id": "M_VII3",
+      "page": 10,
+      "pages": [
+        10
+      ],
+      "sources": [
+        "S107"
+      ],
+      "type": "body",
+      "original": "Handling multimodal demonstrations. Our experiments use focused demonstration datasets with a consistent strategy per task. While L1 regression may help smoothen out noise in training demonstrations by encouraging the policy to learn the median mode in demonstrated actions, it may struggle to accurately model truly multimodal action distributions where multiple valid actions exist for the same input, which may not be ideal in cases where the ability to generate alternative action sequences would be beneficial for task completion. Conversely, diffusion-based approaches may better capture such multimodality but risk overfitting to suboptimal modes in training data (see our website for discussions and video illustrations of these nuances). Understanding OFT’s effectiveness with multimodal demonstrations remains an important direction for future work.",
+      "translation": "处理多模态示范。我们的实验使用每个任务策略一致的聚焦示范数据集。L1 回归可以通过鼓励策略学习示范动作中的中位模态，来帮助平滑训练示范中的噪声；但当同一个输入对应多个有效动作时，它可能难以准确建模真正多模态的动作分布——而在能够生成替代动作序列有助于任务完成的场景中，这可能并不理想。相反，基于扩散的方法可能更好地捕捉这种多模态性，但有过度拟合训练数据中次优模态的风险（相关讨论与视频示例见我们的网站）。理解 OFT 在多模态示范下的有效性仍是未来工作的重要方向。",
+      "translated": true
+    },
+    {
+      "id": "M_VII4",
+      "page": 10,
+      "pages": [
+        10
+      ],
+      "sources": [
+        "S108"
+      ],
+      "type": "body",
+      "original": "Pretraining versus fine-tuning. Our study focuses specifically on fine-tuning VLAs for downstream tasks. Whether OFT’s benefits extend effectively to pretraining, or whether more expressive algorithms like diffusion are necessary for large-scale training, requires further investigation.",
+      "translation": "预训练与微调。我们的研究专门聚焦于为下游任务微调 VLA。OFT 的收益是否能有效延伸到预训练阶段，或者扩散这类更具表达力的算法是否是大规模训练所必需的，这些问题仍需进一步研究。",
+      "translated": true
+    },
+    {
+      "id": "M_VII5",
+      "page": 10,
+      "pages": [
+        10
+      ],
+      "sources": [
+        "S109"
+      ],
+      "type": "body",
+      "original": "Inconsistent language grounding. Our ALOHA experiments reveal that OpenVLA without FiLM exhibits poor language grounding, despite showing no such issues in LIBERO simulation benchmark experiments. The source of this discrepancy—whether from the lack of bimanual data in pretraining or other factors—remains unclear and warrants further study.",
+      "translation": "语言落地的不一致。我们的 ALOHA 实验显示，不含 FiLM 的 OpenVLA 语言落地能力很差，但在 LIBERO 仿真基准实验中却没有出现这类问题。这一差异的来源——是预训练中缺少双臂数据，还是其他因素——目前仍不清楚，值得进一步研究。",
+      "translated": true
+    },
+    {
+      "id": "M_ACK",
+      "page": 10,
+      "pages": [
+        10
+      ],
+      "sources": [
+        "S110"
+      ],
+      "type": "body",
+      "original": "We thank the Stanford Center for Research on Foundation Models (CRFM) and Stanford Institute for Human-Centered AI (HAI) for providing computational resources that supported this research. Toyota Research Institute (TRI) provided funds to assist the authors with their research, but this article solely reflects the opinions and conclusions of its authors and not TRI or any other Toyota entity. This work was also in part supported by the Robotics and AI Institute and ONR grant N00014-22-1-2621. We thank Physical Intelligence for providing beta access to the π0 model used in our ALOHA robot evaluations. We also thank Dan Fu, Karl Pertsch, and Alec Lessing for insightful discussions which contributed to the development of this work. Lastly, we are grateful to Moritz Reuss for providing additional experimental results for MDT and engaging in helpful discussions related to this work.",
+      "translation": "我们感谢斯坦福基础模型研究中心（CRFM）与斯坦福以人为本人工智能研究院（HAI）为本研究提供的计算资源。丰田研究所（TRI）提供了资金以支持作者的研究，但本文仅反映作者本人的观点与结论，不代表 TRI 或丰田任何其他实体。本工作还部分得到机器人学与人工智能研究院以及 ONR 资助 N00014-22-1-2621 的支持。我们感谢 Physical Intelligence 为我们在 ALOHA 机器人评估中使用的 π0 模型提供 beta 访问权限。我们也感谢 Dan Fu、Karl Pertsch 与 Alec Lessing 富有启发性的讨论，这些讨论推动了本工作的发展。最后，我们感谢 Moritz Reuss 为 MDT 提供额外的实验结果并参与相关讨论。",
+      "translated": true
+    },
+    {
+      "id": "REFERENCES",
+      "page": 10,
+      "pages": [
+        10,
+        11,
+        12,
+        13
+      ],
+      "sources": [
+        "p.10-p.13 参考文献区"
+      ],
+      "type": "references",
+      "original": "reference list (59 entries)",
+      "translation": "",
+      "translated": false,
+      "note": "参考文献按原文保留，未翻译。"
+    },
+    {
+      "id": "M_AA1",
+      "page": 14,
+      "pages": [
+        14
+      ],
+      "sources": [
+        "S128"
+      ],
+      "type": "body",
+      "original": "Base OpenVLA Architecture. OpenVLA combines a fused vision backbone (with both SigLIP [55] and DINOv2 [35] vision transformers), a Llama-2 7B language model [51], and a 3-layer MLP projector with GELU activation [11] for projecting visual features into the language embedding space.",
+      "translation": "基座 OpenVLA 架构。OpenVLA 组合了一个融合视觉主干（同时包含 SigLIP [55] 与 DINOv2 [35] 视觉 Transformer）、一个 Llama-2 7B 语言模型 [51]，以及一个带 GELU 激活 [11]、用于把视觉特征投影到语言嵌入空间的三层 MLP 投影器。",
+      "translated": true
+    },
+    {
+      "id": "M_AA2",
+      "page": 14,
+      "pages": [
+        14
+      ],
+      "sources": [
+        "S129"
+      ],
+      "type": "body",
+      "original": "The original model processes a single third-person image and a language instruction (e.g., “put eggplant into pot”). The fused vision encoder extracts 256 patch embeddings from each vision transformer, concatenates them along the hidden dimension, and projects them into the language embedding space. These projected features are concatenated with language embeddings along the sequence dimension before being processed by the Llama-2 decoder to output a 7-dimensional robot action representing delta end-effector pose, represented by a string of discrete action tokens.",
+      "translation": "原始模型处理一张第三人称图像与一条语言指令（例如 “put eggplant into pot”）。融合视觉编码器从每个视觉 Transformer 提取 256 个 patch 嵌入，在隐藏维度上拼接，并投影到语言嵌入空间。这些投影后的特征再与语言嵌入沿序列维度拼接，送入 Llama-2 解码器处理，输出表示末端执行器位姿增量的 7 维机器人动作——以离散动作词元字符串表示。",
+      "translated": true
+    },
+    {
+      "id": "M_AA3",
+      "page": 14,
+      "pages": [
+        14
+      ],
+      "sources": [
+        "S130"
+      ],
+      "type": "body",
+      "original": "OpenVLA-OFT architecture modifications. OpenVLA-OFT introduces six key changes:",
+      "translation": "OpenVLA-OFT 的架构修改。OpenVLA-OFT 引入六项关键变化：",
+      "translated": true
+    },
+    {
+      "id": "M_AA4",
+      "page": 14,
+      "pages": [
+        14
+      ],
+      "sources": [
+        "S131",
+        "S132",
+        "S133",
+        "S134",
+        "S135",
+        "S136",
+        "S137",
+        "S138",
+        "S139",
+        "S140",
+        "S141",
+        "S142",
+        "S143",
+        "S144",
+        "S145",
+        "S146"
+      ],
+      "type": "list",
+      "original": "1) processes multiple input images (e.g., third-person image plus wrist camera images) through the shared SigLIP-DINOv2 backbone 2) projects robot proprioceptive state to language embedding space via a 2-layer MLP with GELU activation 3) replaces causal attention with bidirectional attention for parallel decoding 4) substitutes the language model decoder output layer with a 4-layer MLP (ReLU activation) for generation of con-tinuous actions (instead of discrete actions) 5) outputs chunks of K actions instead of single-timestep actions 6) (for OpenVLA-OFT+) adds FiLM [37] modules that use the average task language embedding to modulate visual features in both SigLIP and DINOv2 vision transformers (see Appendix C for details)",
+      "translation": "1) 通过共享的 SigLIP-DINOv2 主干处理多路输入图像（例如第三人称图像加腕部相机图像）\n2) 通过带 GELU 激活的两层 MLP 把机器人本体状态投影到语言嵌入空间\n3) 把因果注意力替换为双向注意力以支持并行解码\n4) 用四层 MLP（ReLU 激活）替换语言模型解码器的输出层，以生成连续动作（而非离散动作）\n5) 输出 K 个动作组成的块，而不是单个时间步的动作\n6) （针对 OpenVLA-OFT+）加入 FiLM [37] 模块，用任务语言嵌入的平均值调制 SigLIP 与 DINOv2 两个视觉 Transformer 中的视觉特征（详见 Appendix C）",
+      "translated": true
+    },
+    {
+      "id": "M_AA5",
+      "page": 14,
+      "pages": [
+        14
+      ],
+      "sources": [
+        "S147"
+      ],
+      "type": "body",
+      "original": "The complete OpenVLA-OFT+ architecture is illustrated in Figure 1.",
+      "translation": "完整的 OpenVLA-OFT+ 架构见 Figure 1。",
+      "translated": true
+    },
+    {
+      "id": "M_AB1",
+      "page": 14,
+      "pages": [
+        14
+      ],
+      "sources": [
+        "S148"
+      ],
+      "type": "body",
+      "original": "1) Parallel Decoding Implementation: In the original OpenVLA autoregressive training scheme, the model receives ground-truth action tokens shifted right by one position as input (a setup known as teacher forcing). A causal attention mask ensures the model only attends to current and previous tokens. At test time, each predicted token is fed back as input for the next prediction.",
+      "translation": "1) 并行解码实现：在原始 OpenVLA 的自回归训练方案中，模型接收右移一位的真值动作词元作为输入（即所谓的 teacher forcing）。因果注意力掩码保证模型只关注当前及之前的词元。测试时，每个预测出的词元会作为下一个预测的输入反馈回去。",
+      "translated": true
+    },
+    {
+      "id": "M_AB2",
+      "page": 14,
+      "pages": [
+        14
+      ],
+      "sources": [
+        "S149"
+      ],
+      "type": "body",
+      "original": "For parallel decoding, we replace this input with empty action embeddings that differ only in their positional encoding values (similar to [56]). We also use a bidirectional attention mask (instead of causal), enabling the model to leverage all intermediate features non-causally when predicting each element in the action chunk.",
+      "translation": "对于并行解码，我们把上述输入替换为仅在位置编码上有所不同的空动作嵌入（与 [56] 类似）。我们还使用双向注意力掩码（替代因果掩码），使模型在预测动作块中每个元素时都能以非因果方式利用所有中间特征。",
+      "translated": true
+    },
+    {
+      "id": "M_AB3",
+      "page": 14,
+      "pages": [
+        14
+      ],
+      "sources": [
+        "S150",
+        "S151"
+      ],
+      "type": "body",
+      "original": "2) Continuous Action Representations: For discrete actions, increasing the number of bins used for discretization improves precision but reduces the frequency of individual tokens in the training data, potentially hurting generalization. On the other hand, with a continuous action representation, the VLA can directly model the action distribution without lossy discretization.",
+      "translation": "2) 连续动作表示：对于离散动作，增加离散化使用的桶数可以提升精度，但会降低单个词元在训练数据中出现的频率，从而可能损害泛化。相反，使用连续动作表示时，VLA 可以直接建模动作分布，而不必引入有损的离散化。",
+      "translated": true
+    },
+    {
+      "id": "M_AB4",
+      "page": 14,
+      "pages": [
+        14
+      ],
+      "sources": [
+        "S152"
+      ],
+      "type": "body",
+      "original": "Our continuous representation implementations use the following specifications:",
+      "translation": "我们的连续表示实现采用以下规格：",
+      "translated": true
+    },
+    {
+      "id": "M_AB5",
+      "page": 14,
+      "pages": [
+        14
+      ],
+      "sources": [
+        "S153"
+      ],
+      "type": "body",
+      "original": "L1 regression: The MLP action head consists of 4 layers with ReLU activation, mapping final Llama-2 decoder layer hidden states directly to continuous actions.",
+      "translation": "L1 回归：MLP 动作头由 4 层组成并使用 ReLU 激活，把 Llama-2 解码器最后一层的隐状态直接映射为连续动作。",
+      "translated": true
+    },
+    {
+      "id": "M_AB6",
+      "page": 14,
+      "pages": [
+        14
+      ],
+      "sources": [
+        "S154",
+        "S155",
+        "S156",
+        "S157",
+        "S158"
+      ],
+      "type": "list",
+      "original": "Diffusion: We use: • DDIM [46] sampler with 50 diffusion timesteps • Squared cosine beta schedule following [5, 57] • 4-layer noise predictor with same MLP architecture as the L1 regression head",
+      "translation": "扩散：我们使用：\n• DDIM [46] 采样器，50 个扩散时间步\n• 依据 [5, 57] 的平方余弦 beta 调度\n• 四层噪声预测器，MLP 架构与 L1 回归头相同",
+      "translated": true
+    },
+    {
+      "id": "M_AB7",
+      "page": 14,
+      "pages": [
+        14
+      ],
+      "sources": [
+        "S159"
+      ],
+      "type": "body",
+      "original": "3) Input Processing Details: Passing each input image through the OpenVLA fused vision encoder produces 256 patch embeddings, which are projected to the langauge model embedding space via a 3-layer MLP with GELU activation [11]. Low-dimensional robot states are also projected to the language embedding space through a 2-layer MLP with GELU activation.",
+      "translation": "3) 输入处理细节：每路输入图像经过 OpenVLA 融合视觉编码器后产生 256 个 patch 嵌入，通过带 GELU 激活 [11] 的三层 MLP 投影到语言模型嵌入空间。低维机器人状态同样通过带 GELU 激活的两层 MLP 投影到语言嵌入空间。",
+      "translated": true
+    },
+    {
+      "id": "F008",
+      "page": 15,
+      "pages": [
+        15
+      ],
+      "sources": [
+        "C012",
+        "C013"
+      ],
+      "type": "figure",
+      "asset": "assets/fig08.png",
+      "label": "Fig. 8",
+      "title_zh": "FiLM 在 OpenVLA 视觉主干中的实现",
+      "original": "Fig. 8: Feature-wise linear modulation (FiLM) implementation in OpenVLA’s vision backbone. We integrate FiLM [37] into both SigLIP [55] and DINOv2 [35] vision transformers in OpenVLA’s fused vision backbone. The average task description embedding modulates visual features through scale and shift operations at each transformer block, enhancing language-vision integration. This modification significantly improves language following in ALOHA tasks.",
+      "translation": "Fig. 8：OpenVLA 视觉主干中的特征级线性调制（FiLM）实现。我们在 OpenVLA 融合视觉主干中把 FiLM [37] 同时接入 SigLIP [55] 与 DINOv2 [35] 两个视觉 Transformer。任务描述的平均嵌入在每个 Transformer 块中通过缩放与偏移操作调制视觉特征，从而增强语言与视觉的融合。这一修改显著提升了 ALOHA 任务中的语言跟随能力。",
+      "placed_near": "p.15 C012（正文首次引用 p.5 S035、p.14 S161）",
+      "translated": true
+    },
+    {
+      "id": "M_AC1",
+      "page": 14,
+      "pages": [
+        14
+      ],
+      "sources": [
+        "S161"
+      ],
+      "type": "body",
+      "original": "FiLM schematic. Section IV-C describes how we implement feature-wise linear modulation (FiLM) [37] for Open-VLA. Figure 8 illustrates our implementation. OpenVLA has a fused vision encoder with both SigLIP [55] and DINOv2 [35] vision transformers, and we apply FiLM to both transformers.",
+      "translation": "FiLM 示意图。第 IV-C 节描述了我们在 OpenVLA 中如何实现特征级线性调制（FiLM）[37]。Figure 8 展示了我们的实现。OpenVLA 拥有同时包含 SigLIP [55] 与 DINOv2 [35] 视觉 Transformer 的融合视觉编码器，我们对两个 Transformer 都施加 FiLM。",
+      "translated": true
+    },
+    {
+      "id": "M_AC2",
+      "page": 14,
+      "pages": [
+        14
+      ],
+      "sources": [
+        "S162"
+      ],
+      "type": "body",
+      "original": "Design considerations. In our implementation, following Perez et al. [37], we multiply F by (1 + γ) instead of γ since γ and β are near zero at initialization. This helps preserve the visual encoder’s original activations at the start of fine-tuning, minimizing perturbation in the pretrained representation.",
+      "translation": "设计考量。在我们的实现中，参照 Perez et al. [37]，我们把 F 乘以 (1 + γ) 而不是 γ，因为 γ 与 β 在初始化时接近零。这有助于在微调开始时保留视觉编码器原有的激活，使预训练表示受到的扰动最小。",
+      "translated": true
+    },
+    {
+      "id": "M_AC3",
+      "page": 14,
+      "pages": [
+        14
+      ],
+      "sources": [
+        "S163"
+      ],
+      "type": "body",
+      "original": "Implementation specifics. The functions f (x) and h (x) that project language embeddings to obtain γ and β are implemented as simple affine transformations. Separate projectors are learned for each transformer block to allow for block-specific modulation patterns. This design enables the model to learn different modulation patterns at different levels of visual feature processing.",
+      "translation": "实现细节。把语言嵌入投影以得到 γ 与 β 的函数 f(x) 与 h(x) 实现为简单的仿射变换。每个 Transformer 块都学习单独的投影器，以允许块特定的调制模式。这一设计让模型能够在视觉特征处理的不同层级学到不同的调制模式。",
+      "translated": true
+    },
+    {
+      "id": "M_AC4",
+      "page": 14,
+      "pages": [
+        14
+      ],
+      "sources": [
+        "S164"
+      ],
+      "type": "body",
+      "original": "One might initially consider modulating each patch embedding independently, as opposed to each hidden dimension of each embedding as discussed in Section IV-C. However, our spatially-agnostic modulation approach more closely mirrors FiLM’s operation in convolutional networks, where modulation applies globally across spatial dimensions since entire feature maps are scaled and shifted by individual elements of γ and β. This design choice better maintains the benefits of FiLM and improves the policy’s language grounding substantially. We find that an alternative formulation that modulates each patch embedding independently leads to weaker language grounding.",
+      "translation": "人们起初可能会考虑对每个 patch 嵌入独立调制，而不是如第 IV-C 节所讨论的对每个嵌入的每个隐藏维度进行调制。然而我们的空间无关调制方式更贴近 FiLM 在卷积网络中的运作方式：那里调制在整个空间维度上全局施加，因为整张特征图都被 γ 与 β 的各个元素缩放和偏移。这一设计选择更好地保留了 FiLM 的优点，并显著提升了策略的语言落地能力。我们发现，对每个 patch 嵌入独立调制的替代形式会导致更弱的语言落地。",
+      "translated": true
+    },
+    {
+      "id": "M_AD1",
+      "page": 14,
+      "pages": [
+        14,
+        15
+      ],
+      "sources": [
+        "S165",
+        "S166",
+        "S167"
+      ],
+      "type": "body",
+      "original": "OpenVLA-OFT training details for LIBERO. Hyperparameters for OpenVLA-OFT fine-tuning on LIBERO are listed in [Table IV](#T004). We train until the mean L1 loss between predicted and ground-truth normalized actions (scaled between [−1, +1]) falls below 0.01. For faster convergence, we decay the learning rate from 5e-4 to 5e-5 after 100K gradient steps. We evaluate checkpoints every 50K steps, with the 150K checkpoint achieving best performance in all task suites except for LIBERO-Goal. Note that we do not use FiLM for LIBERO experiments since the fine-tuned policies without it already demonstrate good language grounding.",
+      "translation": "LIBERO 上的 OpenVLA-OFT 训练细节。LIBERO 上 OpenVLA-OFT 微调的超参数列在 Table IV 中。我们训练直到预测动作与真值归一化动作之间的平均 L1 损失（动作缩放到 [−1, +1]）低于 0.01。为加快收敛，我们在 100K 梯度步后把学习率从 5e-4 衰减到 5e-5。我们每 50K 步评估一次检查点，除 LIBERO-Goal 外，150K 检查点在所有任务套件上都取得最佳性能。注意我们在 LIBERO 实验中不使用 FiLM，因为不含 FiLM 的微调策略已经展现出良好的语言落地能力。",
+      "translated": true
+    },
+    {
+      "id": "T004",
+      "page": 17,
+      "pages": [
+        17
+      ],
+      "sources": [
+        "C014"
+      ],
+      "type": "table",
+      "asset": "assets/tab04.png",
+      "label": "Table IV",
+      "title_zh": "LIBERO 的 OpenVLA-OFT 超参数",
+      "original": "TABLE IV: OpenVLA-OFT hyperparameters for LIBERO. We specify the hyperparameters for the full OpenVLA-OFT approach which includes parallel decoding, action chunking, continuous actions with L1 regression, and additional inputs (wrist camera and robot state).",
+      "translation": "TABLE IV：LIBERO 的 OpenVLA-OFT 超参数。我们给出完整 OpenVLA-OFT 方法的超参数，该方法包含并行解码、动作分块、配合 L1 回归的连续动作以及额外输入（腕部相机与机器人状态）。",
+      "placed_near": "p.17 C014（正文首次引用 p.15 S165）",
+      "translated": true
+    },
+    {
+      "id": "M_AD2",
+      "page": 15,
+      "pages": [
+        15
+      ],
+      "sources": [
+        "S168",
+        "S169"
+      ],
+      "type": "body",
+      "original": "OpenVLA-OFT+ training details for ALOHA. Hyperparameters for OpenVLA-OFT+ training on ALOHA tasks (with FiLM in the augmented OFT+ recipe) are shown in [Table V](#T005). We maintain the same convergence criterion as in the LIBERO experiments (training until mean normalized L1 loss falls below 0.01) and similar learning rate decay strategy (again 10× reduction, but after 50K gradient steps instead of 100K, since the ALOHA datasets are smaller). For the two clothes folding tasks which do not require language grounding, we still include FiLM to verify that these additional parameters do not impair task execution.",
+      "translation": "ALOHA 上的 OpenVLA-OFT+ 训练细节。在 ALOHA 任务上（使用含 FiLM 的增强 OFT+ 配方）训练 OpenVLA-OFT+ 的超参数列在 Table V 中。我们沿用与 LIBERO 实验相同的收敛判据（训练直到平均归一化 L1 损失低于 0.01）以及类似的学习率衰减策略（同样衰减 10 倍，但由于 ALOHA 数据集更小，在 50K 梯度步后而非 100K 后衰减）。对于两个不需要语言落地的叠衣物任务，我们仍然加入 FiLM，以验证这些额外参数不会损害任务执行。",
+      "translated": true
+    },
+    {
+      "id": "T005",
+      "page": 17,
+      "pages": [
+        17
+      ],
+      "sources": [
+        "C015"
+      ],
+      "type": "table",
+      "asset": "assets/tab05.png",
+      "label": "Table V",
+      "title_zh": "ALOHA 实验的 OpenVLA-OFT+ 超参数",
+      "original": "TABLE V: OpenVLA-OFT+ hyperparameters for ALOHA experiments. We specify the hyperparameters for the full OpenVLA-OFT+ approach which includes parallel decoding, action chunking, continuous actions with L1 regression, additional inputs (two wrist camera images and robot state), and FiLM.",
+      "translation": "TABLE V：ALOHA 实验的 OpenVLA-OFT+ 超参数。我们给出完整 OpenVLA-OFT+ 方法的超参数，该方法包含并行解码、动作分块、配合 L1 回归的连续动作、额外输入（两路腕部相机图像与机器人状态）以及 FiLM。",
+      "placed_near": "p.17 C015（正文首次引用 p.15 S168）",
+      "translated": true
+    },
+    {
+      "id": "M_AE1",
+      "page": 15,
+      "pages": [
+        15
+      ],
+      "sources": [
+        "S170",
+        "S171"
+      ],
+      "type": "body",
+      "original": "ACT training details for ALOHA. Table VI lists hyperparameters for ACT [56] trained from scratch on each task. For non-language-dependent tasks (“fold shorts”, “fold shirt”), we use the default ResNet-18 [10] backbone, which does not include language conditioning. For language-dependent tasks (“scoop X into bowl”, “put X into pot”), we implement EfficientNet-B0 [48] with FiLM [37], similar to [43]. While the authors of ACT recommend training for at least 5K epochs, we extend training to 10K-70K epochs per task to improve performance.",
+      "translation": "ALOHA 上的 ACT 训练细节。Table VI 列出了每个任务上从零训练的 ACT [56] 的超参数。对于不依赖语言的任务（“fold shorts”、“fold shirt”），我们使用默认的 ResNet-18 [10] 主干，其中不包含语言条件化。对于依赖语言的任务（“scoop X into bowl”、“put X into pot”），我们参照 [43] 实现带 FiLM [37] 的 EfficientNet-B0 [48]。虽然 ACT 的作者建议至少训练 5K 个 epoch，但我们把每个任务的训练扩展到 10K-70K 个 epoch 以提升性能。",
+      "translated": true
+    },
+    {
+      "id": "T006",
+      "page": 18,
+      "pages": [
+        18
+      ],
+      "sources": [
+        "C016"
+      ],
+      "type": "table",
+      "asset": "assets/tab06.png",
+      "label": "Table VI",
+      "title_zh": "ALOHA 实验的 ACT 超参数",
+      "original": "TABLE VI: ACT hyperparameters for ALOHA experiments. We follow default parameters from Zhao et al. [56] with three modifications: increased batch size (8 to 64), reduced chunk size (100 to 25 to match other methods in our experiments), and EfficientNet-B0 with FiLM [37] for language-dependent tasks instead of ResNet-18. All models are trained from scratch for at least 5000 epochs, as recommended by the authors of ACT.",
+      "translation": "TABLE VI：ALOHA 实验的 ACT 超参数。我们沿用 Zhao et al. [56] 的默认参数并做三处修改：增大批大小（8 到 64）、减小动作块长度（从 100 到 25，以匹配我们实验中的其他方法），以及在依赖语言的任务中用带 FiLM [37] 的 EfficientNet-B0 替换 ResNet-18。所有模型都按 ACT 作者的建议从零训练至少 5000 个 epoch。",
+      "placed_near": "p.18 C016（正文首次引用 p.15 S170）",
+      "translated": true
+    },
+    {
+      "id": "M_AE2",
+      "page": 15,
+      "pages": [
+        15
+      ],
+      "sources": [
+        "S172"
+      ],
+      "type": "body",
+      "original": "Diffusion Policy training details for ALOHA. For Diffusion Policy training, we use the DROID implementation [22], which conditions action predictions on DistilBERT [42] language embeddings of the task description. We list hyperparameters in Table VII.",
+      "translation": "ALOHA 上的 Diffusion Policy 训练细节。对于 Diffusion Policy 训练，我们使用 DROID 实现 [22]，它以任务描述的 DistilBERT [42] 语言嵌入为条件预测动作。超参数列在 Table VII 中。",
+      "translated": true
+    },
+    {
+      "id": "T007",
+      "page": 18,
+      "pages": [
+        18
+      ],
+      "sources": [
+        "C017"
+      ],
+      "type": "table",
+      "asset": "assets/tab07.png",
+      "label": "Table VII",
+      "title_zh": "ALOHA 实验的 Diffusion Policy 超参数",
+      "original": "TABLE VII: Diffusion Policy hyperparameters for ALOHA experiments. This configuration follows the DROID implementation [22] with two modifications: multiple input images for the ALOHA robot setup and larger image size (224 x 224 px) for fair comparison with other methods.",
+      "translation": "TABLE VII：ALOHA 实验的 Diffusion Policy 超参数。该配置遵循 DROID 实现 [22]，并做两处修改：支持 ALOHA 机器人平台的多路输入图像，以及为与其他方法公平比较而采用更大的图像尺寸（224 x 224 px）。",
+      "placed_near": "p.18 C017（正文首次引用 p.15 S172）",
+      "translated": true
+    },
+    {
+      "id": "M_AE3",
+      "page": 15,
+      "pages": [
+        15
+      ],
+      "sources": [
+        "S173",
+        "S174"
+      ],
+      "type": "body",
+      "original": "RDT-1B training details for ALOHA. Hyperparameters for RDT-1B fine-tuning are shown in [Table VIII](#T008). The authors of RDT-1B recommend training for 150K gradient steps, but we observe that training converges in significantly fewer steps since our fine-tuning datasets are much smaller than the RDT-1B fine-tuning dataset. Therefore, we observe that it is unnecessary to train for such a large amount of time. In fact, on “scoop X into bowl”, the earlier 18K step checkpoint (73.3% success) outperforms the later 40K step checkpoint (70.0%) (we report the former in our ALOHA experiments).",
+      "translation": "ALOHA 上的 RDT-1B 训练细节。RDT-1B 微调的超参数列在 Table VIII 中。RDT-1B 的作者建议训练 150K 梯度步，但我们观察到由于微调数据集远小于 RDT-1B 的微调数据集，训练在显著更少的步数内就收敛了。因此我们认为没有必要训练那么久。事实上，在 “scoop X into bowl” 上，较早的 18K 步检查点（73.3% 成功率）优于较晚的 40K 步检查点（70.0%），我们在 ALOHA 实验中报告的是前者。",
+      "translated": true
+    },
+    {
+      "id": "T008",
+      "page": 18,
+      "pages": [
+        18
+      ],
+      "sources": [
+        "C018"
+      ],
+      "type": "table",
+      "asset": "assets/tab08.png",
+      "label": "Table VIII",
+      "title_zh": "ALOHA 实验的 RDT-1B 超参数",
+      "original": "TABLE VIII: RDT-1B hyperparameters for ALOHA experiments. This configuration follows default parameters from the RDT-1B codebase [27].",
+      "translation": "TABLE VIII：ALOHA 实验的 RDT-1B 超参数。该配置沿用 RDT-1B 代码库 [27] 的默认参数。",
+      "placed_near": "p.18 C018（正文首次引用 p.15 S173）",
+      "translated": true
+    },
+    {
+      "id": "M_AE4",
+      "page": 15,
+      "pages": [
+        15
+      ],
+      "sources": [
+        "S175"
+      ],
+      "type": "body",
+      "original": "π0 training details for ALOHA. [Table IX](#T009) lists hyperparameters for π0 fine-tuning. We use full fine-tuning (the default option in their codebase) and train until convergence.",
+      "translation": "ALOHA 上的 π0 训练细节。Table IX 列出了 π0 微调的超参数。我们使用全量微调（其代码库中的默认选项）并训练到收敛。",
+      "translated": true
+    },
+    {
+      "id": "T009",
+      "page": 19,
+      "pages": [
+        19
+      ],
+      "sources": [
+        "C019"
+      ],
+      "type": "table",
+      "asset": "assets/tab09.png",
+      "label": "Table IX",
+      "title_zh": "ALOHA 实验的 π0 超参数",
+      "original": "TABLE IX: π0 hyperparameters for ALOHA experiments. This configuration follows the default settings specified in the original π0 project codebase [3].",
+      "translation": "TABLE IX：ALOHA 实验的 π0 超参数。该配置沿用 π0 原始项目代码库 [3] 中指定的默认设置。",
+      "placed_near": "p.19 C019（正文首次引用 p.15 S175）",
+      "translated": true
+    },
+    {
+      "id": "M_AF1",
+      "page": 15,
+      "pages": [
+        15,
+        16
+      ],
+      "sources": [
+        "S176",
+        "S177",
+        "S178",
+        "S179",
+        "S180",
+        "S181",
+        "S182",
+        "S183",
+        "S184",
+        "S185",
+        "S186",
+        "S187",
+        "S188"
+      ],
+      "type": "list",
+      "original": "1) ALOHA Task Suite Details: Below are detailed specifications for each task in our ALOHA experiments: 1. “fold shorts” • Task: Bimanual folding of white shorts with two synchronized folds • Dataset: 20 demonstrations (19 training, 1 validation) • Episode length: 1000 timesteps (40 seconds) • Evaluation: 10 trials • Initial states: See Figure 9 2. “fold shirt” • Task: Long-horizon T-shirt folding with multiple synchronized bimanual folds • Dataset: 30 demonstrations (29 training, 1 validation) • Episode length: 1250 timesteps (50 seconds) • Evaluation: 10 trials • Initial states: See Figure 10 3. “scoop X into bowl” • Task: Move bowl to center, scoop specified ingredient (raisins, almonds and green M&Ms, or pretzels) into bowl • Dataset: 45 demonstrations (15 per target; 42 training, 3 validation) • Episode length: 900 timesteps (36 seconds) • Evaluation: 12 trials • Initial states: See Figure 11 4. “put X into pot” • Task: Open pot, place specified item (green pepper, red pepper, or yellow corn) into pot, close pot • Dataset: 300 demonstrations (100 per target; 285 training, 15 validation) • Initial variation: 45 cm horizontal, 20 cm vertical for food items; fixed pot pose • Episode length: 400 timesteps (16 seconds) • Evaluation: 24 trials (12 in-distribution evaluations, 12 out-of-distribution evaluations) • Initial states: See Figures 12 (in-distribution) and 13 (out-of-distribution)",
+      "translation": "1) ALOHA 任务套件细节：下面是我们在 ALOHA 实验中每个任务的详细规格：\n1. “fold shorts”\n• 任务：以两次同步双臂折叠动作叠好白色短裤\n• 数据集：20 条示范（19 训练、1 验证）\n• Episode 长度：1000 个时间步（40 秒）\n• 评估：10 次试验\n• 初始状态：见 Figure 9\n2. “fold shirt”\n• 任务：通过多次同步双臂折叠完成长时程 T 恤折叠\n• 数据集：30 条示范（29 训练、1 验证）\n• Episode 长度：1250 个时间步（50 秒）\n• 评估：10 次试验\n• 初始状态：见 Figure 10\n3. “scoop X into bowl”\n• 任务：把碗移到中央，把指定食材（葡萄干、杏仁与绿色 M&M 豆，或椒盐卷饼）舀入碗中\n• 数据集：45 条示范（每种目标 15 条；42 训练、3 验证）\n• Episode 长度：900 个时间步（36 秒）\n• 评估：12 次试验\n• 初始状态：见 Figure 11\n4. “put X into pot”\n• 任务：打开锅盖，把指定物品（青椒、红椒或玉米）放入锅中，再盖上锅盖\n• 数据集：300 条示范（每种目标 100 条；285 训练、15 验证）†\n• 初始变化：食物横向 45 cm、纵向 20 cm；锅的位姿固定\n• Episode 长度：400 个时间步（16 秒）\n• 评估：24 次试验（12 次分布内评估、12 次分布外评估）\n• 初始状态：见 Figure 12（分布内）与 Figure 13（分布外）",
+      "translated": true
+    },
+    {
+      "id": "F009",
+      "page": 19,
+      "pages": [
+        19
+      ],
+      "sources": [
+        "C020",
+        "C021"
+      ],
+      "type": "figure",
+      "asset": "assets/fig09.png",
+      "label": "Fig. 9",
+      "title_zh": "“fold shorts” 任务的初始状态",
+      "original": "Fig. 9: Initial states for “fold shorts” task evaluations. We use the smallest variance in initial positions for this task due to the small number of training demonstrations (20) compared to other tasks. During the first eight rollouts, the shorts’ position is incrementally adjusted by up to 3 cm along the vertical axis of the tabletop surface. In the final two rollouts, the shorts are rotated 10 degrees clockwise to align the bottom edge to be parallel to the tabletop’s horizontal axis.",
+      "translation": "Fig. 9：“fold shorts” 任务评估的初始状态。由于该任务的训练示范数量（20 条）少于其他任务，我们使用位置方差最小的初始状态设置。在前八次 rollout 中，短裤位置沿桌面竖直轴最多递增调整 3 cm。在最后两次 rollout 中，短裤顺时针旋转 10 度，使下沿与桌面水平轴平行。",
+      "placed_near": "p.19 C020（正文首次引用 p.16 S181）",
+      "translated": true
+    },
+    {
+      "id": "F010",
+      "page": 19,
+      "pages": [
+        19
+      ],
+      "sources": [
+        "C022"
+      ],
+      "type": "figure",
+      "asset": "assets/fig10.png",
+      "label": "Fig. 10",
+      "title_zh": "“fold shirt” 任务的初始状态",
+      "original": "Fig. 10: Initial states for “fold shirt” task evaluations. The bottom edge of the shirt varies by 15 cm along the tabletop’s vertical axis across different trials.",
+      "translation": "Fig. 10：“fold shirt” 任务评估的初始状态。不同试验中，衬衫下沿沿桌面竖直轴变化 15 cm。",
+      "placed_near": "p.19 C022（正文首次引用 p.16 S182）",
+      "translated": true
+    },
+    {
+      "id": "F011",
+      "page": 20,
+      "pages": [
+        20
+      ],
+      "sources": [
+        "C023",
+        "C024"
+      ],
+      "type": "figure",
+      "asset": "assets/fig11.png",
+      "label": "Fig. 11",
+      "title_zh": "“scoop X into bowl” 任务的初始状态",
+      "original": "Fig. 11: Initial states for “scoop X into bowl” task evaluations. The green bowl’s position varies by up to 10 cm across both vertical and horizontal table axes. Simultaneously, the metal spoon’s position varies by 3 cm along the horizontal axis. Each row in this grid displays a set of three identical initial states since we rotate among three target food ingredients (“raisins”, “almonds and green M&Ms”, and “pretzels”) with the same initial states, before moving on to the next set of initial states.",
+      "translation": "Fig. 11：“scoop X into bowl” 任务评估的初始状态。绿色碗的位置在桌面竖直与水平两个方向上最多变化 10 cm；同时金属勺的位置沿水平方向变化 3 cm。该网格中的每一行展示三个相同的初始状态，因为我们在相同初始状态下依次轮换三种目标食材（“葡萄干”、“杏仁与绿色 M&M 豆”、“椒盐卷饼”），然后再进入下一组初始状态。",
+      "placed_near": "p.20 C023（正文首次引用 p.16 S184）",
+      "translated": true
+    },
+    {
+      "id": "F012",
+      "page": 21,
+      "pages": [
+        21
+      ],
+      "sources": [
+        "C025",
+        "C026"
+      ],
+      "type": "figure",
+      "asset": "assets/fig12.png",
+      "label": "Fig. 12",
+      "title_zh": "“put X into pot” 任务的初始状态（分布内）",
+      "original": "Fig. 12: Initial states for “put X into pot” task evaluations (in-distribution version). Food object positions vary by 15 cm vertically and 40 cm horizontally across trials, while the pot remains stationary. Each grid row presents three identical initial states, as we cycle through the three target objects (“green pepper”, “red pepper”, and “yellow corn”) using the same initial configurations before we move on to the next set of initial configurations. (Refer to Figure 13 for the out-of-distribution version of this task.)",
+      "translation": "Fig. 12：“put X into pot” 任务评估的初始状态（分布内版本）。不同试验中食物物体的位置纵向变化 15 cm、横向变化 40 cm，而锅保持不动。网格的每一行呈现三个相同的初始状态，因为我们在相同初始配置下依次轮换三种目标物体（“青椒”、“红椒”、“玉米”），然后再进入下一组初始配置。（该任务的分布外版本见 Figure 13。）",
+      "placed_near": "p.21 C025（正文首次引用 p.16 S188）",
+      "translated": true
+    },
+    {
+      "id": "F013",
+      "page": 22,
+      "pages": [
+        22
+      ],
+      "sources": [
+        "C027",
+        "C028"
+      ],
+      "type": "figure",
+      "asset": "assets/fig13.png",
+      "label": "Fig. 13",
+      "title_zh": "“put X into pot” 任务的初始状态（分布外）",
+      "original": "Fig. 13: Initial states for “put X into pot” task evaluations (out-of-distribution version). Unlike the in-distribution version of this task (Figure 12), this version introduces unseen green and orange bowls as distractor objects to assess robustness to novel visual inputs. Food object positions vary by 15 cm vertically and 30 cm horizontally across trials, with the pot remaining stationary. Each grid row presents three identical initial states, as we cycle through the three target objects (“green pepper”, “red pepper”, and “yellow corn”) using the same initial configurations before we move on to the next set of initial configurations.",
+      "translation": "Fig. 13：“put X into pot” 任务评估的初始状态（分布外版本）。与分布内版本（Figure 12）不同，该版本引入了未见过的绿色与橙色碗作为干扰物，以评估对新颖视觉输入的鲁棒性。不同试验中食物物体的位置纵向变化 15 cm、横向变化 30 cm，锅保持不动。网格的每一行呈现三个相同的初始状态，因为我们在相同初始配置下依次轮换三种目标物体（“青椒”、“红椒”、“玉米”），然后再进入下一组初始配置。",
+      "placed_near": "p.22 C027（正文首次引用 p.16 S188）",
+      "translated": true
+    },
+    {
+      "id": "M_AF2",
+      "page": 16,
+      "pages": [
+        16
+      ],
+      "sources": [
+        "S189"
+      ],
+      "type": "body",
+      "original": "2) ALOHA Task Scoring Rubric: The scoring rubrics and detailed results for the four ALOHA tasks are shown in [Tables X](#T010), XI, XII, and XIII.",
+      "translation": "2) ALOHA 任务评分标准：四个 ALOHA 任务的评分标准与详细结果见 Tables X、XI、XII 与 XIII。",
+      "translated": true
+    },
+    {
+      "id": "T010",
+      "page": 23,
+      "pages": [
+        23
+      ],
+      "sources": [
+        "C029",
+        "C030"
+      ],
+      "type": "table",
+      "asset": "assets/tab10.png",
+      "label": "Table X",
+      "title_zh": "“fold shorts” 任务的分阶段评分结果",
+      "original": "TABLE X: Detailed results for the “fold shorts” ALOHA task. Success is assessed using a staged scoring system, with 20 points allocated to each of five task stages. Points are awarded cumulatively, requiring successful completion of prior stages to receive a nonzero score in subsequent stages. The reported values represent the average performance across all experimental trials.",
+      "translation": "TABLE X：“fold shorts” ALOHA 任务的详细结果。成功与否采用分阶段评分体系评估，五个任务阶段各占 20 分。分数累加计算，只有在完成前序阶段后，后续阶段才可能得到非零分数。表中数值是所有实验试验的平均表现。",
+      "placed_near": "p.23 C029（正文首次引用 p.16 S189）",
+      "translated": true
+    },
+    {
+      "id": "T011",
+      "page": 23,
+      "pages": [
+        23
+      ],
+      "sources": [
+        "C031"
+      ],
+      "type": "table",
+      "asset": "assets/tab11.png",
+      "label": "Table XI",
+      "title_zh": "“fold shirt” 任务的分阶段评分结果",
+      "original": "TABLE XI: Detailed results for the “fold shirt” ALOHA task. Success is assessed using a staged scoring system, with 10 points allocated to each of ten task stages. Points are awarded cumulatively, requiring successful completion of prior stages to receive a nonzero score in subsequent stages. A penalty of -10 points is applied if a large portion of the shirt sticks out after the final fold, as this is a common error for one method and is visually apparent. The reported values represent the average performance across all experimental trials.",
+      "translation": "TABLE XI：“fold shirt” ALOHA 任务的详细结果。成功与否采用分阶段评分体系评估，十个任务阶段各占 10 分。分数累加计算，只有在完成前序阶段后，后续阶段才可能得到非零分数。若最终折叠后衣物仍有大面积外露，则扣 10 分，因为这是某一种方法常见的错误且视觉上明显。表中数值是所有实验试验的平均表现。",
+      "placed_near": "p.23 C031（正文首次引用 p.16 S189）",
+      "translated": true
+    },
+    {
+      "id": "T012",
+      "page": 23,
+      "pages": [
+        23
+      ],
+      "sources": [
+        "C032"
+      ],
+      "type": "table",
+      "asset": "assets/tab12.png",
+      "label": "Table XII",
+      "title_zh": "“scoop X into bowl” 任务的分阶段评分结果",
+      "original": "TABLE XII: Detailed results for the “scoop X into bowl” ALOHA task. Success is assessed using a staged scoring system. Points are awarded cumulatively, requiring successful completion of prior stages to receive a nonzero score in subsequent stages. Penalties of -5 points are applied if any food is spilled onto the table or if the spoon is not fully emptied during pouring. The reported values represent the average performance across all experimental trials.",
+      "translation": "TABLE XII：“scoop X into bowl” ALOHA 任务的详细结果。成功与否采用分阶段评分体系评估。分数累加计算，只有在完成前序阶段后，后续阶段才可能得到非零分数。若有食物洒落到桌面上，或倾倒过程中勺内未完全清空，各扣 5 分。表中数值是所有实验试验的平均表现。",
+      "placed_near": "p.23 C032（正文首次引用 p.16 S189）",
+      "translated": true
+    },
+    {
+      "id": "T013",
+      "page": 23,
+      "pages": [
+        23
+      ],
+      "sources": [
+        "C033"
+      ],
+      "type": "table",
+      "asset": "assets/tab13.png",
+      "label": "Table XIII",
+      "title_zh": "“put X into pot” 任务的分阶段评分结果",
+      "original": "TABLE XIII: Detailed results for the “put X into pot” ALOHA task (combined results for in-distribution and out-of-distribution evaluations). Success is assessed using a staged scoring system. Points are awarded cumulatively, requiring successful completion of prior stages to receive a nonzero score in subsequent stages. The reported values represent the average performance across all experimental trials.",
+      "translation": "TABLE XIII：“put X into pot” ALOHA 任务的详细结果（分布内与分布外评估的合并结果）。成功与否采用分阶段评分体系评估。分数累加计算，只有在完成前序阶段后，后续阶段才可能得到非零分数。表中数值是所有实验试验的平均表现。",
+      "placed_near": "p.23 C033（正文首次引用 p.16 S189）",
+      "translated": true
+    },
+    {
+      "id": "M_AG1",
+      "page": 16,
+      "pages": [
+        16
+      ],
+      "sources": [
+        "S190",
+        "S191",
+        "S192",
+        "S193",
+        "S194",
+        "S195",
+        "S196"
+      ],
+      "type": "list",
+      "original": "1) Single OpenVLA-OFT Policy for All LIBERO Task Suites Combined: In Section V and Table I, we report results with OpenVLA-OFT policies trained on each task suite independently. In this section, we assess whether our method scales to larger fine-tuning datasets by training one OpenVLA-OFT policy on all four task suites combined. As shown in Table XIV, this new policy achieves comparable average task performance as the task suite-specific policies—confirming that our method scales to larger fine-tuning datasets. 2) Ablating FiLM in LIBERO: The FiLM ablation study in Section VI suggests that FiLM is crucial for enabling strong language following in real-world ALOHA robot tasks. In this section, we assess whether FiLM is similarly important in the LIBERO simulation tasks. We train a single OpenVLA-OFT+ policy (with FiLM) on all LIBERO task suites combined (similar to the previous section) and report task performance results in Table XIV, comparing performance against the OpenVLA-OFT policy trained without FiLM. In LIBERO, FiLM leads to slightly higher average success rate, though the difference here is minor compared to the findings in the real-world ALOHA experiments, where language following is more challenging due to the reasons discussed in Section IV-C. 3) Ablating the OpenVLA Pretrained Representation: We evaluate the performance of OpenVLA-OFT policies produced by fine-tuning the underlying Prismatic VLM [21] directly on the LIBERO downstream datasets without OpenVLA’s Open X-Embodiment [34] robot pretraining. This ablation study investigates whether OpenVLA’s robot-pretrained representation remains valuable when subjected to a substantially different fine-tuning approach such as OFT. The results in Table XV demonstrate that the variant without the pretrained OpenVLA representation consistently underperforms compared to the full OpenVLA-OFT model, confirming the benefits of using the pretrained representation for downstream policy learning. 4) Scaling Up OpenVLA-OFT to a Larger Real-World Dataset (BridgeData V2): In Appendix G1, we observe that a single OpenVLA-OFT policy can effectively fit all four LIBERO task suite datasets combined, confirming that the proposed method scales to larger fine-tuning datasets. In this section, we scale up the fine-tuning data further and assess whether OpenVLA-OFT can also fit a real-world robotic manipulation dataset that is significantly larger and more diverse than both the LIBERO datasets and the ALOHA robot datasets discussed in Section VI. Specifically, we train OpenVLA-OFT (without FiLM) on the BridgeData V2 dataset [52], which contains 50,365 real WidowX robot demonstrations (25× more than the four LIBERO task suites combined). We evaluate OpenVLA-OFT on a subset of BridgeData V2 WidowX robot tasks from the evaluation suite used in the original OpenVLA work [23]. This representative subset covers the four types of generalization (visual, motion, physical, semantic) as well as language grounding tasks. We compare the task performance of OpenVLA-OFT with that of the public OpenVLA checkpoint, scoring both methods using the same criteria used in the OpenVLA work. As shown in Table XVI, OpenVLA-OFT surpasses OpenVLA on average across these tasks (69.2% versus 65.8%, respectively)—confirming scalability of the proposed OFT approach to much larger and more diverse real robot datasets. Further, we observe that FiLM is not necessary for satisfactory language following in Bridge tasks, likely because the base model has shown effective language following in Bridge tasks.",
+      "translation": "1) 覆盖全部 LIBERO 任务套件的单一 OpenVLA-OFT 策略：在第 V 节与 Table I 中，我们报告的是在每个任务套件上独立训练的 OpenVLA-OFT 策略的结果。本节我们评估该方法是否能扩展到更大的微调数据集：在四个任务套件合并的数据上训练一个 OpenVLA-OFT 策略。如 Table XIV 所示，这个新策略取得了与套件专用策略相当的平均任务性能，说明我们的方法可以扩展到更大的微调数据集。\n2) 在 LIBERO 中消融 FiLM：第 VI 节的 FiLM 消融研究表明，FiLM 对于在真机 ALOHA 机器人任务中实现强语言跟随至关重要。本节我们评估 FiLM 在 LIBERO 仿真任务中是否同样重要。我们在全部 LIBERO 任务套件合并的数据上训练一个 OpenVLA-OFT+ 策略（带 FiLM，与上一节类似），并在 Table XIV 中报告任务性能结果，与不带 FiLM 训练的 OpenVLA-OFT 策略进行比较。在 LIBERO 上，FiLM 带来了略高的平均成功率，但这一差异相比真机 ALOHA 实验中的发现要小得多——后者由于第 IV-C 节讨论的原因，语言跟随更具挑战性。\n3) 消融 OpenVLA 预训练表示：我们评估了直接在 LIBERO 下游数据集上微调底层 Prismatic VLM [21]（不使用 OpenVLA 的 Open X-Embodiment [34] 机器人预训练）所得到的 OpenVLA-OFT 策略的性能。这项消融研究考察当采用 OFT 这样与预训练差别很大的微调方法时，OpenVLA 的机器人预训练表示是否仍有价值。Table XV 的结果表明，不含预训练 OpenVLA 表示的变体始终不如完整的 OpenVLA-OFT 模型，证实了预训练表示对下游策略学习是有益的。\n4) 把 OpenVLA-OFT 扩展到更大的真实世界数据集（BridgeData V2）：在 Appendix G1 中我们观察到，单一 OpenVLA-OFT 策略可以有效拟合四个 LIBERO 任务套件合并的数据集，说明所提方法能扩展到更大的微调数据集。本节我们进一步扩大微调数据规模，评估 OpenVLA-OFT 是否也能拟合一个明显更大、更多样的真实世界机器人操作数据集——其规模远超 LIBERO 数据集与第 VI 节讨论的 ALOHA 机器人数据集。具体来说，我们在 BridgeData V2 数据集 [52] 上训练 OpenVLA-OFT（不含 FiLM）；该数据集包含 50,365 条真实 WidowX 机器人示范，是四个 LIBERO 任务套件合计数量的 25 倍以上。\n我们在原始 OpenVLA 工作 [23] 所使用的评估套件中选取 BridgeData V2 WidowX 机器人任务的一个子集进行评估。这一具有代表性的子集覆盖四类泛化（视觉、运动、物理、语义）以及语言落地任务。我们把 OpenVLA-OFT 的任务表现与公开的 OpenVLA 检查点比较，并使用与 OpenVLA 工作相同的评分标准对两者打分。如 Table XVI 所示，OpenVLA-OFT 在这些任务上的平均表现超过 OpenVLA（分别为 69.2% 与 65.8%），证实了所提出的 OFT 方法可以扩展到更大、更多样的真实机器人数据集。此外我们观察到，在 Bridge 任务上 FiLM 对令人满意的语言跟随并非必要，很可能因为基座模型在 Bridge 任务上已经展现出有效的语言跟随能力。",
+      "translated": true
+    },
+    {
+      "id": "T014",
+      "page": 23,
+      "pages": [
+        23
+      ],
+      "sources": [
+        "C034",
+        "C035"
+      ],
+      "type": "table",
+      "asset": "assets/tab14.png",
+      "label": "Table XIV",
+      "title_zh": "附加 LIBERO 实验：单一策略与 FiLM 消融",
+      "original": "TABLE XIV: Additional LIBERO experiments: Single policy for all LIBERO task suites and FiLM ablation study. Here we train a single policy on all four LIBERO task suites combined, without FiLM (“OpenVLA-OFT”) and with FiLM (“OpenVLA-OFT+”). Policy inputs here include a third-person camera image, wrist camera image, robot proprioceptive state, and a language instruction. We observe comparable task performance when training on all task suites together versus training on each of them independently. In addition, we find that FiLM has little effect on task performance in LIBERO, given that the variant without FiLM already exhibits good language following.",
+      "translation": "TABLE XIV：附加 LIBERO 实验——覆盖全部任务套件的单一策略与 FiLM 消融研究。这里我们在四个 LIBERO 任务套件合并的数据上训练单一策略：不含 FiLM（“OpenVLA-OFT”）与含 FiLM（“OpenVLA-OFT+”）。策略输入包括第三人称相机图像、腕部相机图像、机器人本体状态与语言指令。我们观察到，在全部任务套件上一起训练与分别独立训练的性能相当。此外我们发现 FiLM 对 LIBERO 上的任务性能影响很小，因为不含 FiLM 的变体已经展现出良好的语言跟随能力。",
+      "placed_near": "p.23 C034（正文首次引用 p.16 S190、S191）",
+      "translated": true
+    },
+    {
+      "id": "T015",
+      "page": 23,
+      "pages": [
+        23
+      ],
+      "sources": [
+        "C036",
+        "C037"
+      ],
+      "type": "table",
+      "asset": "assets/tab15.png",
+      "label": "Table XV",
+      "title_zh": "消融实验：用 OFT 配方从零微调 OpenVLA",
+      "original": "TABLE XV: Ablation experiment: Fine-tuning OpenVLA from scratch with the OFT recipe. Policy inputs here include a third-person camera image, a wrist camera image, robot proprioceptive state, and a language instruction. The from-scratch policies generally perform worse than the full OpenVLA-OFT policies, confirming that OpenVLA’s pretrained representation is beneficial for downstream policy performance even when the fine-tuning recipe differs substantially from the pretraining recipe.",
+      "translation": "TABLE XV：消融实验——用 OFT 配方从零微调 OpenVLA。策略输入包括第三人称相机图像、腕部相机图像、机器人本体状态与语言指令。从零训练的策略总体不如完整的 OpenVLA-OFT 策略，证实了即使微调配方与预训练配方差别很大，OpenVLA 的预训练表示对下游策略性能仍然有益。",
+      "placed_near": "p.23 C036（正文首次引用 p.16 S192）",
+      "translated": true
+    },
+    {
+      "id": "T016",
+      "page": 24,
+      "pages": [
+        24
+      ],
+      "sources": [
+        "C038"
+      ],
+      "type": "table",
+      "asset": "assets/tab16.png",
+      "label": "Table XVI",
+      "title_zh": "BridgeData V2 WidowX 机器人评估",
+      "original": "TABLE XVI: OpenVLA-OFT in BridgeData V2 WidowX robot evaluations. We use a subset of the tasks from the original OpenVLA BridgeData V2 evaluation suite, along with the corresponding scoring criteria. Each score is the average over 10 trials per task. OpenVLA-OFT surpasses OpenVLA in average task performance and even demonstrates effective language following without FiLM.",
+      "translation": "TABLE XVI：BridgeData V2 WidowX 机器人评估中的 OpenVLA-OFT。我们使用原始 OpenVLA BridgeData V2 评估套件中的任务子集及其对应的评分标准。每个分数是每个任务 10 次试验的平均。OpenVLA-OFT 的平均任务表现超过 OpenVLA，并且在不使用 FiLM 的情况下也展现出有效的语言跟随能力。",
+      "placed_near": "p.24 C038（正文首次引用 p.16 S196）",
+      "translated": true
+    },
+    {
+      "id": "M_NOTE3",
+      "page": 16,
+      "pages": [
+        16
+      ],
+      "sources": [
+        "N007"
+      ],
+      "type": "footnote",
+      "original": "† This relatively large number of demonstrations for the “put X into pot” task is not necessary for satisfactory performance. It simply reflects an earlier investigative phase of this work during which we encountered difficulties with language grounding in learned policies and initially hypothesized that increasing demonstration quantity might improve language following capabilities. However, merely expanding the training set proved insufficient for achieving satisfactory language grounding, and we discovered that additional techniques were needed for more reliable language grounding. We still decided to fine-tune on the full dataset with 300 demonstrations nonetheless.",
+      "translation": "† “put X into pot” 任务中这个相对较大的示范数量对于取得令人满意的性能并非必要。它只是反映了本工作早期的一个探索阶段：当时我们在学到的策略中遇到语言落地困难，最初假设增加示范数量可能改善语言跟随能力。然而仅扩大训练集并不足以实现令人满意的语言落地，我们发现还需要额外技术才能获得更可靠的语言落地。尽管如此，我们仍决定在这个 300 条示范的完整数据集上微调。",
+      "translated": true
+    },
+    {
+      "id": "M_NOTE4",
+      "page": 16,
+      "pages": [
+        16
+      ],
+      "sources": [
+        "N009"
+      ],
+      "type": "footnote",
+      "original": "‡ Although the base OpenVLA model was already pretrained on Bridge data, we note that the model must still be fine-tuned when using the new OFT recipe since the architecture, learning algorithm, and action representation and decoding scheme have been modified significantly from the pretraining setup. In fact, the initial action regression L1 loss in the beginning of OpenVLA-OFT training on Bridge is large (roughly 0.5 when actions are normalized to the scale [−1, +1]).",
+      "translation": "‡ 尽管基座 OpenVLA 模型已经在 Bridge 数据上预训练过，我们还是要指出：使用新的 OFT 配方时模型仍必须微调，因为架构、学习算法、动作表示与解码方式都已相对预训练设置做了大幅修改。事实上，在 Bridge 上开始 OpenVLA-OFT 训练时，初始的动作回归 L1 损失很大（当动作归一化到 [−1, +1] 时约为 0.5）。",
+      "translated": true
+    }
+  ]
+}

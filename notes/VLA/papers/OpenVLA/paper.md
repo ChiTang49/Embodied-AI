@@ -37,6 +37,24 @@
 
 ---
 
+【Note】OpenVLA 的贡献：**高效微调与部署方法**
+
+OpenVLA 不是 RT-2 的复刻，只是高层配方相同——骨干、视觉编码器、数据、离散化都换了。
+
+论文自己声明的贡献大致是四块（原文依据）：
+
+1. 提出一个 7B 的开源 VLA，在 970k 条 OpenX 轨迹上训练，为通用操作策略建立新的 SOTA，在 WidowX 与 Google robot 的 29 个任务上超过 55B 的闭源 RT-2-X 16.5 个百分点（p.2 S007）。
+
+2. 系统研究 VLA 的**微调**——论文原话是 "a new contribution not explored in prior work"：在 7 个 Franka 任务上做数据高效全量微调（10–150 条示教），证明微调后的 OpenVLA 明显优于微调后的 Octo、比 Diffusion Policy 高 20.4%（p.2 S004、p.2 S007）。
+
+3. 首次证明 LoRA 与量化能让 VLA 在**消费级 GPU**上微调与部署而不掉性能——"we are the first to demonstrate … on consumer-grade GPUs instead of large server nodes"（p.3 S009；对应 5.3 节表 1、5.4 节表 2 与图 6）。这是论文增量最实的一块，也是你说的概括里没有的。
+
+4. 开源全部资源：模型权重、微调 notebook、支持 OpenX 大规模训练的 PyTorch 代码库（p.2 S004、p.6 S030、p.7 S031）。
+
+至于"缩小参数量"，论文没有把它单列为一项贡献，而是当作**证据**：7B 的模型在多数任务类别上达到或超过 55B 的 RT-2-X，说明小一个数量级也能达到强性能（p.2 S004、p.3 S012 四点差异的第一点、p.8 S037）。所以更准确的说法是"参数量小且开源"，而不是"贡献是缩小参数量"。
+
+一句话总结：OpenVLA 的增量 = **RT-2 式配方 + 换开源骨干 + 系统化的微调/量化研究 + 全开源**；其中论文自己盖章为"此前未探索"的是微调与量化那一部分，而不是"重做了 RT-2"。
+
 ## p.1 标题页 · Fig. 1 · 摘要
 
 <a id="S001"></a>
@@ -88,21 +106,25 @@
 
 **Original:** OpenVLA builds on a Llama 2 language model combined with a visual encoder that fuses pretrained features from DINOv2 and SigLIP. As a product of the added data diversity and new model components, OpenVLA demonstrates strong results for generalist manipulation, outperforming closed models such as RT-2-X (55B) by 16.5% in absolute task success rate across 29 tasks and multiple robot embodiments, with 7x fewer parameters. We further show that we can effectively fine-tune OpenVLA for new settings, with especially strong generalization results in multi-task environments involving multiple objects and strong language grounding abilities, and outperform expressive from-scratch imitation learning methods such as Diffusion Policy by 20.4%. We also explore compute efficiency; as a separate contribution, we show that OpenVLA can be fine-tuned on consumer GPUs via modern low-rank adaptation methods and served efficiently via quantization without a hit to downstream success rate. Finally, we release model checkpoints, fine-tuning notebooks, and our PyTorch codebase with built-in support for training VLAs at scale on Open X-Embodiment datasets.
 
-**中文:** OpenVLA 以 Llama 2 语言模型为骨干，并配有一个融合 DINOv2 与 SigLIP 预训练特征的视觉编码器。得益于数据的进一步多样化和新的模型组件，OpenVLA 在通用操作任务上表现强劲：在跨 29 个任务、多种机器人本体的评测中，其绝对任务成功率比闭源模型 RT-2-X（55B）高 16.5%，而参数量仅为其 1/7。我们进一步证明，OpenVLA 可被有效微调以适应新场景，尤其在涉及多个物体的多任务环境中泛化结果优异、语言 grounding 能力强，并在绝对成功率上超过 Diffusion Policy 这类表达力强的从零模仿学习方法 20.4%。我们还探讨了计算效率：作为一项独立贡献，我们展示 OpenVLA 可以通过现代低秩适配（LoRA）方法在消费级 GPU 上微调，并通过量化高效部署，且不损失下游成功率。最后，我们发布模型检查点、微调 notebook，以及内置支持在 Open X-Embodiment 数据集上大规模训练 VLA 的 PyTorch 代码库。
+**中文:** OpenVLA **以 Llama 2 语言模型为骨干，并配有一个融合 DINOv2 与 SigLIP 预训练特征的视觉编码器**。得益于数据的进一步多样化和新的模型组件，OpenVLA 在通用操作任务上表现强劲：在跨 29 个任务、多种机器人本体的评测中，其绝对任务成功率比闭源模型 RT-2-X（55B）高 16.5%，而参数量仅为其 1/7。我们进一步证明，OpenVLA 可被有效微调以适应新场景，尤其在涉及多个物体的多任务环境中泛化结果优异、语言 grounding 能力强，并在绝对成功率上超过 Diffusion Policy 这类表达力强的从零模仿学习方法 20.4%。我们还探讨了计算效率：作为一项独立贡献，我们展示 OpenVLA 可以通过现代低秩适配（LoRA）方法在消费级 GPU 上微调，并通过量化高效部署，且不损失下游成功率。最后，我们发布模型检查点、微调 notebook，以及内置支持在 Open X-Embodiment 数据集上大规模训练 VLA 的 PyTorch 代码库。
 
 <a id="S005"></a>
 **Source:** p.2 S005
 
 **Original:** 1 Introduction. A key weakness of learned policies for robotic manipulation is their inability to generalize beyond their training data: while existing policies trained for individual skills or language instructions have the capacity to extrapolate behaviors to new initial conditions such as object positions or lighting [2, 3], they lack robustness to scene distractors or novel objects [4, 5] and struggle to execute unseen task instructions [6, 7]. Yet beyond robotics, existing foundation models for vision and language such as CLIP [8], SigLIP [9], and Llama 2 [10] are capable of these types of generalization and more, stemming from the priors captured by their Internet-scale pretraining datasets. While reproducing this scale of pretraining for robotics is still an open challenge — even the largest robot manipulation datasets [1, 11] only have 100K to 1M examples – this imbalance suggests an opportunity: using existing foundation models for vision and language as a core building block for training robotic policies that can generalize to objects, scenes, and tasks beyond their training data.
 
-**中文:** 1 引言。机器人操作学习策略的一个关键弱点是无法泛化到训练数据之外：已有的针对单一技能或语言指令训练的策略，虽能把行为外推到新的初始条件（如物体位置或光照）[2, 3]，但对场景干扰物或新物体鲁棒性不足 [4, 5]，也难以执行未见过的任务指令 [6, 7]。然而在机器人之外，CLIP [8]、SigLIP [9]、Llama 2 [10] 等视觉与语言基础模型却具备这类泛化能力甚至更强，其来源是互联网规模预训练数据所刻画的先验。尽管在机器人领域复现这种规模的预训练仍是开放难题——即便最大的机器人操作数据集 [1, 11] 也只有 10 万到 100 万条样本——这种失衡恰恰提示了一个机会：把已有的视觉与语言基础模型作为核心构件，用来训练能够泛化到训练数据之外的物体、场景和任务的机器人策略。
+**中文:** 1 引言。机器人操作学习策略的一个关键弱点是无法泛化到训练数据之外：已有的针对单一技能或语言指令训练的策略，虽能把行为外推到新的初始条件（如物体位置或光照）[2, 3]，但对场景干扰物或新物体鲁棒性不足 [4, 5]，也难以执行未见过的任务指令 [6, 7]。然而在机器人之外，CLIP [8]、SigLIP [9]、Llama 2 [10] 等视觉与语言基础模型却具备这类泛化能力甚至更强，其来源是互联网规模预训练数据所刻画的先验。**尽管在机器人领域复现这种规模的预训练仍是开放难题——即便最大的机器人操作数据集 [1, 11] 也只有 10 万到 100 万条样本——这种失衡恰恰提示了一个机会：把已有的视觉与语言基础模型作为核心构件，用来训练能够泛化到训练数据之外的物体、场景和任务的机器人策略。**
+
+【Note】阐述了复用 VLM 的原因：需要大规模预训练数据刻画的先验知识，但机器人操作数据库太小（仅10w~100w），故直接复用开源权重的 VLM 模型。
+
+为什么不自己训一个 VLM：VLM 训练流程也是闭源的，不如找个开源权重 VLM 微调。
 
 <a id="S006"></a>
 **Source:** p.2 S006
 
 **Original:** Towards this goal, existing work has explored integrating pretrained language and vision-language models for robotic representation learning [12–14] and as a component in modular systems for task planning and execution [15, 16]. More recently, they have been used for directly learning vision-language-action models [VLAs; 1, 7, 17, 18] for control. VLAs provide a direct instantiation of using pretrained vision-and-language foundation models for robotics, directly fine-tuning visually-conditioned language models (VLMs) such as PaLI [19, 20] to generate robot control actions. By building off of strong foundation models trained on Internet-scale data, VLAs such as RT-2 [7] demonstrate impressive robustness results, as well as an ability to generalize to novel objects and tasks, setting a new standard for generalist robot policies. Yet, there are two key reasons preventing the widespread use of existing VLAs: 1) current models [1, 7, 17, 18] are closed, with limited visibility into model architecture, training procedures, and data mixture, and 2) existing works do not provide best practices for deploying and adapting VLAs to new robots, environments, and tasks — especially on commodity hardware (e.g., consumer-grade GPUs). We argue that to develop a rich foundation for future research and development, robotics needs open-source, generalist VLAs that support effective fine-tuning and adaptation, akin to the existing ecosystem around open-source language models [21–24].
 
-**中文:** 为实现这一目标，已有工作探索了将预训练语言模型和视觉-语言模型用于机器人表征学习 [12–14]，以及作为模块化系统中任务规划与执行的组件 [15, 16]。更近期，它们被用于直接学习视觉-语言-动作模型（VLA）[1, 7, 17, 18] 以完成控制。VLA 是把预训练视觉-语言基础模型直接用于机器人的一种实现方式：直接微调 PaLI [19, 20] 这类视觉条件语言模型（VLM）来生成机器人控制动作。通过建立在互联网规模数据训练的强基础模型之上，RT-2 [7] 等 VLA 展现出令人印象深刻的鲁棒性，以及泛化到新物体和新任务的能力，为通用机器人策略设立了新标准。然而，有两个关键原因阻碍了现有 VLA 的广泛使用：1）当前模型 [1, 7, 17, 18] 是闭源的，外界难以了解其模型架构、训练流程和数据混合方式；2）已有工作没有给出把 VLA 部署并适配到新机器人、新环境和新任务的最佳实践——尤其是在普通硬件（如消费级 GPU）上。我们认为，为了给未来研究与发展建立丰厚的基础，机器人领域需要开源、通用、且支持高效微调与适配的 VLA，就像围绕开源语言模型 [21–24] 已经形成的生态那样。
+**中文:** 为实现这一目标，已有工作探索了将预训练语言模型和视觉-语言模型用于机器人表征学习 [12–14]，以及作为模块化系统中任务规划与执行的组件 [15, 16]。更近期，它们被用于直接学习视觉-语言-动作模型（VLA）[1, 7, 17, 18] 以完成控制。VLA 是把预训练视觉-语言基础模型直接用于机器人的一种实现方式：直接微调 PaLI [19, 20] 这类视觉条件语言模型（VLM）来生成机器人控制动作。通过建立在互联网规模数据训练的强基础模型之上，RT-2 [7] 等 VLA 展现出令人印象深刻的鲁棒性，以及泛化到新物体和新任务的能力，为通用机器人策略设立了新标准。然而，**有两个关键原因阻碍了现有 VLA 的广泛使用：1）当前模型 [1, 7, 17, 18] 是闭源的，外界难以了解其模型架构、训练流程和数据混合方式；2）已有工作没有给出把 VLA 部署并适配到新机器人、新环境和新任务的最佳实践——尤其是在普通硬件（如消费级 GPU）上。**<mark>我们认为，为了给未来研究与发展建立丰厚的基础，机器人领域需要开源、通用、且支持高效微调与适配的 VLA，就像围绕开源语言模型 [21–24] 已经形成的生态那样。</mark>
 
 <a id="S007"></a>
 **Source:** p.2 S007
@@ -116,7 +138,7 @@
 
 **Original:** ¹ OpenVLA uses multiple pretrained model components: SigLIP [9] and DinoV2 [25] vision encoders and a Llama 2 [10] language model backbone. For all three models, weights are open, but not their training data or code. We release training data, code and model weights for reproducing OpenVLA on top of these components.
 
-**中文:** ¹ OpenVLA 使用了多个预训练模型组件：SigLIP [9] 与 DinoV2 [25] 视觉编码器，以及 Llama 2 [10] 语言模型骨干。这三者的权重是公开的，但其训练数据与代码并不公开。我们在这些组件之上发布用于复现 OpenVLA 的训练数据、代码与模型权重。
+**中文:** ¹ **OpenVLA 使用了多个预训练模型组件：SigLIP [9] 与 DinoV2 [25] 视觉编码器，以及 Llama 2 [10] 语言模型骨干。**这三者的权重是公开的，但其训练数据与代码并不公开。我们在这些组件之上发布用于复现 OpenVLA 的训练数据、代码与模型权重。
 
 ## p.3 引言（续）· 2 相关工作
 
@@ -125,28 +147,49 @@
 
 **Original:** multi-task settings with multiple objects. Following these results, we are the first to demonstrate the effectiveness of compute-efficient fine-tuning methods leveraging low-rank adaptation [LoRA; 26] and model quantization [27] to facilitate adapting OpenVLA models on consumer-grade GPUs instead of large server nodes without compromising performance. As a final contribution, we open-source all models, deployment and fine-tuning notebooks, and the OpenVLA codebase for training VLAs at scale, with the hope that these resources enable future work exploring and adapting VLAs for robotics.
 
-**中文:** （接上页）在多物体、多任务场景中把语言 grounding 到行为。基于这些结果，我们首次证明：利用低秩适配（LoRA [26]）与模型量化 [27] 这类计算高效的微调方法，可以在消费级 GPU 而非大型服务器节点上完成 OpenVLA 的适配，且不牺牲性能。作为最后一项贡献，我们开源了所有模型、部署与微调 notebook，以及用于大规模训练 VLA 的 OpenVLA 代码库，希望这些资源能够支撑未来对 VLA 的探索与适配工作。
+**中文:** （接上页）在多物体、多任务场景中把语言 grounding 到行为。基于这些结果，我们首次证明：利用**低秩适配（LoRA [26]）**与**模型量化** [27] 这类计算高效的微调方法，可以在消费级 GPU 而非大型服务器节点上完成 OpenVLA 的适配，且不牺牲性能。作为最后一项贡献，我们开源了所有模型、部署与微调 notebook，以及用于大规模训练 VLA 的 OpenVLA 代码库，希望这些资源能够支撑未来对 VLA 的探索与适配工作。
 
 <a id="S010"></a>
 **Source:** p.3 S010
 
 **Original:** 2 Related Work. Visually-Conditioned Language Models. Visually-conditioned language models (VLMs), which are trained on Internet-scale data to generate natural language from input image(s) and language prompts, have been adopted for myriad applications from visual question answering [28–31] to object localization [32, 33]. One of the key advances fueling recent VLMs are model architectures that bridge features from pretrained vision encoders [8, 9, 25] with pretrained language models [10, 23, 34–36], directly building on advances in both computer vision and natural language modelling to create powerful multimodal models. While early work explored various architectures for cross-attending between vision and language features [37–41], new open-source VLMs [20, 42–44] have converged on a simpler "patch-as-token" approach, in which patch features from pretrained visual transformers are treated as tokens, and are then projected into the input space of a language model. This simplicity makes it easy to repurpose existing tools for training language models at scale for VLM training. We employ these tools in our work to scale VLA training, and specifically use VLMs from Karamcheti et al. [44] as our pretrained backbone, as they are trained from multi-resolution visual features, fusing low-level spatial information from DINOv2 [25] with higher-level semantics from SigLIP [9] to aid in visual generalization.
 
-**中文:** 2 相关工作。视觉条件语言模型。视觉条件语言模型（VLM）在互联网规模数据上训练，能够根据输入图像与语言提示生成自然语言，已被用于视觉问答 [28–31]、物体定位 [32, 33] 等大量应用。推动近期 VLM 发展的关键进展之一，是把预训练视觉编码器 [8, 9, 25] 的特征与预训练语言模型 [10, 23, 34–36] 桥接起来的模型架构，直接建立计算机视觉与自然语言建模两方面的进展之上，从而构造出强大的多模态模型。早期工作探索了多种在视觉与语言特征间做交叉注意力的架构 [37–41]，而新的开源 VLM [20, 42–44] 已收敛到更简单的"patch-as-token"做法：把预训练视觉 Transformer 的 patch 特征当作 token，再投影到语言模型的输入空间。这种简洁性使得为大规模语言模型训练所开发的工具可以方便地复用于 VLM 训练。我们在工作中正是借助这些工具把 VLA 训练规模化，并具体采用 Karamcheti 等人 [44] 的 VLM 作为预训练骨干，因为该模型由多分辨率视觉特征训练而来，把 DINOv2 [25] 的低层空间信息与 SigLIP [9] 的更高层语义融合在一起，有助于视觉泛化。
+**中文:** 2 相关工作。视觉条件语言模型。视觉条件语言模型（VLM）在互联网规模数据上训练，能够根据输入图像与语言提示生成自然语言，已被用于视觉问答 [28–31]、物体定位 [32, 33] 等大量应用。推动近期 VLM 发展的关键进展之一，是把预训练视觉编码器 [8, 9, 25] 的特征与预训练语言模型 [10, 23, 34–36] 桥接起来的模型架构，直接建立计算机视觉与自然语言建模两方面的进展之上，从而构造出强大的多模态模型。早期工作探索了多种在视觉与语言特征间做交叉注意力的架构 [37–41]，而**新的开源 VLM [20, 42–44] 已收敛到更简单的"patch-as-token"做法：把预训练视觉 Transformer 的 patch 特征当作 token，再投影到语言模型的输入空间。这种简洁性使得为大规模语言模型训练所开发的工具可以方便地复用于 VLM 训练。**我们在工作中正是借助这些工具把 VLA 训练规模化，并具体采用 Karamcheti 等人 [44] 的 VLM 作为预训练骨干，因为该模型由多分辨率视觉特征训练而来，把 DINOv2 [25] 的低层空间信息与 SigLIP [9] 的更高层语义融合在一起，有助于视觉泛化。
+
+【Note】现代图像 Encoder 方式：patch-as-token
+
+把图像切成 patch，把 patch 特征"当作 token"，投影到语言模型的输入空间。
+
+
 
 <a id="S011"></a>
 **Source:** p.3 S011
 
 **Original:** Generalist Robot Policies. A recent trend in robotics works towards training multi-task "generalist" robot policies [2, 6, 45–49] on large diverse robot datasets [1, 2, 6, 11, 45, 49–56], spanning many different robot embodiments [1, 5, 53, 57–66]. Notably, Octo [5] trains a generalist policy that can control multiple robots out-of-the-box and allows for flexible fine-tuning to new robot setups. A key difference between these approaches and OpenVLA is the model architecture. Prior works like Octo typically compose pretrained components such as language embeddings or visual encoders with additional model components initialized from scratch [2, 5, 6], learning to "stitch" them together during the course of policy training. Unlike these works, OpenVLA adopts a more end-to-end approach, directly fine-tuning VLMs to generate robot actions by treating them as tokens in the language model vocabulary. Our experimental evaluation shows that this simple yet scalable pipeline substantially boosts performance and generalization ability over prior generalist policies.
 
-**中文:** 通用机器人策略。机器人领域近期的一个趋势是：在大型多样化机器人数据集 [1, 2, 6, 11, 45, 49–56] 上训练多任务"通用"机器人策略 [2, 6, 45–49]，覆盖众多不同的机器人本体 [1, 5, 53, 57–66]。其中值得注意的是 Octo [5]，它训练的通用策略开箱即可控制多种机器人，并支持灵活地微调到新的机器人配置。这些方法与 OpenVLA 的一个关键差异在于模型架构。Octo 等先前工作通常把预训练组件（如语言嵌入或视觉编码器）与若干从零初始化的模型组件组合起来 [2, 5, 6]，在策略训练过程中学习把它们"缝合"在一起。与这些工作不同，OpenVLA 采用更端到端的方式：直接把 VLM 微调为生成机器人动作，方法是把动作当作语言模型词表中的 token。我们的实验评估表明，这条简单却可扩展的路线在性能与泛化能力上明显优于先前的通用策略。
+**中文:** 通用机器人策略。机器人领域近期的一个趋势是：在大型多样化机器人数据集 [1, 2, 6, 11, 45, 49–56] 上训练多任务"通用"机器人策略 [2, 6, 45–49]，覆盖众多不同的机器人本体 [1, 5, 53, 57–66]。其中值得注意的是 Octo [5]，它训练的通用策略开箱即可控制多种机器人，并支持灵活地微调到新的机器人配置。这些方法与 OpenVLA 的一个关键差异在于模型架构。**Octo 等先前工作通常把预训练组件（如语言嵌入或视觉编码器）与若干从零初始化的模型组件组合起来 [2, 5, 6]，在策略训练过程中学习把它们"缝合"在一起。**与这些工作不同，**OpenVLA 采用更端到端的方式：直接把 VLM 微调为生成机器人动作，方法是把动作当作语言模型词表中的 token。**我们的实验评估表明，这条简单却可扩展的路线在性能与泛化能力上明显优于先前的通用策略。
+
+【Note】<mark>OpenVLA 与 RT-2 是同一配方家族，OpenVLA 在机制层面大量沿用了 RT-2 的方案。</mark>
+
+- OpenVLA 与 RT-2 的相同部分：
+  - 两者都走"直接微调 VLM → 把动作当作词表 token → next-token 预测"的路线。论文把 RT-2 作为 VLA 的典范介绍（p.2 S006），并说明 OpenVLA 的动作离散化与 token 覆写是"Following Brohan et al. [7]"：每维动作离散成 256 个 bin，再用动作 token 覆写词表中使用频率最低的 256 个 token（p.5 S017–S018），训练时也只在动作 token 上算交叉熵损失（p.5 S018）。
+- OpenVLA 与 RT-2 的不同部分：
+
+| 维度                | RT-2 / RT-2-X                                   | OpenVLA                                                      |
+| ------------------- | ----------------------------------------------- | ------------------------------------------------------------ |
+| VLM 骨干            | **PaLI 系**（Google 闭源）[19, 20]，p.2 S006    | 开源 Prismatic-7B：**SigLIP+DINOv2 双编码器 + Llama 2 7B**，p.4 S015 |
+| 参数量              | RT-2-X 为 55B                                   | 7B（少近一个数量级），p.8 S037                               |
+| 动作离散化边界      | min-max（Brohan et al. [7]）                    | 1%–99% 分位数，p.5 S017                                      |
+| 微调时的数据        | 机器人动作数据 + 互联网预训练数据 co-fine-tuned | 只用机器人数据微调，p.8 S037                                 |
+| 数据预处理          | 未过滤 Bridge 数据中的全零动作                  | 过滤每条示教首帧的全零动作，p.32 S110                        |
+| 开放程度 / 配套研究 | 闭源，无微调与量化研究                          | 全开源，系统研究微调、LoRA、量化，p.3 S012                   |
 
 <a id="S012"></a>
 **Source:** p.3 S012
 
 **Original:** Vision-Language-Action Models. A number of works have explored the use of VLMs for robotics, e.g., for visual state representations [12, 13], object detection [67], high-level planning [16], and for providing a feedback signal [68–71]. Others integrate VLMs directly into end-to-end visuomotor manipulation policies [14, 15], but incorporate significant structure into the policy architecture or require calibrated cameras, which limits their applicability. A number of recent works have explored similar recipes to ours and directly fine-tuned large pretrained VLMs for predicting robot actions [1, 7, 17, 18, 72–74]. Such models are often referred to as vision-language-action models (VLAs), since they fuse robot control actions directly into VLM backbones. This has three key benefits: (1) it performs alignment of pretrained vision and language components on a large, Internet-scale vision-language dataset, (2) the use of a generic architecture, not custom-made for robot control, allows us to leverage the scalable infrastructure underlying modern VLM training [75–77] and scale to training billion-parameter policies with minimal code modifications, and (3) it provides a direct pathway for robotics to benefit from the rapid improvements in VLMs. Existing works on VLAs either focus on training and evaluating in single robot or simulated setups [72–74, 78] and thus lack generality, or are closed and do not support efficient fine-tuning to new robot setups [1, 7, 17, 18]. Most closely related, RT-2-X [1] trains a 55B-parameter VLA policy on the Open X-Embodiment dataset and demonstrates state-of-the-art generalist manipulation policy performance. However, our work differs from RT-2-X in multiple important aspects: (1) by combining a strong open VLM backbone with a richer robot pretraining dataset, OpenVLA outperforms RT-2-X in our experiments while being an order of magnitude smaller; (2) we thoroughly investigate fine-tuning of OpenVLA models to new target setups, while RT-2-X does not investigate the fine-tuning setting; (3) we are the first to demonstrate the effectiveness of modern parameter-efficient fine-tuning and quantization approaches for VLAs; and (4) OpenVLA is the first generalist VLA that is open-source and thus supports future research on VLA training, data mixtures, objectives, and inference.
 
-**中文:** 视觉-语言-动作模型。不少工作探索了把 VLM 用于机器人，例如用于视觉状态表示 [12, 13]、物体检测 [67]、高层规划 [16] 以及提供反馈信号 [68–71]。也有工作把 VLM 直接集成到端到端视觉运动操作策略中 [14, 15]，但其策略架构引入了大量结构化设计，或需要标定相机，限制了适用性。近期一批工作探索了与我们类似的配方，直接微调大型预训练 VLM 来预测机器人动作 [1, 7, 17, 18, 72–74]。这类模型通常被称为视觉-语言-动作模型（VLA），因为它们把机器人控制动作直接融入 VLM 骨干。这带来三个关键好处：(1) 它在互联网规模的视觉-语言大数据上完成了预训练视觉与语言组件的对齐；(2) 使用通用架构（而非为机器人控制定制的架构）使我们能够利用现代 VLM 训练背后的可扩展基础设施 [75–77]，以极少的代码改动扩展到十亿参数级策略的训练；(3) 它为机器人领域直接受益于 VLM 的快速进步提供了路径。已有的 VLA 工作要么只在单一机器人或仿真环境中训练与评测 [72–74, 78]，因而缺乏通用性；要么闭源、不支持对新机器人配置的高效微调 [1, 7, 17, 18]。最接近我们的是 RT-2-X [1]，它在 Open X-Embodiment 数据集上训练了 55B 参数的 VLA 策略，并展现了当时最优的通用操作策略性能。但我们的工作在多个重要方面与之不同：(1) 通过把强开源 VLM 骨干与更丰富的机器人预训练数据集结合，OpenVLA 在实验中超越了 RT-2-X，而参数量小一个数量级；(2) 我们系统研究了把 OpenVLA 微调到新目标配置的问题，而 RT-2-X 未研究微调场景；(3) 我们首次证明现代参数高效微调与量化方法对 VLA 有效；(4) OpenVLA 是首个开源的通用 VLA，因而能够支撑未来在 VLA 训练、数据混合、目标函数与推理方面的研究。
+**中文:** 视觉-语言-动作模型。不少工作探索了把 VLM 用于机器人，例如用于视觉状态表示 [12, 13]、物体检测 [67]、高层规划 [16] 以及提供反馈信号 [68–71]。也有工作把 VLM 直接集成到端到端视觉运动操作策略中 [14, 15]，但其策略架构引入了大量结构化设计，或需要标定相机，限制了适用性。近期一批工作探索了与我们类似的配方，直接微调大型预训练 VLM 来预测机器人动作 [1, 7, 17, 18, 72–74]。这类模型通常被称为视觉-语言-动作模型（VLA），因为它们把机器人控制动作直接融入 VLM 骨干。这带来三个关键好处：(1) 它在互联网规模的视觉-语言大数据上完成了预训练视觉与语言组件的对齐；(2) **使用通用架构（而非为机器人控制定制的架构）使我们能够利用现代 VLM 训练背后的可扩展基础设施 [75–77]，以极少的代码改动扩展到十亿参数级策略的训练**；(3) 它为机器人领域直接受益于 VLM 的快速进步提供了路径。已有的 VLA 工作要么只在单一机器人或仿真环境中训练与评测 [72–74, 78]，因而缺乏通用性；要么闭源、不支持对新机器人配置的高效微调 [1, 7, 17, 18]。<mark>**最接近我们的是 RT-2-X [1]，它在 Open X-Embodiment 数据集上训练了 55B 参数的 VLA 策略，并展现了当时最优的通用操作策略性能。但我们的工作在多个重要方面与之不同：(1) 通过把强开源 VLM 骨干与更丰富的机器人预训练数据集结合，OpenVLA 在实验中超越了 RT-2-X，而参数量小一个数量级；(2) 我们系统研究了把 OpenVLA 微调到新目标配置的问题，而 RT-2-X 未研究微调场景；(3) 我们首次证明现代参数高效微调与量化方法对 VLA 有效；(4) OpenVLA 是首个开源的通用 VLA，因而能够支撑未来在 VLA 训练、数据混合、目标函数与推理方面的研究。**</mark>
 
 ## p.4 3 The OpenVLA Model · 3.1 预备知识
 
@@ -155,7 +198,7 @@
 
 **Original:** 3 The OpenVLA Model. We introduce the OpenVLA model, a 7B-parameter vision-language-action model (VLA) trained on 970k robot demonstrations from the Open X-Embodiment dataset [1]. There are many, largely unexplored, questions around best practices for developing VLA models, e.g., what are the best model backbones, datasets, and hyperparameters to use for training. Below, we detail our approach for developing OpenVLA and summarize our key learnings. Concretely, we first provide a brief overview of modern VLMs, which form the backbone of OpenVLA (Section 3.1); then describe our basic training recipe and dataset (Section 3.2 and Section 3.3); discuss key design decisions (Section 3.4); and provide details of the used infrastructure for training and inference (Section 3.5).
 
-**中文:** 3 OpenVLA 模型。我们提出 OpenVLA 模型：一个 7B 参数的视觉-语言-动作模型（VLA），在 Open X-Embodiment 数据集 [1] 的 97 万条机器人示教上训练。关于如何开发 VLA 模型，仍有许多基本未被探索的问题，例如应该选用什么模型骨干、数据集与超参数。下面我们详述开发 OpenVLA 的方法并总结关键经验。具体而言，我们首先简要回顾构成 OpenVLA 骨干的现代 VLM（3.1 节）；然后描述基本训练配方与数据集（3.2 节与 3.3 节）；讨论关键设计决策（3.4 节）；并给出训练与推理所用基础设施的细节（3.5 节）。
+**中文:** 3 OpenVLA 模型。我们提出 OpenVLA 模型：一个 7B 参数的视觉-语言-动作模型（VLA），**在 Open X-Embodiment 数据集 [1] 的 97 万条机器人示教上训练**。关于如何开发 VLA 模型，仍有许多基本未被探索的问题，例如应该选用什么模型骨干、数据集与超参数。下面我们详述开发 OpenVLA 的方法并总结关键经验。具体而言，我们首先简要回顾构成 OpenVLA 骨干的现代 VLM（3.1 节）；然后描述基本训练配方与数据集（3.2 节与 3.3 节）；讨论关键设计决策（3.4 节）；并给出训练与推理所用基础设施的细节（3.5 节）。
 
 <a id="S014"></a>
 **Source:** p.4 S014
@@ -181,7 +224,7 @@
 
 **Original caption:** Figure 2: OpenVLA model architecture. Given an image observation and a language instruction, the model predicts 7-dimensional robot control actions. The architecture consists of three key components: (1) a vision encoder that concatenates Dino V2 [25] and SigLIP [79] features, (2) a projector that maps visual features to the language embedding space, and (3) the LLM backbone, a Llama 2 7B-parameter large language model [10].
 
-**中文图注:** 图 2：OpenVLA 模型架构。给定图像观测与语言指令，模型预测 7 维机器人控制动作。架构包含三个关键组件：(1) 视觉编码器，拼接 DinoV2 [25] 与 SigLIP [79] 特征；(2) 投影器（MLP Projector），把视觉特征映射到语言嵌入空间；(3) LLM 骨干，即 Llama 2 7B 大语言模型 [10]。图中流程为：输入图像 + 语言指令（"Put eggplant in bowl"）→ 视觉编码与投影 → 拼入提示模板（"What should the robot do to {task}? A:"）→ Llama 2 7B 自回归生成离散动作 token → Action De-Tokenizer 还原为 7 维机器人动作 [Δx, Δθ, ΔGrip]。
+**中文图注:** 图 2：OpenVLA 模型架构。给定图像观测与语言指令，模型预测 7 维机器人控制动作。架构包含三个关键组件：(1) **视觉编码器，拼接 DinoV2 [25] 与 SigLIP [79] 特征**；(2) **投影器（MLP Projector），把视觉特征映射到语言嵌入空间**；(3) **LLM 骨干，即 Llama 2 7B 大语言模型 [10]**。图中流程为：输入图像 + 语言指令（"Put eggplant in bowl"）→ 视觉编码与投影 → 拼入提示模板（"What should the robot do to {task}? A:"）→ Llama 2 7B 自回归生成离散动作 token → Action De-Tokenizer 还原为 7 维机器人动作 [Δx, Δθ, ΔGrip]。
 
 **Reading note:** 重点看三处：(1) 视觉端由 DinoV2 与 SigLIP 并联、特征按通道拼接；(2) 动作在 LLM 的输出词表里以 token 形式生成，再由 de-tokenizer 还原为连续控制量；(3) 输入提示采用固定模板，任务指令以自然语言填入 `{task}` 位置。
 
@@ -190,7 +233,18 @@
 
 **Original:** In this work, we build on the Prismatic-7B VLM [44]. Prismatic follows the same standard architecture described above, with a 600M-parameter visual encoder, a small 2-layer MLP projector, and a 7B-parameter Llama 2 language model backbone [10]. Notably, Prismatic uses a two-part visual encoder, consisting of pretrained SigLIP [79] and DinoV2 [25] models. Input image patches are passed separately through both encoders and the resulting feature vectors are concatenated channel-wise. In contrast to the more commonly used vision encoders such as CLIP- [80] or SigLIP-only encoders, the addition of DinoV2 features has been shown to be helpful for improved spatial reasoning [44], which can be particularly helpful for robot control.
 
-**中文:** 在本工作中，我们基于 Prismatic-7B VLM [44] 构建模型。Prismatic 采用上述标准架构：600M 参数视觉编码器、两层的小型 MLP 投影器，以及 7B 参数的 Llama 2 语言模型骨干 [10]。值得注意的是，Prismatic 使用双部分视觉编码器，由预训练的 SigLIP [79] 与 DinoV2 [25] 组成。输入图像 patch 分别经过两个编码器，得到的特征向量按通道拼接。相比更常用的 CLIP-only [80] 或 SigLIP-only 编码器，加入 DinoV2 特征已被证明有助于提升空间推理能力 [44]，这对机器人控制尤其有用。
+**中文:** 在本工作中，**我们基于 Prismatic-7B VLM [44] 构建模型。Prismatic 采用上述标准架构**：600M 参数视觉编码器、两层的小型 MLP 投影器，以及 7B 参数的 Llama 2 语言模型骨干 [10]。值得注意的是，Prismatic 使用双部分视觉编码器，由预训练的 SigLIP [79] 与 DinoV2 [25] 组成。输入图像 patch 分别经过两个编码器，得到的特征向量按通道拼接。相比更常用的 CLIP-only [80] 或 SigLIP-only 编码器，**加入 DinoV2 特征已被证明有助于提升空间推理能力** [44]，这对机器人控制尤其有用。
+
+【Note】为什么同时需要**DinoV2 与 SigLIP**  ？
+
+SigLIP 提供与语言对齐的**高层语义**（"这是什么物体"），DINOv2 提供细粒度的**低层空间信息**（"它在哪里、朝什么方向"），而机器人控制恰好这两样都要。
+
+| 编码器 | 预训练方式                   | 擅长提供                                  | 对应机器人的需求                       |
+| ------ | ---------------------------- | ----------------------------------------- | -------------------------------------- |
+| SigLIP | 图文对比学习（与文本对齐）   | 高层语义：物体类别、概念、与指令的对应    | "听懂指令，选对物体"（语言 grounding） |
+| DINOv2 | 自监督视觉预训练（只靠图像） | 低层空间/几何结构：位置、形状、细粒度对应 | "精确对齐、抓准位置朝向"（空间推理）   |
+
+同时，**这套双编码器是继承来的，不是 OpenVLA 单独设计的**。OpenVLA 直接采用 Prismatic-7B 作预训练骨干，SigLIP+DINOv2 是 Prismatic 自带的配置；OpenVLA 要做的是把这两个编码器连同整个骨干一起全量微调——而且论文发现 VLA 必须微调视觉编码器、不能冻结。
 
 <a id="S016"></a>
 **Source:** p.4 S016
@@ -208,12 +262,21 @@
 
 **中文:** 3.2 OpenVLA 训练流程。为训练 OpenVLA，我们微调预训练的 Prismatic-7B VLM 骨干来做机器人动作预测（见图 2）。我们把动作预测问题表述为"视觉-语言"任务：把输入观测图像与自然语言任务指令映射为一串预测的机器人动作 [7]。为了让 VLM 的语言模型骨干能够预测机器人动作，我们把连续机器人动作映射为语言模型分词器（tokenizer）使用的离散 token，从而在 LLM 的输出空间中表示动作。沿用 Brohan 等人 [7] 的做法，我们把机器人动作的每一维分别离散化为 256 个 bin 之一。对每个动作维度，我们设定 bin 宽度，使其在训练数据该维动作的 1% 分位数到 99% 分位数之间均匀划分。使用分位数而非 Brohan 等人 [7] 所用的 min-max 边界，可以忽略数据中的离群动作——否则这些离群值会急剧扩大离散化区间，降低动作离散化的有效粒度。
 
+【Note】动作 Token 设置
+
+1. 把连续区间切成 256 格。对动作的**每一维**（比如 Δx 这一维，或者夹爪开合这一维）单独做：不是让模型预测"具体是哪个数值"，而是让它做一道 256 选 1 的选择题——选中的格子对应整数 0–255，而这个整数恰好对应词表里的一个 token。7 维动作（Δx、Δy、Δz、三个旋转、grip）就变成依次生成的 7 个 token，每个都是 256 选 1。为什么是 256？因为 256 = 2⁸，一个字节的取值数，正好能干净地占用词表里 256 个 token 的位置。
+
+2. 格子边界怎么定——这就是这段话的重点。先把训练数据里这一维的所有数值拿出来（比如全部 97 万条轨迹里所有的 Δx），找到它的 1% 分位数 P1 和 99% 分位数 P99。"1% 分位数"的意思是：只有 1% 的数据比 P1 还小，只有 1% 的数据比 P99 还大。然后在 [P1, P99] 这个区间上等宽地切 256 格。落在 P1 以下的值就归到第 0 格，落在 P99 以上的值就归到第 255 格——注意是**饱和到两端**，不是丢数据。
+
+3. 为什么不用 min-max（最小值到最大值）？假设这一维的绝大多数数据都挤在 -5 到 +5 之间，但数据里混进了一条噪声轨迹、出现了一个 +50 的离群值。用 min-max 的话，区间就被撑成 [-5, 50]，256 格要覆盖 55 个单位，每格约 0.21 个单位；而用分位数把 1% 的极端尾巴裁掉后，区间只剩 [-5, +5]，每格约 0.04 个单位，粒度细了 5 倍。也就是说：**分位数保证有限的 256 格花在数据真正密集的地方**，不被少数离群值白白稀释。论文原话就是这个意思——离群值会"急剧扩大离散化区间，降低动作离散化的有效粒度"（p.5 S017）。
+4. 推理时逆向翻译：模型生成 token 序列 → 每个 token 还原成该格的整数值 → 再映射回该格的数值（通常取格子中心）→ 得到连续动作发给机器人。图 2 右侧的 "Action De-Tokenizer" 干的正是这件事（p.4 C002）。
+
 <a id="S018"></a>
 **Source:** p.5 S018
 
 **Original:** Using this discretization, we obtain N discrete integers ∈ [0 … 255] for an N-dimensional robot action. Unfortunately, the tokenizer used by OpenVLA's language backbone, the Llama tokenizer [10], only reserves 100 "special tokens" for tokens newly introduced during fine-tuning, which is too few for the 256 tokens of our action discretization. Instead, we again opt for simplicity and follow Brohan et al. [7]'s approach by simply overwriting the 256 least used tokens in the Llama tokenizer's vocabulary (which corresponds to the last 256 tokens) with our action tokens. Once the actions are processed into a sequence of tokens, OpenVLA is trained with a standard next-token prediction objective, evaluating the cross-entropy loss on the predicted action tokens only. We discuss key design decisions for implementing this training procedure in Section 3.4. Next, we describe the robot dataset we use for OpenVLA training.
 
-**中文:** 通过这种离散化，一个 N 维机器人动作会得到 N 个取值范围在 [0 … 255] 的离散整数。遗憾的是，OpenVLA 语言骨干所使用的分词器（Llama tokenizer [10]）只为微调期间新引入的 token 预留了 100 个"特殊 token"，而我们的动作离散化需要 256 个，远远不够。我们同样选择最简单的方案，沿用 Brohan 等人 [7] 的做法：直接用动作 token 覆盖 Llama 词表中使用频率最低的 256 个 token（即词表最后 256 个）。动作被处理为 token 序列后，OpenVLA 以标准的下一 token 预测目标训练，且只在预测的动作 token 上计算交叉熵损失。我们将在 3.4 节讨论实现该训练流程的关键设计决策。接下来介绍用于 OpenVLA 训练的机器人数据集。
+**中文:** 通过这种离散化，一个 N 维机器人动作会得到 N 个取值范围在 [0 … 255] 的离散整数。遗憾的是，OpenVLA 语言骨干所使用的分词器（Llama tokenizer [10]）只为微调期间新引入的 token 预留了 100 个"特殊 token"，而我们的动作离散化需要 256 个，远远不够。我们同样选择最简单的方案，沿用 Brohan 等人 [7] 的做法：**直接用动作 token 覆盖 Llama 词表中使用频率最低的 256 个 token（即词表最后 256 个）**。动作被处理为 token 序列后，OpenVLA 以标准的下一 token 预测目标训练，且只在预测的动作 token 上计算交叉熵损失。我们将在 3.4 节讨论实现该训练流程的关键设计决策。接下来介绍用于 OpenVLA 训练的机器人数据集。
 
 <a id="S019"></a>
 **Source:** p.5 S019
@@ -227,12 +290,12 @@
 
 **Original:** The goals of this curation are to ensure (1) a coherent input and output space across all training datasets, and (2) a balanced mix of embodiments, tasks, and scenes in the final training mixture.² To address (1), we follow [1, 5] and restrict our training dataset to contain only manipulation datasets with at least one 3rd person camera and use single-arm end-effector control. For (2), we leverage the data mixture weights of Octo [5] for all datasets that pass the first round of filtering. Octo heuristically down-weights or removes less diverse datasets and up-weights datasets with larger task and scene diversity; see Octo Model Team et al. [5] for details.
 
-**中文:** 数据整理的目标是确保 (1) 所有训练数据集具有一致的输入与输出空间，(2) 最终训练混合在本体、任务与场景上达到均衡。² 针对 (1)，我们沿用 [1, 5]，把训练数据限制为至少含一个第三人称相机、且使用单臂末端执行器控制的机器人操作数据集。针对 (2)，对于通过第一轮筛选的所有数据集，我们采用 Octo [5] 的数据混合权重。Octo 会启发式地降低多样性较低数据集（或直接移除）的权重，并提高任务与场景多样性更高数据集的权重；细节见 Octo Model Team 等人 [5]。
+**中文:** 数据整理的目标是确保 (1) 所有训练数据集具有一致的输入与输出空间，(2) 最终训练混合在本体、任务与场景上达到均衡。² 针对 (1)，我们沿用 [1, 5]，把训练数据限制为至少含一个第三人称相机、且使用单臂末端执行器控制的机器人操作数据集。针对 (2)，对于通过第一轮筛选的所有数据集，我们**采用 Octo [5] 的数据混合权重。Octo 会启发式地降低多样性较低数据集（或直接移除）的权重，并提高任务与场景多样性更高数据集的权重**；细节见 Octo Model Team 等人 [5]。
 
 <a id="S021"></a>
 **Source:** p.5 S021
 
-**Original:** We also experimented with incorporating a few additional datasets into our training mixture that were added to the OpenX dataset since the release of Octo, including the DROID dataset [11], although at a conservative mixture weight of 10%. In practice, we found that the action token accuracy on DROID remained low throughout training, suggesting a larger mixture weight or model may be required to fit its diversity in the future. To not jeopardize the quality of the final model, we removed DROID from the data mixture for the final third of training. We provide a complete overview of the used datasets and mixture weights in Appendix A.
+**Original:** We also experimented with incorporating a few additional datasets into our training mixture that were added to the OpenX dataset since the release of Octo, including the DROID dataset [11], although at a conservative mixture weight of 10%. In practice, we found that the action token accuracy on DROID remained low throughout training, suggesting a larger mixture weight or model may be required to fit its diversity in the future. To not jeopardize the quality of the final model, we removed DROID from the data mixture for the final third of training. We provide a complete overview of the used datasets and mixture weights in Appendix A.	
 
 **中文:** 我们还尝试把 Octo 发布之后加入 OpenX 数据集的一些额外数据集纳入训练混合，包括 DROID 数据集 [11]，但仅使用保守的 10% 混合权重。实践中我们发现，DROID 上的动作 token 准确率在整个训练过程中始终偏低，说明未来若要拟合其多样性，可能需要更大的混合权重或更大的模型。为避免影响最终模型质量，我们在训练的最后三分之一阶段把 DROID 从数据混合中移除。所用数据集与混合权重的完整清单见附录 A。
 
@@ -441,6 +504,7 @@
 **中文:** 图 5：适配到新的机器人配置。我们在 7 个 Franka Emika Panda 任务（每个 10–150 条示教）上评测从零训练的最优 Diffusion Policy，以及在同一数据上微调的通用策略 Octo 与 OpenVLA。Diffusion Policy 在较窄的单指令任务上表现强，而 Octo 与 OpenVLA 在涉及多指令与干扰物的多样化微调任务上表现更好。总体而言，OpenVLA 在两种配置上取得最高的综合性能，说明它是下游任务学习策略的一个有效默认选择。平均成功率 ± 标准误基于每种方法 129 次 rollout 计算（Franka-Tabletop 任务 99 次、Franka-DROID 任务 30 次）。详细结果见表 7。
 
 <a id="F005"></a>
+
 ### Fig. 5. 面向新机器人配置的微调结果（Franka-Tabletop / Franka-DROID）
 
 **Placed near:** p.9 S042
@@ -475,7 +539,7 @@
 
 **Original:** 5.3 Parameter-Efficient Fine-Tuning. The full fine-tuning runs of OpenVLA in the previous section used 8 A100 GPUs for 5-15 hours per task (depending on the dataset size) to achieve high performance. While this is substantially less compute than what is required for VLA pretraining, in this section we explore even more compute- and parameter-efficient fine-tuning approaches and investigate their effectiveness.
 
-**中文:** 5.3 参数高效微调。上一节中 OpenVLA 的全量微调为达到高性能，每个任务使用 8 张 A100 GPU 训练 5–15 小时（取决于数据集规模）。虽然这已经远低于 VLA 预训练所需的算力，本节我们仍进一步探索更节省算力与参数的微调方法，并考察其有效性。
+**中文:** 5.3 参数高效微调。上一节中 OpenVLA 的全量微调为达到高性能，**每个任务使用 8 张 A100 GPU 训练 5–15 小时**（取决于数据集规模）。虽然这已经远低于 VLA 预训练所需的算力，本节我们仍进一步探索更节省算力与参数的微调方法，并考察其有效性。
 
 <a id="C006"></a>
 **Source:** p.10 C006
@@ -496,9 +560,10 @@
 
 **Original:** We report fine-tuning success rates across multiple Franka-Tabletop tasks, as well as training parameter count and GPU memory requirements, in Table 1.⁴ We find that only fine-tuning the network's last layer or freezing the vision encoder leads to poor performance, suggesting that further adaptation of the visual features to the target scene is crucial. In contrast, "sandwich fine-tuning" achieves better performance since it fine-tunes the vision encoder, and it consumes less GPU memory since it does not fine-tune the full LLM backbone. Lastly, LoRA achieves the best trade-off between performance and training memory consumption, outperforming "sandwich fine-tuning" and matching full fine-tuning performance while fine-tuning only 1.4% of the parameters. We find that the LoRA rank has negligible effect on policy performance and thus recommend using a default rank of r = 32. With LoRA, we can fine-tune OpenVLA on a new task within 10-15 hours on a single A100 GPU – an 8x reduction in compute compared to full fine-tuning.
 
-**中文:** 我们在表 1 中报告了多个 Franka-Tabletop 任务上的微调成功率，以及训练参数量与 GPU 显存需求。⁴ 我们发现，只微调网络最后一层或冻结视觉编码器都会导致性能很差，说明让视觉特征进一步适配目标场景至关重要。相比之下，"sandwich 微调"因为微调了视觉编码器而取得更好性能，又由于不微调整个 LLM 骨干而占用更少显存。最后，LoRA 在性能与训练显存之间取得最佳权衡：优于 sandwich 微调、追平全量微调性能，却只微调 1.4% 的参数。我们发现 LoRA 的秩对策略性能影响可忽略，因此推荐默认使用 r = 32。借助 LoRA，我们可以在单张 A100 GPU 上于 10–15 小时内把 OpenVLA 微调到一个新任务——相比全量微调减少 8 倍计算量。
+**中文:** 我们在表 1 中报告了多个 Franka-Tabletop 任务上的微调成功率，以及训练参数量与 GPU 显存需求。⁴ 我们发现，只微调网络最后一层或冻结视觉编码器都会导致性能很差，说明让视觉特征进一步适配目标场景至关重要。相比之下，"sandwich 微调"因为微调了视觉编码器而取得更好性能，又由于不微调整个 LLM 骨干而占用更少显存。最后，LoRA 在性能与训练显存之间取得最佳权衡：优于 sandwich 微调、追平全量微调性能，却只微调 1.4% 的参数。我们发现 LoRA 的秩对策略性能影响可忽略，因此**推荐默认使用 r = 32**。借助 LoRA，我们可以在单张 A100 GPU 上于 10–15 小时内把 OpenVLA 微调到一个新任务——相比全量微调减少 8 倍计算量。
 
 <a id="T001"></a>
+
 ### Table 1. 参数高效微调：策略、成功率、可训练参数与显存
 
 **Placed near:** p.10 S047
@@ -618,7 +683,7 @@
 
 **Original:** The current OpenVLA model has several limitations. First, it currently only supports single-image observations. In reality, real-world robot setups are heterogeneous, with a wide range of possible sensory inputs [5]. Expanding OpenVLA to support multiple image and proprioceptive inputs as well as observation history is an important avenue for future work. Exploring the use of VLMs pretrained on interleaved image and text data may facilitate such flexible-input VLA fine-tuning.
 
-**中文:** 当前的 OpenVLA 模型存在若干局限。第一，它目前只支持单张图像观测。而在现实中，真实机器人配置是异构的，可能的传感输入范围很广 [5]。把 OpenVLA 扩展到支持多路图像、本体感受输入以及观测历史，是未来工作的重要方向。探索使用在交错图像-文本数据上预训练的 VLM，可能有助于实现这类灵活输入的 VLA 微调。
+**中文:** <mark>当前的 OpenVLA 模型存在若干局限。第一，它目前只支持单张图像观测。而在现实中，真实机器人配置是异构的，可能的传感输入范围很广 [5]。把 OpenVLA 扩展到支持多路图像、本体感受输入以及观测历史，是未来工作的重要方向。探索使用在交错图像-文本数据上预训练的 VLM，可能有助于实现这类灵活输入的 VLA 微调。</mark>
 
 <a id="S055"></a>
 **Source:** p.11 S055
