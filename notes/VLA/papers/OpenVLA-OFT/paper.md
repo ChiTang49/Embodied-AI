@@ -72,15 +72,15 @@
 
 > Abstract
 
-
 <a id="M_ABS"></a>
 **Source:** p.1 S001
 
 **Original:** Abstract—Recent vision-language-action models (VLAs) build upon pretrained vision-language models and leverage diverse robot datasets to demonstrate strong task execution, language following ability, and semantic generalization. Despite these successes, VLAs struggle with novel robot setups and require fine-tuning to achieve good performance, yet how to most effectively fine-tune them is unclear given many possible strategies. In this work, we study key VLA adaptation design choices such as different action decoding schemes, action representations, and learning objectives for fine-tuning, using OpenVLA as our representative base model. Our empirical analysis informs an Optimized Fine-Tuning (OFT) recipe that integrates parallel decoding, action chunking, a continuous action representation, and a simple L1 regression-based learning objective to altogether improve inference efficiency, policy performance, and flexibility in the model’s input-output specifications. We propose OpenVLA-OFT, an instantiation of this recipe, which sets a new state of the art on the LIBERO simulation benchmark, significantly boosting OpenVLA’s average success rate across four task suites from 76.5% to 97.1% while increasing action generation throughput by 26×. In real-world evaluations, our fine-tuning recipe enables OpenVLA to successfully execute dexterous, high-frequency control tasks on a bimanual ALOHA robot and outperform other VLAs (π0 and RDT-1B) fine-tuned using their default recipes, as well as strong imitation learning policies trained from scratch (Diffusion Policy and ACT) by up to 15% (absolute) in average success rate. We release code for OFT and pretrained model checkpoints at https://openvla-oft.github.io.
 
-**中文:** 摘要——近期的视觉-语言-动作模型（VLA）以预训练的视觉-语言模型为基础，并借助多样化的机器人数据集，在任务执行、语言跟随能力和语义泛化方面展现出强劲表现。尽管取得了这些成功，VLA 在面对新的机器人平台时仍然表现吃力，需要通过微调才能取得良好性能；然而在众多可能的策略中，如何最有效地微调仍不明确。在本文中，我们以 OpenVLA 作为代表性基座模型，研究 VLA 适配中的关键设计选择，例如不同的动作解码方式、动作表示形式与微调学习目标。我们的实证分析促成了一个“优化微调”（Optimized Fine-Tuning, OFT）配方，它把并行解码、动作分块、连续动作表示以及一个简单的 L1 回归学习目标整合起来，从而整体提升推理效率、策略性能以及模型输入-输出规格上的灵活性。我们提出 OpenVLA-OFT，作为该配方的一个实例，它在 LIBERO 仿真基准上刷新了最优结果：将 OpenVLA 在四个任务套件上的平均成功率从 76.5% 显著提升到 97.1%，同时把动作生成吞吐量提高 26 倍。在真实世界评估中，我们的微调配方使 OpenVLA 能够在双机械臂 ALOHA 机器人上成功执行灵巧的高频控制任务，其表现优于使用各自默认配方微调的其他 VLA（π0 与 RDT-1B），并在平均成功率上超过从零训练的强模仿学习策略（Diffusion Policy 与 ACT）最多 15 个百分点（绝对值）。我们在 https://openvla-oft.github.io 公开了 OFT 的代码与预训练模型检查点。
+**中文:** 摘要——近期的视觉-语言-动作模型（VLA）以预训练的视觉-语言模型为基础，并借助多样化的机器人数据集，在任务执行、语言跟随能力和语义泛化方面展现出强劲表现。**尽管取得了这些成功，VLA 在面对新的机器人平台时仍然表现吃力，需要通过微调才能取得良好性能；然而在众多可能的策略中，如何最有效地微调仍不明确。**<mark>在本文中，我们以 OpenVLA 作为代表性基座模型，研究 VLA 适配中的关键设计选择，例如不同的动作解码方式、动作表示形式与微调学习目标。我们的实证分析促成了一个“优化微调”（Optimized Fine-Tuning, OFT）配方，它把并行解码、动作分块、连续动作表示以及一个简单的 L1 回归学习目标整合起来，从而整体提升推理效率、策略性能以及模型输入-输出规格上的灵活性。</mark>我们提出 OpenVLA-OFT，作为该配方的一个实例，它在 LIBERO 仿真基准上刷新了最优结果：将 OpenVLA 在四个任务套件上的平均成功率从 76.5% 显著提升到 97.1%，同时把动作生成吞吐量提高 26 倍。在真实世界评估中，我们的微调配方使 OpenVLA 能够在双机械臂 ALOHA 机器人上成功执行灵巧的高频控制任务，其表现优于使用各自默认配方微调的其他 VLA（π0 与 RDT-1B），并在平均成功率上超过从零训练的强模仿学习策略（Diffusion Policy 与 ACT）最多 15 个百分点（绝对值）。我们在 https://openvla-oft.github.io 公开了 OFT 的代码与预训练模型检查点。
 
 <a id="s1"></a>
+
 ## 一、引言
 
 > I. INTRODUCTION
@@ -98,16 +98,17 @@
 
 **Original:** Prior work has begun exploring VLA adaptation strategies, with Kim et al. [23] proposing parameter-efficient fine-tuning via LoRA. However, their autoregressive action generation remains too slow (3-5 Hz) for high-frequency control (25-50+ Hz), and both LoRA and full fine-tuning of autoregressive VLAs often yield unsatisfactory performance in bimanual manipulation tasks [54, 27, 3]. While recent approaches improve efficiency through better action tokenization schemes [2, 38], achieving 2 to 13× speedups, significant latency between action chunks (e.g., 750 ms for the recent FAST approach [38]) still limits real-time deployment on high-frequency bimanual robots. Exploring alternative VLA adaptation approaches that achieve both satisfactory speed and quality remains an underexplored area of research.
 
-**中文:** 已有工作开始探索 VLA 的适配策略：Kim et al. [23] 提出了基于 LoRA 的参数高效微调。然而其自回归动作生成仍然太慢（3-5 Hz），无法满足高频控制（25-50+ Hz）的需求；而且无论是 LoRA 还是全量微调，自回归 VLA 在双臂操作任务上往往都难以取得令人满意的性能 [54, 27, 3]。尽管近期一些方法通过更好的动作词元化方案 [2, 38] 实现了 2 到 13 倍的加速，但动作块之间的显著延迟（例如近期 FAST 方法的 750 ms [38]）仍然限制了其在高频双臂机器人上的实时部署。探索既能满足速度、又能保证质量的替代 VLA 适配方法，仍是一个研究不足的领域。
+**中文:** 已有工作开始探索 VLA 的适配策略：Kim et al. [23] 提出了基于 LoRA 的参数高效微调。然而其自回归动作生成仍然太慢（3-5 Hz），无法满足高频控制（25-50+ Hz）的需求；而且无论是 LoRA 还是全量微调，自回归 VLA 在双臂操作任务上往往都难以取得令人满意的性能 [54, 27, 3]。尽管近期一些方法通过更好的动作词元化方案 [2, 38] 实现了 2 到 13 倍的加速，但动作块之间的显著延迟（例如近期 FAST 方法的 750 ms [38]）仍然限制了其在高频双臂机器人上的实时部署。**探索既能满足速度、又能保证质量的替代 VLA 适配方法，仍是一个研究不足的领域。**
 
 <a id="M_INT3"></a>
 **Source:** p.1 S004
 
 **Original:** In this work, we study key design decisions for adapting VLAs to novel robots and tasks using OpenVLA, a representative autoregressive VLA, as our base model. We examine three key design choices: action decoding scheme (autoregressive vs. parallel generation), action representation (discrete vs. continuous), and learning objective (next-token prediction vs. L1 regression vs. diffusion). Our study reveals several key insights that build on each other: (1) parallel decoding with action chunking not only boosts inference efficiency but also improves success rates on downstream tasks while enabling greater flexibility in the model’s input-output specifications; (2) continuous action representations further improve model quality compared to discrete representations; and (3) fine-tuning the VLA with an L1 regression objective yields comparable performance to diffusion-based fine-tuning while offering faster training convergence and inference speed.
 
-**中文:** 在本文中，我们以 OpenVLA（一个具有代表性的自回归 VLA）作为基座模型，研究将 VLA 适配到新机器人和新任务时的关键设计决策。我们考察三个关键设计选择：动作解码方式（自回归 vs. 并行生成）、动作表示（离散 vs. 连续）以及学习目标（下一词元预测 vs. L1 回归 vs. 扩散）。我们的研究揭示出若干层层递进的关键洞见：(1) 并行解码加动作分块不仅提升了推理效率，还提高了下游任务的成功率，同时让模型的输入-输出规格更具灵活性；(2) 相比离散表示，连续动作表示进一步提升了模型质量；(3) 使用 L1 回归目标微调 VLA，可以获得与基于扩散的微调相当的性能，同时训练收敛更快、推理速度更高。
+**中文:** 在本文中，我们以 OpenVLA（一个具有代表性的自回归 VLA）作为基座模型，研究将 VLA 适配到新机器人和新任务时的关键设计决策。**我们考察三个关键设计选择：动作解码方式（自回归 vs. 并行生成）、动作表示（离散 vs. 连续）以及学习目标（下一词元预测 vs. L1 回归 vs. 扩散）。**我们的研究揭示出若干层层递进的关键洞见：<mark>**(1) 并行解码加动作分块不仅提升了推理效率，还提高了下游任务的成功率，同时让模型的输入-输出规格更具灵活性；(2) 相比离散表示，连续动作表示进一步提升了模型质量；(3) 使用 L1 回归目标微调 VLA，可以获得与基于扩散的微调相当的性能，同时训练收敛更快、推理速度更高。**</mark>
 
 <a id="F001"></a>
+
 ### Fig. 1. 双机械臂 ALOHA 机器人上的 OpenVLA-OFT+
 
 **Placed near:** p.2 C001（正文首次引用 p.2 S006）
@@ -117,7 +118,7 @@
 
 **Original caption:** Fig. 1: OpenVLA-OFT+ on the bimanual ALOHA robot. Our Optimized Fine-Tuning (OFT) recipe enhances fine-tuned OpenVLA policies through improved inference efficiency, model quality, and input-output flexibility. The resulting OpenVLA-OFT+ policies execute diverse dexterous manipulation tasks on a real-world bimanual robot at high control frequencies (25 Hz). The “+” suffix indicates the integration of feature-wise linear modulation (FiLM) [37], which strengthens language grounding in tasks where accurate language understanding is critical for success.
 
-**中文图注:** Fig. 1：双机械臂 ALOHA 机器人上的 OpenVLA-OFT+。我们的“优化微调”（OFT）配方通过提升推理效率、模型质量与输入-输出灵活性，增强了微调后的 OpenVLA 策略。由此得到的 OpenVLA-OFT+ 策略在真实双臂机器人上以高控制频率（25 Hz）执行多样化的灵巧操作任务。名称中的 “+” 后缀表示加入了特征级线性调制（FiLM）[37]，它在需要准确理解语言才能成功的任务中增强了语言落地能力。
+**中文图注:** Fig. 1：双机械臂 ALOHA 机器人上的 OpenVLA-OFT+。我们的**“优化微调”（OFT）**配方通过提升推理效率、模型质量与输入-输出灵活性，增强了微调后的 OpenVLA 策略。由此得到的 OpenVLA-OFT+ 策略在真实双臂机器人上以高控制频率（25 Hz）执行多样化的灵巧操作任务。名称中的 “+” 后缀表示加入了特征级线性调制（FiLM）[37]，它在需要准确理解语言才能成功的任务中增强了语言落地能力。
 
 **Reading note:** 展示 OpenVLA-OFT+ 在 25 Hz 真机控制下完成的多种精细操作；名称中的 “+” 表示额外加入了 FiLM 语言调制。
 
@@ -153,28 +154,28 @@
 
 **Original:** Prior works have leveraged language and vision foundation models to enhance robotic capabilities, using them as pretrained visual representations that accelerate robotic policy learning [30, 33, 31, 20, 32], for object localization in robotics tasks [9, 47], and for high-level planning and reasoning [1, 17, 44, 16, 45, 18, 6]. More recently, researchers have explored fine-tuning vision-language models (VLMs) to directly predict low-level robotic control actions, producing “vision-language-action” models (VLAs) [4, 34, 24, 23, 7, 15, 8, 53, 58, 54, 3, 2], which have demonstrated effective language following [59] and generalization to out-of-distribution test conditions and unseen semantic concepts. These works focus primarily on model development, while we focus on developing a recipe for fine-tuning such models, justifying individual design decisions with insights that we gain from our empirical analysis.
 
-**中文:** 已有工作利用语言与视觉基础模型增强机器人能力：把它们当作加速机器人策略学习的预训练视觉表示 [30, 33, 31, 20, 32]，用于机器人任务中的物体定位 [9, 47]，以及用于高层规划与推理 [1, 17, 44, 16, 45, 18, 6]。更近期，研究者开始探索微调视觉-语言模型（VLM）以直接预测低层机器人控制动作，产生“视觉-语言-动作”模型（VLA） [4, 34, 24, 23, 7, 15, 8, 53, 58, 54, 3, 2]，这些模型展示了有效的语言跟随能力 [59]，并能泛化到分布外测试条件与未见过的语义概念。这些工作主要关注模型本身的设计，而我们关注的是为这类模型开发一套微调配方，并通过实证分析为各项具体设计决策提供依据。
+**中文:** 已有工作利用语言与视觉基础模型增强机器人能力：把它们当作加速机器人策略学习的预训练视觉表示 [30, 33, 31, 20, 32]，用于机器人任务中的物体定位 [9, 47]，以及用于高层规划与推理 [1, 17, 44, 16, 45, 18, 6]。更近期，研究者开始探索微调视觉-语言模型（VLM）以直接预测低层机器人控制动作，产生“视觉-语言-动作”模型（VLA） [4, 34, 24, 23, 7, 15, 8, 53, 58, 54, 3, 2]，这些模型展示了有效的语言跟随能力 [59]，并能泛化到分布外测试条件与未见过的语义概念。**这些工作主要关注模型本身的设计，而我们关注的是为这类模型开发一套微调配方，并通过实证分析为各项具体设计决策提供依据。**
 
 <a id="M_REL2"></a>
 **Source:** p.2 S008
 
 **Original:** Despite the importance of fine-tuning for real-world VLA deployment, empirical analysis of effective fine-tuning recipes remains limited. While Kim et al. [23] study various parameter update strategies and from their findings show that LoRA fine-tuning enables effective adaptation to single-arm robots operating at low control frequencies (< 10 Hz), their analysis does not extend to bimanual robots with high control frequencies (25-50+ Hz), a more complex control scenario. We address this gap by exploring VLA adaptation design decisions for fast inference and reliable task execution on a real-world bimanual manipulator with a 25 Hz controller.
 
-**中文:** 尽管微调对 VLA 的真机部署至关重要，但关于有效微调配方的实证分析仍然有限。Kim et al. [23] 研究了多种参数更新策略，并发现 LoRA 微调能让模型有效适配单臂机器人在低频控制（< 10 Hz）下的运行；然而他们的分析并未扩展到高频控制（25-50+ Hz）的双臂机器人这一更复杂的控制场景。为填补这一空白，我们面向真机双臂机械臂上 25 Hz 控制器的快速推理与可靠任务执行，探索 VLA 的适配设计决策。
+**中文:** 尽管微调对 VLA 的真机部署至关重要，但关于有效微调配方的实证分析仍然有限。**Kim et al. [23] 研究了多种参数更新策略，并发现 LoRA 微调能让模型有效适配单臂机器人在低频控制（< 10 Hz）下的运行；然而他们的分析并未扩展到高频控制（25-50+ Hz）的双臂机器人这一更复杂的控制场景。为填补这一空白，我们<mark>面向真机双臂机械臂上 25 Hz 控制器的快速推理与可靠任务执行，探索 VLA 的适配设计决策</mark>。**
 
 <a id="M_REL3"></a>
 **Source:** p.2 S009
 
 **Original:** Recent works by Belkhale and Sadigh [2] and Pertsch et al. [38] improve VLA efficiency through new action tokenization schemes, using vector quantization or discrete cosine transform-based compression to represent action chunks (sequences of actions) with fewer tokens than simple per-dimension binning (as used in RT-2 [4] and OpenVLA [23]). While these approaches achieve 2 to 13× speedups for autoregressive VLAs, we explore design decisions beyond autoregressive modeling, which remains inherently limited by iterative generation. Our parallel decoding approach, when paired with action chunking, achieves significantly greater speedups: 26× to 43× throughput with much lower latency (0.07 ms for single-arm tasks with one input image and 0.321 ms for bimanual tasks with three input images).
 
-**中文:** Belkhale and Sadigh [2] 和 Pertsch et al. [38] 通过新的动作词元化方案提升 VLA 效率，使用向量量化或离散余弦变换压缩来表示动作块（动作序列），所用词元数少于简单的逐维分箱（RT-2 [4] 与 OpenVLA [23] 中使用的做法）。这些方法为自回归 VLA 带来 2 到 13 倍的加速，而我们探索的是超越自回归建模的设计决策——自回归建模受限于迭代生成这一点是本质性的。我们的并行解码方法与动作分块结合后取得了显著更大的加速：吞吐量提升 26 到 43 倍，同时延迟大幅降低（单臂任务、单张输入图像时为 0.07 ms，双臂任务、三张输入图像时为 0.321 ms）。
+**中文:** **Belkhale and Sadigh [2] 和 Pertsch et al. [38] 通过新的动作词元化方案提升 VLA 效率，使用向量量化或离散余弦变换压缩来表示动作块（动作序列），所用词元数少于简单的逐维分箱（RT-2 [4] 与 OpenVLA [23] 中使用的做法）。这些方法为自回归 VLA 带来 2 到 13 倍的加速**，而我们探索的是超越自回归建模的设计决策——**自回归建模受限于迭代生成这一点是本质性的。我们的<mark>并行解码方法与动作分块结合</mark>后取得了显著更大的加速：吞吐量提升 26 到 43 倍，同时延迟大幅降低（单臂任务、单张输入图像时为 0.07 ms，双臂任务、三张输入图像时为 0.321 ms）。**
 
 <a id="M_REL4"></a>
 **Source:** p.2 S010, p.3 S011
 
 **Original:** Another line of research [54, 27, 3] demonstrates effective VLA fine-tuning for high-frequency, bimanual manipulation using generative approaches like diffusion or flow match-ing. While these diffusion-based VLAs achieve higher action throughput than autoregressive VLAs by generating multi-timestep action chunks simultaneously, they introduce computational trade-offs through slower training and multiple denoising or integration steps at inference time. Furthermore, these diffusion VLAs vary considerably in architecture, learning algorithm, vision-language fusion approach, and input-output specifications—and which design elements most significantly impact performance remains unclear. Through controlled experiments, we show that policies fine-tuned with a simpler L1 regression objective can match more complex approaches in task performance while achieving significantly greater inference efficiency.
 
-**中文:** 另一条研究路线 [54, 27, 3] 表明，使用扩散或流匹配等生成式方法，可以有效地把 VLA 微调到高频双臂操作任务上。这些基于扩散的 VLA 通过同时生成多个时间步的动作块，获得了比自回归 VLA 更高的动作吞吐量，但代价是训练更慢，且推理时需要多步去噪或积分。此外，这些扩散式 VLA 在架构、学习算法、视觉-语言融合方式以及输入-输出规格上差异很大，究竟哪些设计要素对性能影响最大仍不清楚。通过受控实验，我们表明用更简单的 L1 回归目标微调出的策略，在任务性能上可以媲美更复杂的方法，同时推理效率显著更高。
+**中文:** 另一条研究路线 [54, 27, 3] 表明，**使用扩散或流匹配等生成式方法，可以有效地把 VLA 微调到高频双臂操作任务上**。这些基于扩散的 VLA 通过同时生成多个时间步的动作块，获得了比自回归 VLA 更高的动作吞吐量，但**代价是训练更慢，且推理时需要多步去噪或积分。此外，这些扩散式 VLA 在架构、学习算法、视觉-语言融合方式以及输入-输出规格上差异很大，究竟哪些设计要素对性能影响最大仍不清楚。**通过受控实验，我们表明<mark>**用更简单的 L1 回归目标微调出的策略，在任务性能上可以媲美更复杂的方法，同时推理效率显著更高**</mark>。
 
 <a id="M_REL5"></a>
 **Source:** p.3 S012
@@ -194,7 +195,7 @@
 
 **Original:** Original OpenVLA formulation. We use OpenVLA [23] as our representative base VLA, a 7B-parameter manipulation policy created by fine-tuning the Prismatic VLM [21] on 1M episodes from the Open X-Embodiment dataset [34]. See Appendix A for architecture details. OpenVLA’s original training formulation uses autoregressive prediction of 7 discrete robot action tokens per timestep: 3 for position control, 3 for orientation control, and 1 for gripper control. It employs next-token prediction with cross-entropy loss as its learning objective, similar to language models. We explore alternative formulations including parallel decoding, continuous action representations, and learning objectives like L1 regression and diffusion modeling in the next few sections.
 
-**中文:** 原始 OpenVLA 形式。我们使用 OpenVLA [23] 作为代表性基座 VLA：它是在 Open X-Embodiment 数据集 [34] 的 100 万条 episode 上微调 Prismatic VLM [21] 得到的 7B 参数操作策略。架构细节见 Appendix A。OpenVLA 的原始训练形式是每个时间步自回归地预测 7 个离散机器人动作词元：3 个用于位置控制、3 个用于姿态控制、1 个用于夹爪控制。它采用带交叉熵损失的下一词元预测作为学习目标，与语言模型类似。在接下来的几节中，我们将探索替代形式，包括并行解码、连续动作表示以及 L1 回归与扩散建模等学习目标。
+**中文:** 原始 OpenVLA 形式。**我们使用 OpenVLA [23] 作为代表性基座 VLA**：它是在 **Open X-Embodiment 数据集 [34] 的 100 万条 episode** 上微调 Prismatic VLM [21] 得到的 **7B 参数操作策略**。架构细节见 Appendix A。OpenVLA 的原始训练形式是**每个时间步自回归地预测 7 个离散机器人动作词元：3 个用于位置控制、3 个用于姿态控制、1 个用于夹爪控制。**它采用**带交叉熵损失的下一词元预测作为学习目标，与语言模型类似**。在接下来的几节中，我们将探索替代形式，包括并行解码、连续动作表示以及 L1 回归与扩散建模等学习目标。
 
 <a id="M_PRE2"></a>
 **Source:** p.3 S014
@@ -245,7 +246,7 @@
 
 **Original caption:** Fig. 2: Key design decisions for VLA fine-tuning. Left: Comparison between autoregressive decoding, which generates actions sequentially, and parallel decoding, which leverages bidirectional attention and generates all actions in a single forward pass. Right: Comparison between discrete action tokens with next-token prediction and continuous action values with L1 regression or diffusion modeling objectives. The original OpenVLA training scheme includes autoregressive decoding, discrete actions, and next-token prediction.
 
-**中文图注:** Fig. 2：VLA 微调的关键设计选择。左：自回归解码（顺序生成动作）与并行解码（利用双向注意力在单次前向传播中生成所有动作）的对比。右：带下一词元预测的离散动作词元，与带 L1 回归或扩散建模目标的连续动作值之间的对比。原始 OpenVLA 训练方案包含自回归解码、离散动作与下一词元预测。
+**中文图注:** Fig. 2：VLA 微调的关键设计选择。左：**自回归解码（顺序生成动作）与并行解码（利用双向注意力在单次前向传播中生成所有动作）的对比**。右：**带下一词元预测的离散动作词元，与带 L1 回归或扩散建模目标的连续动作值之间的对比**。原始 OpenVLA 训练方案包含自回归解码、离散动作与下一词元预测。
 
 **Reading note:** 左：自回归解码与并行解码；右：离散动作词元 + 下一词元预测 与 连续动作 + L1 回归/扩散目标。
 
@@ -275,6 +276,82 @@
 **Original:** Parallel decoding and action chunking. Unlike autoregressive generation which requires sequential token prediction, parallel decoding enables the model to map input embeddings to the predicted output sequence in a single forward pass. We modify the model to receive empty action embeddings as input and replace the causal attention mask with bidirectional attention, allowing the decoder to predict all actions simultaneously. This reduces action generation from D sequential passes to a single pass, where D is the action dimensionality.
 
 **中文:** 并行解码与动作分块。与需要顺序预测词元的自回归生成不同，并行解码让模型在单次前向传播中把输入嵌入映射为预测的输出序列。我们修改模型，使其接收空的动作嵌入作为输入，并把因果注意力掩码替换为双向注意力，从而让解码器能够同时预测所有动作。这把动作生成从 D 次顺序前向传播降到 1 次，其中 D 是动作维度。
+
+【Note】<mark>**自回归解码 -> 并行解码**</mark>
+
+**自回归解码（autoregressive decoding）**
+
+- 模型一次生成一个动作词元。
+- 后一个输出要依赖前一个输出，因此必须顺序执行。
+- OpenVLA 每个时间步有 7 个动作维度：3 个位置、3 个姿态、1 个夹爪控制。
+- 如果要预测连续 \(K\) 个未来时间步，就需要依次生成 \(7K\) 个词元，延迟会随动作块长度增加。
+
+**并行解码（parallel decoding）**
+
+- 模型预先放入多个“空的动作槽位”（图中的黄色方块）。
+- 将因果注意力改成双向注意力，使所有动作槽位可以同时利用输入信息。
+- 一次前向传播直接输出所有动作维度，甚至可以同时输出未来多个时间步的动作块。
+
+因此，动作块大小为 \(K\) 时，模型可以一次输出 \(7K\) 个动作，而不是逐个生成。这正是论文能够高效使用 **action chunking** 的关键。
+
+【Note】<mark>**离散动作 -> 连续动作**</mark>
+
+**离散动作：**
+
+OpenVLA 原本把每个归一化动作维度划分为 256 个桶。例如：
+
+```
+128, 132, 14, 128, 110, 201, 255
+```
+
+这些数字不是实际位移，而是动作词元编号。流程是：
+
+```
+语言/视觉输入
+→ LLM 隐状态
+→ 线性投影得到 logits
+→ softmax
+→ 预测动作词元
+```
+
+训练目标类似语言模型的 **next-token prediction**，通常使用交叉熵损失。
+
+优点是可以直接复用语言模型的词元预测结构；缺点是连续动作被量化成有限的 256 个区间，会损失细粒度精度，而且输出维度和词表绑定得较紧。
+
+**连续动作：**机器人动作本质上是“物理量”，而离散动作把它强行当成了“词语”；连续动作则让模型直接预测位移、旋转和夹爪开合等数值。
+
+连续分支直接输出动作向量，例如图中的：
+
+```
+0.00, 0.03, -0.82, 0.00, -0.14, 0.57, 1.00
+```
+
+论文中这些动作通常先归一化到 \([-1,+1]\)，再由一个 MLP action head 从 LLM 的最终隐状态直接回归。
+
+它可以配合两种训练目标：
+
+- **L1 regression**：直接最小化预测动作与真实动作之间的 L1 距离；
+- **Diffusion**：学习逐步去噪生成动作。
+
+L1 回归只需一次直接预测；扩散模型虽然可能有更强的分布建模能力，但推理时需要多次去噪。本文实现中扩散推理使用 50 个 diffusion steps，因此延迟更高。
+
+【Note】<mark>**OpenVLA & OpenVLA-OFT**</mark>
+
+图中三种设计如何组合
+
+原始 OpenVLA 的组合是：
+
+```
+自回归解码 + 离散动作 + 下一词元预测
+```
+
+论文提出的 OpenVLA-OFT 组合是：
+
+```
+并行解码 + 动作分块 + 连续动作 + L1 回归
+```
+
+
 
 <a id="M_IV5"></a>
 **Source:** p.4 S021
@@ -319,6 +396,7 @@
 **中文:** 所有输入嵌入——视觉特征、机器人状态与语言词元——在序列维度上拼接后再送入解码器。这种统一的潜在表示让模型在生成动作时能够关注到全部可用信息。结合并行解码与动作分块，该架构可以在生成多个时间步动作的同时高效处理丰富的多模态输入，如图 Figure 1 所示。
 
 <a id="H_SEC4C"></a>
+
 ### C. 用 FiLM 增强 OpenVLA-OFT 的语言落地能力
 
 > C. Augmenting OpenVLA-OFT with FiLM for Enhanced Language Grounding
@@ -358,6 +436,79 @@
 **Original:** We apply FiLM after the self-attention layer and before the feedforward layer in each vision transformer block, with separate projectors for each block (see [Figure 8](#F008)). Additional implementation details are provided in Appendix C. We only use FiLM for the ALOHA experiments discussed in Section VI, where multiple camera viewpoints lead to a larger presence of spurious correlations in visual inputs.
 
 **中文:** 我们在每个视觉 Transformer 块中把 FiLM 施加在自注意力层之后、前馈层之前，并为每个块学习单独的投影器（见 Figure 8）。更多实现细节见 Appendix C。我们只在第 VI 节讨论的 ALOHA 实验中使用 FiLM，因为那里的多相机视角导致视觉输入中存在更多虚假相关。
+
+【Note】
+
+这里写作 **FiLM**，全称是 *Feature-wise Linear Modulation*，即“特征级线性调制”。
+
+一句话理解：
+
+> FiLM 让语言指令在视觉编码阶段就改变“模型看图的方式”。
+
+它们作用在模型的不同位置：
+
+| 机制     | 作用位置   | 解决的问题                             |
+| -------- | ---------- | -------------------------------------- |
+| 连续动作 | 输出端     | 动作应该表示成连续数值还是离散词元     |
+| FiLM     | 视觉编码端 | 模型应该如何根据语言理解图像           |
+| 并行解码 | 解码过程   | 一次生成一个动作，还是同时生成一段动作 |
+
+所以，FiLM 不是动作输出方法，也不是加速方法；它主要解决语言指令被模型忽略的问题。
+
+假设图像中有：
+
+- 勺子
+- 葡萄干
+- 其他食材
+- 碗
+
+用户可能下达两种指令：
+
+```
+scoop raisins into bowl
+scoop green beans into bowl
+```
+
+图像可能完全相同，但动作应该不同。
+
+原始做法通常是：
+
+```
+图像 → 视觉特征
+文字 → 语言特征
+视觉特征 + 语言特征 → 动作
+```
+
+问题是，模型可能发现：只看腕部相机里的物体位置，就已经能在训练集上取得不错的结果，于是形成“捷径”，没有认真读取语言。论文认为 ALOHA 的多相机输入容易产生这种虚假相关。
+
+FiLM 的作用是让语言更早地进入视觉处理过程：
+
+```
+语言指令 → 改变视觉特征 → 再进行动作预测
+```
+
+同一张图配不同指令，会产生不同的视觉表示。
+
+论文使用的公式是：
+
+$$ \hat F=(1+\gamma)\odot F+\beta $$
+
+其中：
+
+- $F$：原始视觉特征；
+- $\hat F$：经过语言调制后的视觉特征；
+- $\gamma$：由语言决定的缩放向量；
+- $\beta$：由语言决定的偏移向量；
+- $\odot$：逐元素相乘。
+
+可以把它理解为：
+
+- $\gamma$ 决定哪些视觉特征要被放大或减弱；
+- $\beta$ 改变这些特征的基准值。
+
+例如，语言指令是“舀葡萄干”，FiLM 可能让与“葡萄干的颜色、形状、位置”相关的特征更突出，让其他特征相对减弱。指令换成“舀绿豆”时，$\gamma$ 和 $\beta$ 也会改变。
+
+注意：FiLM 并不是直接生成一张“葡萄干在哪里”的注意力图，而是在特征层面改变视觉表示，之后由 Transformer 的注意力机制继续寻找相关区域。
 
 <a id="s5"></a>
 ## 五、实验：评估 VLA 微调的设计决策
@@ -404,7 +555,7 @@
 
 **Original:** We evaluate on the LIBERO simulation benchmark [26], which features a Franka Emika Panda arm in simulation with demonstrations containing camera images, robot state, task annotations, and delta end-effector pose actions. We use four task suites—LIBERO-Spatial, LIBERO-Object, LIBERO-Goal, and LIBERO-Long—each providing 500 expert demonstrations across 10 tasks to assess policy generalization to different spatial layouts, objects, goals, and long-horizon tasks.
 
-**中文:** 我们在 LIBERO 仿真基准 [26] 上评估，该基准在仿真中包含一个 Franka Emika Panda 机械臂，示范数据包含相机图像、机器人状态、任务标注以及末端执行器位姿增量动作。我们使用四个任务套件——LIBERO-Spatial、LIBERO-Object、LIBERO-Goal 与 LIBERO-Long——每个套件在 10 个任务上提供 500 条专家示范，用于评估策略对不同空间布局、物体、目标与长时程任务的泛化能力。
+**中文:** 我们在 LIBERO 仿真基准 [26] 上评估，该基准在仿真中包含**一个 Franka Emika Panda 机械臂**，**示范数据包含相机图像、机器人状态、任务标注以及末端执行器位姿增量动作**。我们使用四个任务套件——LIBERO-Spatial、LIBERO-Object、LIBERO-Goal 与 LIBERO-Long——每个套件在 10 个任务上提供 500 条专家示范，用于评估策略对不同空间布局、物体、目标与长时程任务的泛化能力。
 
 <a id="F003"></a>
 ### Fig. 3. LIBERO 仿真基准的任务套件
@@ -435,6 +586,7 @@
 **中文:** 本研究的主要基线是使用原始微调配方微调的基座 OpenVLA 模型。为进行更广泛的比较，我们还引入了先前最先进模仿学习方法在 LIBERO 上的结果，例如 Diffusion Policy [5]、Octo [49]、DiT Policy [13]、Seer [50]、MDT [40] 与 π0 [3]。需要注意的是 Seer 使用了额外的 LIBERO-90 预训练数据。
 
 <a id="H2005"></a>
+
 ### B. LIBERO 任务性能比较
 
 > B. LIBERO Task Performance Comparisons
@@ -877,9 +1029,10 @@
 
 **Original:** Our study on VLA fine-tuning design decisions reveals how different components impact inference efficiency, task performance, model input-output flexibility, and language following ability. These insights lead to our Optimized Fine-Tuning (OFT) recipe, which enables effective VLA adaptation to novel robots and tasks through parallel decoding, action chunking, continuous actions, L1 regression, and (optionally) FiLM language conditioning. The success of OFT is particularly noteworthy with OpenVLA: despite having no exposure to bimanual robots or multi-view image inputs during pretraining, OpenVLA fine-tuned with OFT can adapt to such configurations and match or even outperform more recent diffusion-based VLAs (π0 and RDT-1B) which have encountered bimanual manipulators and multiple input images during pretraining. This demonstrates that a well-designed fine-tuning recipe can have a significant impact on final performance, and existing VLAs can be successfully adapted to new robotic systems without extensive retraining from scratch. Moreover, our results show that a simple L1 regression-based approach with a high-capacity model such as OpenVLA is quite effective for adapting to novel robots and tasks. This approach offers practical advantages over diffusion-based methods: the simpler algorithm leads to faster training convergence and inference speed while maintaining strong performance, making it particularly suitable for real-world robotics applications.
 
-**中文:** 我们对 VLA 微调设计决策的研究揭示了不同组件如何影响推理效率、任务性能、模型输入-输出灵活性与语言跟随能力。这些洞见促成了我们的“优化微调”（OFT）配方：通过并行解码、动作分块、连续动作、L1 回归以及（可选的）FiLM 语言条件化，实现对新型机器人与任务的有效 VLA 适配。OFT 在 OpenVLA 上的成功尤其值得注意：尽管 OpenVLA 在预训练时从未接触过双臂机器人或多视角图像输入，用 OFT 微调后它仍能适配这类配置，并追平甚至超过更新的扩散式 VLA（π0 与 RDT-1B）——后者在预训练时已经见过双臂机械臂与多路输入图像。这说明精心设计的微调配方能对最终性能产生显著影响，现有 VLA 无需从零大规模重训即可成功适配新机器人系统。此外，我们的结果表明，对于 OpenVLA 这类高容量模型，简单的 L1 回归方法在适配新机器人与新任务时相当有效。相比基于扩散的方法，这一做法具有实际优势：更简单的算法带来更快的训练收敛与推理速度，同时保持强劲性能，因此特别适合真实世界的机器人应用。
+**中文:** 我们对 VLA 微调设计决策的研究揭示了不同组件如何影响推理效率、任务性能、模型输入-输出灵活性与语言跟随能力。这些洞见促成了我们的“优化微调”（OFT）配方：通过<mark>并行解码、动作分块、连续动作、L1 回归以及（可选的）FiLM 语言条件化</mark>，实现对新型机器人与任务的有效 VLA 适配。**OFT 在 OpenVLA 上的成功尤其值得注意：尽管 OpenVLA 在预训练时从未接触过双臂机器人或多视角图像输入，用 OFT 微调后它仍能适配这类配置，并追平甚至超过更新的扩散式 VLA（π0 与 RDT-1B）——后者在预训练时已经见过双臂机械臂与多路输入图像。**<mark>这说明精心设计的微调配方能对最终性能产生显著影响，现有 VLA 无需从零大规模重训即可成功适配新机器人系统。</mark>此外，我们的结果表明，对于 OpenVLA 这类高容量模型，简单的 L1 回归方法在适配新机器人与新任务时相当有效。相比基于扩散的方法，这一做法具有实际优势：更简单的算法带来更快的训练收敛与推理速度，同时保持强劲性能，因此特别适合真实世界的机器人应用。
 
 <a id="s8"></a>
+
 ## 八、局限性
 
 > VIII. LIMITATIONS
@@ -897,7 +1050,7 @@
 
 **Original:** Handling multimodal demonstrations. Our experiments use focused demonstration datasets with a consistent strategy per task. While L1 regression may help smoothen out noise in training demonstrations by encouraging the policy to learn the median mode in demonstrated actions, it may struggle to accurately model truly multimodal action distributions where multiple valid actions exist for the same input, which may not be ideal in cases where the ability to generate alternative action sequences would be beneficial for task completion. Conversely, diffusion-based approaches may better capture such multimodality but risk overfitting to suboptimal modes in training data (see our website for discussions and video illustrations of these nuances). Understanding OFT’s effectiveness with multimodal demonstrations remains an important direction for future work.
 
-**中文:** 处理多模态示范。我们的实验使用每个任务策略一致的聚焦示范数据集。L1 回归可以通过鼓励策略学习示范动作中的中位模态，来帮助平滑训练示范中的噪声；但当同一个输入对应多个有效动作时，它可能难以准确建模真正多模态的动作分布——而在能够生成替代动作序列有助于任务完成的场景中，这可能并不理想。相反，基于扩散的方法可能更好地捕捉这种多模态性，但有过度拟合训练数据中次优模态的风险（相关讨论与视频示例见我们的网站）。理解 OFT 在多模态示范下的有效性仍是未来工作的重要方向。
+**中文:** 处理多模态示范。我们的实验使用每个任务策略一致的聚焦示范数据集。L1 回归可以通过鼓励策略学习示范动作中的中位模态，来帮助平滑训练示范中的噪声；但**当同一个输入对应多个有效动作时，它可能难以准确建模真正多模态的动作分布——而在能够生成替代动作序列有助于任务完成的场景中，这可能并不理想。相反，基于扩散的方法可能更好地捕捉这种多模态性，但有过度拟合训练数据中次优模态的风险**（相关讨论与视频示例见我们的网站）。理解 OFT 在多模态示范下的有效性仍是未来工作的重要方向。
 
 <a id="M_VII4"></a>
 **Source:** p.10 S108
@@ -1134,7 +1287,7 @@
 
 **Original caption:** Fig. 8: Feature-wise linear modulation (FiLM) implementation in OpenVLA’s vision backbone. We integrate FiLM [37] into both SigLIP [55] and DINOv2 [35] vision transformers in OpenVLA’s fused vision backbone. The average task description embedding modulates visual features through scale and shift operations at each transformer block, enhancing language-vision integration. This modification significantly improves language following in ALOHA tasks.
 
-**中文图注:** Fig. 8：OpenVLA 视觉主干中的特征级线性调制（FiLM）实现。我们在 OpenVLA 融合视觉主干中把 FiLM [37] 同时接入 SigLIP [55] 与 DINOv2 [35] 两个视觉 Transformer。任务描述的平均嵌入在每个 Transformer 块中通过缩放与偏移操作调制视觉特征，从而增强语言与视觉的融合。这一修改显著提升了 ALOHA 任务中的语言跟随能力。
+**中文图注:** Fig. 8：OpenVLA 视觉主干中的特征级线性调制（FiLM）实现。**我们在 OpenVLA 融合视觉主干中把 FiLM [37] 同时接入 SigLIP [55] 与 DINOv2 [35] 两个视觉 Transformer。**任务描述的平均嵌入在每个 Transformer 块中通过缩放与偏移操作调制视觉特征，从而增强语言与视觉的融合。**这一修改显著提升了 ALOHA 任务中的语言跟随能力。**
 
 **Reading note:** 以任务描述的均值语言嵌入生成缩放 γ 与偏移 β，对每个隐藏维度做空间无关的调制。
 
