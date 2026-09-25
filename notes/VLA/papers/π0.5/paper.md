@@ -221,22 +221,26 @@
 <a id="S011"></a>
 **Source:** p.4 S011
 
-**Original:** Vision-language-action models (VLAs) are typically trained via imitation learning on diverse robot demonstration datasets D, by maximizing the log-likelihood of an action at (or, more generally, an action chunk at:t+H) given an observation ot and a natural language task instruction ℓ:
+**Original:** Vision-language-action models (VLAs) are typically trained via imitation learning on diverse robot demonstration datasets $D$, by maximizing the log-likelihood of an action $a_t$ (or, more generally, an action chunk $a_{t:t+H}$) given an observation $o_t$ and a natural language task instruction $\ell$:
 
-max_θ E_(at:t+H, ot, ℓ)∼D log πθ(at:t+H | ot, ℓ).
+$$
+\max_{\theta}\;\mathbb{E}_{(a_{t:t+H},o_t,\ell)\sim D}\!\left[\log\pi_\theta(a_{t:t+H}\mid o_t,\ell)\right].
+$$
 
-**中文:** 视觉-语言-动作模型（VLA）通常通过在多样机器人演示数据集 D 上进行模仿学习来训练，即在给定观测 o_t 与自然语言任务指令 ℓ 的条件下，最大化动作 a_t（更一般地，动作块 a_{t:t+H}）的对数似然：
+**中文:** 视觉-语言-动作模型（VLA）通常通过在多样机器人演示数据集 $D$ 上进行模仿学习来训练，即在给定观测 $o_t$ 与自然语言任务指令 $\ell$ 的条件下，最大化动作 $a_t$（更一般地，动作块 $a_{t:t+H}$）的对数似然：
 
-max_θ E_(a_{t:t+H}, o_t, ℓ)∼D log π_θ(a_{t:t+H} | o_t, ℓ)。
+$$
+\max_{\theta}\;\mathbb{E}_{(a_{t:t+H},o_t,\ell)\sim D}\!\left[\log\pi_\theta(a_{t:t+H}\mid o_t,\ell)\right].
+$$
 
-**Reading note:** 原文公式中的下标在 PDF 中以下标排版：`maxθ E(at:t+H ,ot ,ℓ)∼D log πθ (at:t+H |ot , ℓ)`。此处为便于纯文本阅读，将下标改写为 `_` 形式，符号含义不变。
+**Reading note:** 公式按原 PDF 恢复为 LaTeX 排版；上下标、期望与条件概率均保留原文含义。
 
 <a id="S012"></a>
 **Source:** p.4 S012
 
-**Original:** The observation typically contains one or more images I1t, ..., Int and proprioceptive state qt, which captures the position of the robot's joints. VLA architectures follow the design of modern language and vision-language models, with modality-specific tokenizers that map inputs and outputs to discrete ("hard") or continuous ("soft") token representations, and a large, auto-regressive transformer backbone that is trained to map from input to output tokens. The weights of these models are initialized from pre-trained vision-language models. By encoding policy inputs and outputs into tokenized representations, the imitation learning problem described above can be cast as a simple next-token-prediction problem over a sequence of observation, instruction and action tokens, and we can leverage the scalable tools of modern machine learning to optimize it. In practice, the choice of tokenizers for image and text inputs follows those of modern vision-language models. For actions, prior work has developed effective, compression-based tokenization approaches [64], which we use in this work during pretraining. A number of recent VLA models have also proposed to represent the action distribution via diffusion [55, 84, 52] or flow matching [8], providing a more expressive representation over continuous-valued action chunks. During the post-training phase of our model, we will build on the design of the π0 model [8], which represents the action distribution via flow matching. In this design, the tokens corresponding to actions receive the partially denoised actions from the previous step of flow matching as input, and output the flow matching vector field. These tokens also use a different set of model weights, which we refer to as an "action expert," analogously to a mixture of experts architecture. This action expert can specialize to flow matching-based action generation, and can be significantly smaller than the rest of the LLM backbone.
+**Original:** The observation typically contains one or more images $I_t^1,\ldots,I_t^n$ and proprioceptive state $q_t$, which captures the position of the robot's joints. VLA architectures follow the design of modern language and vision-language models, with modality-specific tokenizers that map inputs and outputs to discrete ("hard") or continuous ("soft") token representations, and a large, auto-regressive transformer backbone that is trained to map from input to output tokens. The weights of these models are initialized from pre-trained vision-language models. By encoding policy inputs and outputs into tokenized representations, the imitation learning problem described above can be cast as a simple next-token-prediction problem over a sequence of observation, instruction and action tokens, and we can leverage the scalable tools of modern machine learning to optimize it. In practice, the choice of tokenizers for image and text inputs follows those of modern vision-language models. For actions, prior work has developed effective, compression-based tokenization approaches [64], which we use in this work during pretraining. A number of recent VLA models have also proposed to represent the action distribution via diffusion [55, 84, 52] or flow matching [8], providing a more expressive representation over continuous-valued action chunks. During the post-training phase of our model, we will build on the design of the π0 model [8], which represents the action distribution via flow matching. In this design, the tokens corresponding to actions receive the partially denoised actions from the previous step of flow matching as input, and output the flow matching vector field. These tokens also use a different set of model weights, which we refer to as an "action expert," analogously to a mixture of experts architecture. This action expert can specialize to flow matching-based action generation, and can be significantly smaller than the rest of the LLM backbone.
 
-**中文:** 观测通常包含一幅或多幅图像 I_1^t, ..., I_n^t，以及本体感受状态 q_t（刻画机器人各关节的位置）。VLA 架构沿用现代语言模型与视觉-语言模型的设计：用模态专用的分词器把输入输出映射为离散（"硬"）或连续（"软"）token 表示，再用一个大型自回归 Transformer 主干把输入 token 映射为输出 token。这些模型的权重从预训练的视觉-语言模型初始化。通过把策略的输入输出编码为 token 表示，上述模仿学习问题就可以转化为一个简单的下一 token 预测问题——序列由观测、指令与动作 token 组成——从而可以利用现代机器学习中那些可扩展的工具来优化它。在实践中，图像与文本输入的分词器选择沿用现代视觉-语言模型的做法；对于动作，先前工作已经发展出高效的、基于压缩的分词方法 [64]，我们在本工作的预训练阶段使用它。另有一批近期 VLA 模型提出用扩散 [55, 84, 52] 或流匹配 [8] 来表示动作分布，从而对连续取值的动作块给出表达能力更强的表示。在我们的模型的后训练阶段，我们将沿用 π0 模型 [8] 的设计，用流匹配表示动作分布。在该设计中，对应动作的 token 以上一步流匹配产生的部分去噪动作作为输入，输出流匹配的向量场；这些 token 还使用另一套模型权重，我们称之为"动作专家"（action expert），其思路类似专家混合（mixture of experts）架构。该动作专家可以专门负责基于流匹配的动作生成，并且可以显著小于 LLM 主干的其余部分。
+**中文:** 观测通常包含一幅或多幅图像 $I_t^1,\ldots,I_t^n$，以及本体感受状态 $q_t$（刻画机器人各关节的位置）。VLA 架构沿用现代语言模型与视觉-语言模型的设计：用模态专用的分词器把输入输出映射为离散（"硬"）或连续（"软"）token 表示，再用一个大型自回归 Transformer 主干把输入 token 映射为输出 token。这些模型的权重从预训练的视觉-语言模型初始化。通过把策略的输入输出编码为 token 表示，上述模仿学习问题就可以转化为一个简单的下一 token 预测问题——序列由观测、指令与动作 token 组成——从而可以利用现代机器学习中那些可扩展的工具来优化它。**在实践中，图像与文本输入的分词器选择沿用现代视觉-语言模型的做法；对于动作，先前工作已经发展出高效的、基于压缩的分词方法 [64]，我们在本工作的预训练阶段使用它。**另有一批近期 VLA 模型提出用扩散 [55, 84, 52] 或流匹配 [8] 来表示动作分布，从而对连续取值的动作块给出表达能力更强的表示。**在我们的模型的后训练阶段，我们将沿用 π0 模型 [8] 的设计，用流匹配表示动作分布。**在该设计中，对应动作的 token 以上一步流匹配产生的部分去噪动作作为输入，输出流匹配的向量场；这些 token 还使用另一套模型权重，我们称之为"动作专家"（action expert），其思路类似专家混合（mixture of experts）架构。该动作专家可以专门负责基于流匹配的动作生成，并且可以显著小于 LLM 主干的其余部分。
 
 ---
 
@@ -250,9 +254,10 @@ max_θ E_(a_{t:t+H}, o_t, ℓ)∼D log π_θ(a_{t:t+H} | o_t, ℓ)。
 
 **Original:** We provide an overview of the π0.5 model and training recipe in Figure 3. The model weights are initialized from a standard VLM trained on data from the web, and training then proceeds in two stages: a pre-training stage intended to adapt the model to diverse robotic tasks, and a post-training stage intended to specialize it to mobile manipulation and equip it with the mechanisms for efficient test-time inference. During pre-training, all tasks, including tasks with robot actions, are represented with discrete tokens, which leads to simple, scalable, and efficient training [64]. During post-training, we adapt the model to also have an action expert, as with π0, in order to both represent actions with finer granularity and enable more compute-efficient inference for real-time control. At inference-time, the model first produces a high-level subtask for the robot to perform and then, conditioned on this subtask, predicts the low-level actions via the action expert. We describe the model architecture below, followed by a description of each of the phases and their corresponding training tasks.
 
-**中文:** 我们在图 3 中给出 π0.5 模型与训练配方的总览。模型权重从在网页数据上训练的标准 VLM 初始化，随后训练分两个阶段进行：预训练阶段，目标是让模型适应多样的机器人任务；后训练阶段，目标是把模型专门化到移动操作，并赋予它用于高效测试时推理的机制。预训练期间，所有任务（包括带机器人动作的任务）都用离散 token 表示，从而带来简单、可扩展且高效的训练 [64]。后训练期间，我们像 π0 那样为模型增加动作专家，以便既能以更细的粒度表示动作，又能实现更省算力的推理以支持实时控制。推理时，模型先产出机器人要执行的高层子任务，再以该子任务为条件，通过动作专家预测低层动作。下面我们先描述模型架构，再逐一描述各个阶段及其对应的训练任务。
+**中文:** 我们在图 3 中给出 π0.5 模型与训练配方的总览。模型权重从在网页数据上训练的标准 VLM 初始化，随后训练分两个阶段进行：预训练阶段，目标是让模型适应多样的机器人任务；后训练阶段，目标是把模型专门化到移动操作，并赋予它用于高效测试时推理的机制。**<mark>预训练期间，所有任务（包括带机器人动作的任务）都用离散 token 表示，从而带来简单、可扩展且高效的训练 [64]。后训练期间，我们像 π0 那样为模型增加动作专家，以便既能以更细的粒度表示动作，又能实现更省算力的推理以支持实时控制。</mark>**推理时，模型先产出机器人要执行的高层子任务，再以该子任务为条件，通过动作专家预测低层动作。下面我们先描述模型架构，再逐一描述各个阶段及其对应的训练任务。
 
 <a id="F003"></a>
+
 ### Fig. 3. 模型总览：预训练与后训练两个阶段
 
 **Placed near:** p.5 S013
@@ -275,31 +280,35 @@ max_θ E_(a_{t:t+H}, o_t, ℓ)∼D log π_θ(a_{t:t+H} | o_t, ℓ)。
 <a id="S014"></a>
 **Source:** p.5 S014
 
-**Original:** The π0.5 architecture can flexibly represent both action chunk distributions and tokenized text outputs, with the latter used both for co-training tasks (e.g., question-answering) and for outputting high-level subtask predictions during hierarchical inference. The distribution captured by the model can be written as πθ(at:t+H, ℓ̂|ot, ℓ), where ot = [I1t, ..., Int, qt] consists of the images from all of the cameras and the robot's configuration (joint angles, gripper pose, torso lift pose, and base velocity), ℓ is the overall task prompt (e.g., "put away the dishes"), ℓ̂ represents the model's (tokenized) textual output, which could be either a predicted high-level subtask (e.g., "pick up the plate") or the answer to a vision-language prompt in web data, and at:t+H is a predicted action chunk. We decompose the distribution as
+**Original:** The π0.5 architecture can flexibly represent both action chunk distributions and tokenized text outputs, with the latter used both for co-training tasks (e.g., question-answering) and for outputting high-level subtask predictions during hierarchical inference. The distribution captured by the model can be written as $\pi_\theta(a_{t:t+H},\hat{\ell}\mid o_t,\ell)$, where $o_t=[I_t^1,\ldots,I_t^n,q_t]$ consists of the images from all of the cameras and the robot's configuration (joint angles, gripper pose, torso lift pose, and base velocity), $\ell$ is the overall task prompt (e.g., "put away the dishes"), $\hat{\ell}$ represents the model's (tokenized) textual output, which could be either a predicted high-level subtask (e.g., "pick up the plate") or the answer to a vision-language prompt in web data, and $a_{t:t+H}$ is a predicted action chunk. We decompose the distribution as
 
-πθ(at:t+H, ℓ̂|ot, ℓ) = πθ(at:t+H|ot, ℓ̂) πθ(ℓ̂|ot, ℓ),
+$$
+\pi_\theta(a_{t:t+H},\hat{\ell}\mid o_t,\ell)=\pi_\theta(a_{t:t+H}\mid o_t,\hat{\ell})\,\pi_\theta(\hat{\ell}\mid o_t,\ell).
+$$
 
-where the action distribution does not depend on ℓ, only on ℓ̂. Thus, high-level inference captures πθ(ℓ̂|ot, ℓ), and low-level inference captures πθ(at:t+H|ot, ℓ̂), with both distributions represented by the same model.
+where the action distribution does not depend on $\ell$, only on $\hat{\ell}$. Thus, high-level inference captures $\pi_\theta(\hat{\ell}\mid o_t,\ell)$, and low-level inference captures $\pi_\theta(a_{t:t+H}\mid o_t,\hat{\ell})$, with both distributions represented by the same model.
 
-**中文:** π0.5 架构能够灵活地同时表示动作块分布与 token 化的文本输出，后者既用于协同训练任务（例如问答），也用于分层推理时输出高层子任务预测。模型所建模的分布可写作 π_θ(a_{t:t+H}, ℓ̂ | o_t, ℓ)，其中 o_t = [I_1^t, ..., I_n^t, q_t] 由所有相机的图像与机器人构型（关节角、夹爪位姿、躯干升降位姿、底盘速度）组成；ℓ 是整体任务提示（例如 "put away the dishes"，把餐具收好）；ℓ̂ 表示模型的（token 化）文本输出，它既可能是预测出的高层子任务（例如 "pick up the plate"），也可能是网页数据中视觉-语言提示的答案；a_{t:t+H} 是预测出的动作块。我们把该分布分解为：
+**中文:** π0.5 架构能够灵活地同时表示动作块分布与 token 化的文本输出，后者既用于协同训练任务（例如问答），也用于分层推理时输出高层子任务预测。模型所建模的分布可写作 $\pi_\theta(a_{t:t+H},\hat{\ell}\mid o_t,\ell)$，其中 $o_t=[I_t^1,\ldots,I_t^n,q_t]$ 由所有相机的图像与机器人构型（关节角、夹爪位姿、躯干升降位姿、底盘速度）组成；$\ell$ 是整体任务提示（例如 "put away the dishes"，把餐具收好）；$\hat{\ell}$ 表示模型的（token 化）文本输出，它既可能是预测出的高层子任务（例如 "pick up the plate"），也可能是网页数据中视觉-语言提示的答案；$a_{t:t+H}$ 是预测出的动作块。我们把该分布分解为：
 
-π_θ(a_{t:t+H}, ℓ̂ | o_t, ℓ) = π_θ(a_{t:t+H} | o_t, ℓ̂) · π_θ(ℓ̂ | o_t, ℓ)，
+$$
+\pi_\theta(a_{t:t+H},\hat{\ell}\mid o_t,\ell)=\pi_\theta(a_{t:t+H}\mid o_t,\hat{\ell})\,\pi_\theta(\hat{\ell}\mid o_t,\ell).
+$$
 
-其中动作分布不依赖 ℓ，只依赖 ℓ̂。于是，高层推理对应 π_θ(ℓ̂ | o_t, ℓ)，低层推理对应 π_θ(a_{t:t+H} | o_t, ℓ̂)，而这两个分布由同一个模型表示。
+其中动作分布不依赖 $\ell$，只依赖 $\hat{\ell}$。于是，高层推理对应 $\pi_\theta(\hat{\ell}\mid o_t,\ell)$，低层推理对应 $\pi_\theta(a_{t:t+H}\mid o_t,\hat{\ell})$，而这两个分布由同一个模型表示。
 
 <a id="S015"></a>
 **Source:** p.5 S015
 
-**Original:** The model corresponds to a transformer that takes in N multimodal input tokens x1:N (we use the term token loosely here, referring to both discretized and continuous inputs) and produces a sequence of multimodal outputs y1:N, which we can write as y1:N = f(x1:N, A(x1:N), ρ(x1:N)). Each xi can be a text token (xwi ∈ N), an image patch (xIi ∈ Rp×p×3), or an intermediate denoising value of a robot action in flow matching (xai ∈ Rd). The observations ot and ℓ form the prefix part of x1:N. Depending on the token type, as indicated by ρ(xi), each token can be processed not only by a different encoder, but also by different expert weights within the transformer. For example, image patches are fed through a vision encoder, and text tokens are embedded with an embedding matrix. Following π0 [8], we linearly project action tokens xai into the transformer embedding space and use separate expert weights in the transformer to process the action tokens. The attention matrix A(x1:N) ∈ [0, 1]N×N indicates if a token can attend to another token. Compared to standard causal attention in LLMs, image patch, textual prompt, and continuous action tokens use bidirectional attention.
+**Original:** The model corresponds to a transformer that takes in $N$ multimodal input tokens $x_{1:N}$ (we use the term token loosely here, referring to both discretized and continuous inputs) and produces a sequence of multimodal outputs $y_{1:N}$, which we can write as $y_{1:N}=f\!\left(x_{1:N},A(x_{1:N}),\rho(x_{1:N})\right)$. Each $x_i$ can be a text token ($x_i^w\in\mathbb{N}$), an image patch ($x_i^I\in\mathbb{R}^{p\times p\times3}$), or an intermediate denoising value of a robot action in flow matching ($x_i^a\in\mathbb{R}^d$). The observations $o_t$ and $\ell$ form the prefix part of $x_{1:N}$. Depending on the token type, as indicated by $\rho(x_i)$, each token can be processed not only by a different encoder, but also by different expert weights within the transformer. For example, image patches are fed through a vision encoder, and text tokens are embedded with an embedding matrix. Following π0 [8], we linearly project action tokens $x_i^a$ into the transformer embedding space and use separate expert weights in the transformer to process the action tokens. The attention matrix $A(x_{1:N})\in[0,1]^{N\times N}$ indicates if a token can attend to another token. Compared to standard causal attention in LLMs, image patch, textual prompt, and continuous action tokens use bidirectional attention.
 
-**中文:** 该模型对应一个 Transformer：它接收 N 个多模态输入 token x_{1:N}（这里 "token" 一词是宽泛用法，既指离散输入也指连续输入），并产出一串多模态输出 y_{1:N}，可写作 y_{1:N} = f(x_{1:N}, A(x_{1:N}), ρ(x_{1:N}))。每个 x_i 可以是文本 token（x^w_i ∈ N）、图像 patch（x^I_i ∈ R^{p×p×3}），或流匹配中机器人动作的中间去噪值（x^a_i ∈ R^d）。观测 o_t 与 ℓ 构成 x_{1:N} 的前缀部分。依据 ρ(x_i) 指示的 token 类型，每个 token 不仅可以由不同的编码器处理，还可以由 Transformer 内不同的专家权重处理：例如图像 patch 送入视觉编码器，文本 token 用嵌入矩阵嵌入。沿用 π0 [8] 的做法，我们把动作 token x^a_i 线性投影到 Transformer 嵌入空间，并在 Transformer 中使用单独的专家权重处理动作 token。注意力矩阵 A(x_{1:N}) ∈ [0, 1]^{N×N} 表示某个 token 是否可以关注另一个 token。与 LLM 中标准的因果注意力相比，图像 patch、文本提示与连续动作 token 使用双向注意力。
+**中文:** 该模型对应一个 Transformer：它接收 $N$ 个多模态输入 token $x_{1:N}$（这里 "token" 一词是宽泛用法，既指离散输入也指连续输入），并产出一串多模态输出 $y_{1:N}$，可写作 $y_{1:N}=f\!\left(x_{1:N},A(x_{1:N}),\rho(x_{1:N})\right)$。每个 $x_i$ 可以是文本 token（$x_i^w\in\mathbb{N}$）、图像 patch（$x_i^I\in\mathbb{R}^{p\times p\times3}$），或流匹配中机器人动作的中间去噪值（$x_i^a\in\mathbb{R}^d$）。观测 $o_t$ 与 $\ell$ 构成 $x_{1:N}$ 的前缀部分。依据 $\rho(x_i)$ 指示的 token 类型，每个 token 不仅可以由不同的编码器处理，还可以由 Transformer 内不同的专家权重处理：例如图像 patch 送入视觉编码器，文本 token 用嵌入矩阵嵌入。沿用 π0 [8] 的做法，我们把动作 token $x_i^a$ 线性投影到 Transformer 嵌入空间，并在 Transformer 中使用单独的专家权重处理动作 token。注意力矩阵 $A(x_{1:N})\in[0,1]^{N\times N}$ 表示某个 token 是否可以关注另一个 token。与 LLM 中标准的因果注意力相比，图像 patch、文本提示与连续动作 token 使用双向注意力。
 
 <a id="S016"></a>
 **Source:** p.5 S016
 
-**Original:** As we want our model to output both text (to answer questions about the scene or to output next tasks to accomplish) and actions (to act in the world), the output of f is split into text token logits and action output tokens, respectively y1:M(ℓ) and y1:H(a). The first M correspond to text token logits that can be used to sample ℓ̂ and the later H tokens are produced by a separate action expert, as in π0, and projected via a linear mapping to continuous outputs used to obtain at:t+H (see next section). Note that M + H ≤ N, i.e., not all outputs are associated with a loss. The robot proprioceptive state is discretized and input to the model as text tokens. More details about the architecture are in Appendix E.
+**Original:** As we want our model to output both text (to answer questions about the scene or to output next tasks to accomplish) and actions (to act in the world), the output of $f$ is split into text token logits and action output tokens, respectively $y_{1:M}^{\ell}$ and $y_{1:H}^{a}$. The first $M$ correspond to text token logits that can be used to sample $\hat{\ell}$ and the later $H$ tokens are produced by a separate action expert, as in π0, and projected via a linear mapping to continuous outputs used to obtain $a_{t:t+H}$ (see next section). Note that $M+H\le N$, i.e., not all outputs are associated with a loss. The robot proprioceptive state is discretized and input to the model as text tokens. More details about the architecture are in Appendix E.
 
-**中文:** 由于我们希望模型既能输出文本（回答关于场景的问题，或输出接下来要完成的任务），又能输出动作（在现实世界中行动），f 的输出被分为文本 token logits 与动作输出 token，分别记作 y_{1:M}^{(ℓ)} 与 y_{1:H}^{(a)}。前 M 个是文本 token logits，可用于采样 ℓ̂；后 H 个 token 由单独的动作专家产生（如同 π0），并通过线性映射投影为连续输出，用于得到 a_{t:t+H}（见下一小节）。注意 M + H ≤ N，即并非所有输出都关联损失。机器人的本体感受状态被离散化后，以文本 token 的形式输入模型。关于架构的更多细节见附录 E。
+**中文:** 由于我们希望模型既能输出文本（回答关于场景的问题，或输出接下来要完成的任务），又能输出动作（在现实世界中行动），$f$ 的输出被分为文本 token logits 与动作输出 token，分别记作 $y_{1:M}^{\ell}$ 与 $y_{1:H}^{a}$。前 $M$ 个是文本 token logits，可用于采样 $\hat{\ell}$；后 $H$ 个 token 由单独的动作专家产生（如同 π0），并通过线性映射投影为连续输出，用于得到 $a_{t:t+H}$（见下一小节）。注意 $M+H\le N$，即并非所有输出都关联损失。机器人的本体感受状态被离散化后，以文本 token 的形式输入模型。关于架构的更多细节见附录 E。
 
 ### B. 组合离散与连续动作表示
 
@@ -308,28 +317,46 @@ where the action distribution does not depend on ℓ, only on ℓ̂. Thus, high-
 <a id="s4b"></a>
 
 <a id="S017"></a>
-**Source:** p.5-6 S017
+**Source:** p.5 S017
 
-**Original:** Similarly to π0, we use flow-matching [50] to predict continuous actions in the final model. Given aτ,ωt:t+H = τ at:t+H + (1 − τ)ω, ω ∼ N(0, I), where τ ∈ [0, 1] is the flow matching time index, the model is trained to predict the flow vector field ω − at. However, as shown in [64], VLA training can be much faster when actions are represented by discrete tokens, particularly when using a tokenization scheme that is efficient for compressing the action chunks (e.g., FAST). Unfortunately, such discrete representations are less well-suited for real-time inference, because they require expensive autoregressive decoding for inference [64]. Therefore, an ideal model design would train on discretized actions but still allow for use of flow matching to produce continuous actions at inference time.
+**Original:** Similarly to π0, we use flow-matching [50] to predict continuous actions in the final model. Given $a_{t:t+H}^{\tau,\omega}=\tau a_{t:t+H}+(1-\tau)\omega$, $\omega\sim\mathcal{N}(0,I)$, where $\tau\in[0,1]$ is the flow matching time index, the model is trained to predict the flow vector field $\omega-a_t$. However, as shown in [64], VLA training can be much faster when actions are represented by discrete tokens, particularly when using a tokenization scheme that is efficient for compressing the action chunks (e.g., FAST). Unfortunately, such discrete representations are less well-suited for real-time inference, because they require expensive autoregressive decoding for inference [64]. Therefore, an ideal model design would train on discretized actions but still allow for use of flow matching to produce continuous actions at inference time.
 
-**中文:** 与 π0 类似，我们在最终模型中使用流匹配 [50] 来预测连续动作。给定 a_{τ,ω}^{t:t+H} = τ a_{t:t+H} + (1 − τ)ω，其中 ω ∼ N(0, I)，τ ∈ [0, 1] 是流匹配时间索引，模型被训练用来预测流向量场 ω − a_t。然而，如 [64] 所示，当动作以离散 token 表示时，VLA 训练可以快得多，尤其是在使用能高效压缩动作块的分词方案（例如 FAST）时。遗憾的是，这类离散表示不太适合实时推理，因为推理时需要进行代价高昂的自回归解码 [64]。因此，理想的模型设计应当是：用离散化动作训练，但在推理时仍能用流匹配产生连续动作。
+**中文:** 与 π0 类似，我们在最终模型中使用流匹配 [50] 来预测连续动作。给定 $a_{t:t+H}^{\tau,\omega}=\tau a_{t:t+H}+(1-\tau)\omega$，其中 $\omega\sim\mathcal{N}(0,I)$，$\tau\in[0,1]$ 是流匹配时间索引，模型被训练用来预测流向量场 $\omega-a_t$。然而，如 [64] 所示，当动作以离散 token 表示时，VLA 训练可以快得多，尤其是在使用能高效压缩动作块的分词方案（例如 FAST）时。遗憾的是，这类离散表示不太适合实时推理，因为推理时需要进行代价高昂的自回归解码 [64]。因此，理想的模型设计应当是：用离散化动作训练，但在推理时仍能用流匹配产生连续动作。
 
 <a id="S018"></a>
-**Source:** p.6 S018
+**Source:** p.5 S018
 
 **Original:** Our model is therefore trained to predict actions both through autoregressive sampling of tokens (using the FAST tokenizer) and iterative integration of the flow field, combining the best of both worlds. We use the attention matrix to ensure that the different action representations do not attend to each other. Our model is optimized to minimize the combined loss
 
-E(D,τ,ω) [ H(x1:M, fθℓ(ot, ℓ)) + α ||ω − at:t+H − fθa(aτ,ωt:t+H, ot, ℓ)||² ]   (1)
+$$
+\begin{aligned}
+\mathbb{E}_{D,\tau,\omega}\Bigl[
+&H\!\left(x_{1:M},f_\theta^\ell(o_t,\ell)\right)\\
+&+\alpha\left\|\omega-a_{t:t+H}
+-f_\theta^a\!\left(a_{t:t+H}^{\tau,\omega},o_t,\ell\right)\right\|^2
+\Bigr]
+\end{aligned}
+\tag{1}
+$$
 
-where H(x1:M, y1:Mℓ) is the cross entropy loss between the text tokens and predicted logits (including the FAST encoded action tokens), y1:Ha = fθa(aτ,ωt:t+H, ot, ℓ) is the output from the (smaller) action expert, and α ∈ R is a trade-off parameter. This scheme enables us to first pre-train our model as a standard VLM transformer model by mapping actions to text tokens (α = 0), and then add additional action expert weights predicting continuous action tokens in a non-autoregressive fashion for fast inference in a post-training stage. We find that following this procedure, which is further explained below, leads to stable pre-training and excellent language following abilities of the VLA model. At inference time we then use standard autoregressive decoding for text tokens ℓ̂ followed by 10 denoising steps, conditioned on text tokens, to produce actions at:t+H.
+where $H(x_{1:M},y_{1:M}^{\ell})$ is the cross entropy loss between the text tokens and predicted logits (including the FAST encoded action tokens), $y_{1:H}^{a}=f_\theta^a(a_{t:t+H}^{\tau,\omega},o_t,\ell)$ is the output from the (smaller) action expert, and $\alpha\in\mathbb{R}$ is a trade-off parameter. This scheme enables us to first pre-train our model as a standard VLM transformer model by mapping actions to text tokens ($\alpha=0$), and then add additional action expert weights predicting continuous action tokens in a non-autoregressive fashion for fast inference in a post-training stage. We find that following this procedure, which is further explained below, leads to stable pre-training and excellent language following abilities of the VLA model. At inference time we then use standard autoregressive decoding for text tokens $\hat{\ell}$ followed by 10 denoising steps, conditioned on text tokens, to produce actions $a_{t:t+H}$.
 
 **中文:** 因此，我们的模型同时通过两条路径学习预测动作：对 token 进行自回归采样（使用 FAST 分词器），以及对流场进行迭代积分——把两种方案的长处结合起来。我们利用注意力矩阵确保不同的动作表示之间互不关注。模型优化目标是最小化如下组合损失：
 
-E_(D,τ,ω) [ H(x_{1:M}, f_θ^ℓ(o_t, ℓ)) + α ‖ ω − a_{t:t+H} − f_θ^a(a_{τ,ω}^{t:t+H}, o_t, ℓ) ‖² ]   (1)
+$$
+\begin{aligned}
+\mathbb{E}_{D,\tau,\omega}\Bigl[
+&H\!\left(x_{1:M},f_\theta^\ell(o_t,\ell)\right)\\
+&+\alpha\left\|\omega-a_{t:t+H}
+-f_\theta^a\!\left(a_{t:t+H}^{\tau,\omega},o_t,\ell\right)\right\|^2
+\Bigr]
+\end{aligned}
+\tag{1}
+$$
 
-其中 H(x_{1:M}, y_{1:M}^ℓ) 是文本 token 与预测 logits 之间的交叉熵损失（包含 FAST 编码的动作 token），y_{1:H}^a = f_θ^a(a_{τ,ω}^{t:t+H}, o_t, ℓ) 是（较小的）动作专家的输出，α ∈ R 是权衡参数。这一方案使我们能够先把动作映射为文本 token（α = 0），把模型当作标准 VLM Transformer 来预训练；随后在后训练阶段加入额外的动作专家权重，以非自回归方式预测连续动作 token，从而实现快速推理。我们发现，遵循这一流程（下文将进一步说明）可以带来稳定的预训练以及 VLA 模型出色的语言跟随能力。推理时，我们对文本 token ℓ̂ 使用标准的自回归解码，随后以文本 token 为条件执行 10 步去噪，得到动作 a_{t:t+H}。
+其中 $H(x_{1:M},y_{1:M}^{\ell})$ 是文本 token 与预测 logits 之间的交叉熵损失（包含 FAST 编码的动作 token），$y_{1:H}^{a}=f_\theta^a(a_{t:t+H}^{\tau,\omega},o_t,\ell)$ 是（较小的）动作专家的输出，$\alpha\in\mathbb{R}$ 是权衡参数。这一方案使我们能够先把动作映射为文本 token（$\alpha=0$），把模型当作标准 VLM Transformer 来预训练；随后在后训练阶段加入额外的动作专家权重，以非自回归方式预测连续动作 token，从而实现快速推理。我们发现，遵循这一流程（下文将进一步说明）可以带来稳定的预训练以及 VLA 模型出色的语言跟随能力。推理时，我们对文本 token $\hat{\ell}$ 使用标准的自回归解码，随后以文本 token 为条件执行 10 步去噪，得到动作 $a_{t:t+H}$。
 
-**Reading note:** 原文公式排版为 `E D,τ,ω [ H x1:M , fθℓ (ot , ℓ) + α (ω − at:t+H − fθa(aτ,ω t:t+H , ot , ℓ))² ]`（第二个平方项在原排版中是范数平方）。此处按同一含义改写为纯文本形式。
+**Reading note:** 组合损失由交叉熵与流匹配误差的范数平方构成；已按原 PDF 恢复上下标和公式编号 (1)。
 
 ### C. 预训练
 
@@ -342,7 +369,7 @@ E_(D,τ,ω) [ H(x_{1:M}, f_θ^ℓ(o_t, ℓ)) + α ‖ ω − a_{t:t+H} − f_θ^
 
 **Original:** In the first training stage, π0.5 is trained with a broad range of robot and non-robot data, which we summarize below and illustrate in Figure 4. It is trained as a standard auto-regressive transformer, performing next-token prediction of text, object locations, and FAST encoded action tokens.
 
-**中文:** 在第一个训练阶段，π0.5 使用范围广泛的机器人数据与非机器人数据进行训练，我们将在下文概述并在图 4 中展示。模型以标准自回归 Transformer 的方式训练，对文本、物体位置以及 FAST 编码的动作 token 执行下一 token 预测。
+**中文:** 在第一个训练阶段，π0.5 使用范围广泛的机器人数据与非机器人数据进行训练，我们将在下文概述并在图 4 中展示。**模型以标准自回归 Transformer 的方式训练，对文本、物体位置以及 FAST 编码的动作 token 执行下一 token 预测。**
 
 <a id="S020"></a>
 **Source:** p.6 S020
@@ -382,9 +409,9 @@ E_(D,τ,ω) [ H(x_{1:M}, f_θ^ℓ(o_t, ℓ)) + α ‖ ω − a_{t:t+H} − f_θ^
 <a id="S025"></a>
 **Source:** p.7 S025
 
-**Original:** For all action data, we train the model to predict target joint and end-effector poses. To differentiate the two, we add '<control mode> joint/end effector <control mode>' to the text prompt. All action data is normalized to [−1, 1] using the 1% and 99% quantile of each action dimension of the individual dataset. We set the dimensionality of the action a to a fixed number to accommodate the largest action space among all the datasets. For robots with lower-dimensional configuration and action spaces, we zero-pad the action vectors.
+**Original:** For all action data, we train the model to predict target joint and end-effector poses. To differentiate the two, we add '<control mode> joint/end effector <control mode>' to the text prompt. All action data is normalized to $[-1,1]$ using the 1% and 99% quantile of each action dimension of the individual dataset. We set the dimensionality of the action $a$ to a fixed number to accommodate the largest action space among all the datasets. For robots with lower-dimensional configuration and action spaces, we zero-pad the action vectors.
 
-**中文:** 对所有动作数据，我们训练模型预测目标关节位姿与末端执行器位姿。为区分二者，我们在文本提示中加入 '<control mode> joint/end effector <control mode>'。所有动作数据都用各自数据集每个动作维度的 1% 与 99% 分位数归一化到 [−1, 1]。我们把动作 a 的维度设为固定值，以容纳所有数据集中最大的动作空间；对于构型与动作空间维度更低的机器人，动作向量用零填充。
+**中文:** 对所有动作数据，我们训练模型预测目标关节位姿与末端执行器位姿。为区分二者，我们在文本提示中加入 '<control mode> joint/end effector <control mode>'。所有动作数据都用各自数据集每个动作维度的 1% 与 99% 分位数归一化到 $[-1,1]$。我们把动作 $a$ 的维度设为固定值，以容纳所有数据集中最大的动作空间；对于构型与动作空间维度更低的机器人，动作向量用零填充。
 
 <a id="F004"></a>
 ### Fig. 4. 预训练与后训练任务的示例
@@ -396,7 +423,7 @@ E_(D,τ,ω) [ H(x_{1:M}, f_θ^ℓ(o_t, ℓ)) + α ‖ ω − a_{t:t+H} − f_θ^
 
 **Original caption:** Fig. 4: Examples from pre-training and post-training tasks. π0.5 is pre-trained on data from mobile manipulators (MM), non-mobile robots in diverse environments (ME), and cross-embodiment data collected under laboratory conditions (CE), as well as high-level subtask prediction (HL), and multi-modal web data (WD). In a post-training phase, we additionally use verbal instructions (VI), and omit the laboratory cross-embodiment data (CE) to focus the model on mobile manipulation and diverse environments. The figure displays an exemplary subset of the tasks in each category.
 
-**中文图注:** 图 4：预训练与后训练任务示例。π0.5 在以下数据上预训练：移动机械臂数据（MM）、多样环境中的固定式机器人数据（ME）、实验室条件下采集的跨本体数据（CE），以及高层子任务预测（HL）与多模态网页数据（WD）。在后训练阶段，我们额外使用语言指令（VI），并去掉实验室跨本体数据（CE），使模型聚焦于移动操作与多样环境。图中展示的是各类别任务的一个示例子集。
+**中文图注:** 图 4：预训练与后训练任务示例。π0.5 在以下数据上预训练：移动机械臂数据（MM）、多样环境中的固定式机器人数据（ME）、实验室条件下采集的跨本体数据（CE），以及高层子任务预测（HL）与多模态网页数据（WD）。**在后训练阶段，我们额外使用语言指令（VI），并去掉实验室跨本体数据（CE），使模型聚焦于移动操作与多样环境。**图中展示的是各类别任务的一个示例子集。
 
 **Reading note:** 阅读此图时按"数据源 → 任务样例"对照：MM（移动平台上的叠衣、整理抽屉、扫桌）、ME（不同家庭中的固定式机械臂：装瓶、挂裙子、叠亚麻布）、CE（实验室桌面任务：收拾柜子、烧水壶归位）、HL（从观测与高层指令预测边界框与子任务）、WD（网页图像描述与 VQA）。图中给出了后训练阶段的任务选择逻辑：CE 被去掉、VI 被加入。
 
@@ -409,9 +436,9 @@ E_(D,τ,ω) [ H(x_{1:M}, f_θ^ℓ(o_t, ℓ)) + α ‖ ω − a_{t:t+H} − f_θ^
 <a id="S026"></a>
 **Source:** p.7 S026
 
-**Original:** After pre-training the model with discrete tokens for 280k gradient steps, we perform a second stage of training that we refer to as post-training. The purpose of this stage is to both specialize the model to our use-case (mobile manipulation in homes), and to add an action expert that can produce continuous action chunks via flow matching. This stage jointly trains with next-token prediction, to preserve text prediction capabilities, and flow matching for the action expert (which is initialized with random weights at the beginning of post-training). We optimize the objective in Equation (1), with α = 10.0 for 80k additional steps. The post-training action dataset consists of the MM and ME robot data, filtered down to successful episodes that are below a fixed length threshold. We include web data (WD) to preserve the model's semantic and visual capabilities, and the slice of HL data corresponding to the multi-environment datasets. Additionally, to improve the model's ability to predict appropriate high-level subtasks, we collect verbal instruction demonstrations (VI), which are constructed by expert users providing "language demonstrations," selecting appropriate sub-task commands to command the robot to perform mobile manipulation tasks step by step. These examples are collected by "teleoperating" the robot in real time with language to perform tasks with the learned low level policy, essentially providing demonstrations of good high-level subtask outputs for a trained policy.
+**Original:** After pre-training the model with discrete tokens for 280k gradient steps, we perform a second stage of training that we refer to as post-training. The purpose of this stage is to both specialize the model to our use-case (mobile manipulation in homes), and to add an action expert that can produce continuous action chunks via flow matching. This stage jointly trains with next-token prediction, to preserve text prediction capabilities, and flow matching for the action expert (which is initialized with random weights at the beginning of post-training). We optimize the objective in Equation (1), with $\alpha=10.0$ for 80k additional steps. The post-training action dataset consists of the MM and ME robot data, filtered down to successful episodes that are below a fixed length threshold. We include web data (WD) to preserve the model's semantic and visual capabilities, and the slice of HL data corresponding to the multi-environment datasets. Additionally, to improve the model's ability to predict appropriate high-level subtasks, we collect verbal instruction demonstrations (VI), which are constructed by expert users providing "language demonstrations," selecting appropriate sub-task commands to command the robot to perform mobile manipulation tasks step by step. These examples are collected by "teleoperating" the robot in real time with language to perform tasks with the learned low level policy, essentially providing demonstrations of good high-level subtask outputs for a trained policy.
 
-**中文:** 在用离散 token 对模型预训练 28 万（280k）个梯度步之后，我们进行第二个训练阶段，称为后训练。该阶段的目的有二：一是把模型专门化到我们的应用场景（家庭中的移动操作），二是加入动作专家，使其能通过流匹配产生连续动作块。该阶段同时用下一 token 预测（以保住文本预测能力）与动作专家的流匹配来联合训练（动作专家在后训练开始时用随机权重初始化）。我们优化式 (1) 的目标，α = 10.0，再训练 8 万（80k）步。后训练的动作数据集由 MM 与 ME 机器人数据构成，并过滤为成功且时长低于固定阈值的片段。我们纳入网页数据（WD）以保持模型的语义与视觉能力，以及 HL 数据中对应多环境数据集的那一部分。此外，为了提升模型预测恰当高层子任务的能力，我们采集语言指令示范（VI）：由专家用户提供"语言示范"，选择合适的子任务指令，一步步指挥机器人完成移动操作任务。这些样本是通过用语言实时"遥操作"机器人、配合已学到的低层策略执行任务而采集的——本质上是为一个训练好的策略提供"好的高层子任务输出"的示范。
+**中文:** 在用离散 token 对模型预训练 28 万（280k）个梯度步之后，**我们进行第二个训练阶段，称为后训练。该阶段的目的有二：一是把模型专门化到我们的应用场景（家庭中的移动操作），二是加入动作专家，使其能通过流匹配产生连续动作块。**<mark>该阶段同时用下一 token 预测（以保住文本预测能力）与动作专家的流匹配来联合训练（动作专家在后训练开始时用随机权重初始化）。</mark>我们优化式 (1) 的目标，$\alpha=10.0$，再训练 8 万（80k）步。后训练的动作数据集由 MM 与 ME 机器人数据构成，并过滤为成功且时长低于固定阈值的片段。我们纳入网页数据（WD）以保持模型的语义与视觉能力，以及 HL 数据中对应多环境数据集的那一部分。此外，**为了提升模型预测恰当高层子任务的能力，我们采集语言指令示范（VI）：由专家用户提供"语言示范"，选择合适的子任务指令，一步步指挥机器人完成移动操作任务。这些样本是通过用语言实时"遥操作"机器人、配合已学到的低层策略执行任务而采集的——本质上是为一个训练好的策略提供"好的高层子任务输出"的示范。**
 
 ### E. 机器人系统细节
 
@@ -542,6 +569,7 @@ E_(D,τ,ω) [ H(x_{1:M}, f_θ^ℓ(o_t, ℓ)) + α ‖ ω − a_{t:t+H} − f_θ^
 **中文:** 第一个实验的结果见图 8。任务的平均性能总体上随训练地点数量增加而提升。为了量化最终模型（104 个地点）在多大程度上弥合了泛化差距，我们加入了一个对照模型（绿色），它直接在使用测试家庭数据上训练。该对照模型的性能与最终 104 地点模型相当，说明我们的协同训练配方确实有效地实现了广泛泛化，达到了与在测试环境上训练过的模型相近的性能。为了确认这种泛化性能确实需要完整的协同训练配方，我们又加入两个基线：它们在预训练阶段不使用任何其他协同训练任务，而是直接分别在测试环境的数据（浅绿）或来自 104 个训练地点的移动操作数据（浅黄）上训练。这两个基线的性能都显著更差——这表明，即使策略见过测试家庭的机器人数据，我们的完整训练配方所利用的其他数据源仍是获得良好泛化的必要条件。当不使用测试家庭数据时，用我们的配方进行预训练尤其重要，这从图 8 中绿色柱与浅黄柱之间的巨大差距可以看出。
 
 <a id="F008"></a>
+
 ### Fig. 8. 不同训练地点数量下的性能
 
 **Placed near:** p.9 S033
@@ -560,9 +588,10 @@ E_(D,τ,ω) [ H(x_{1:M}, f_θ^ℓ(o_t, ℓ)) + α ‖ ω − a_{t:t+H} − f_θ^
 
 **Original:** The results of the second experiment (language following) are shown in Figure 9. We report the language following rate, which measures how often the robot selects the object indicated in the language command, and success rate, which measures how often the robot successfully places that object in the correct location (either inside the drawer or inside the sink, depending on the test scenario). We separately measure performance on object categories seen in training (but new object instances) and unseen ("out-of-distribution") object categories. Details of this experiment are shown and discussed in Appendix C. Figure 9 shows that, as the number of locations in the training data increases, both language following performance and success rate improve. As expected, the performance on in-distribution objects improves more quickly than that of out-of-distribution objects. As each new environment introduces new household items, the model becomes generally more robust and starts to generalize to task categories that were not present in the training data.
 
-**中文:** 第二个实验（语言跟随）的结果见图 9。我们报告两个指标：语言跟随率（language following rate），衡量机器人选中语言指令所指物体的频率；以及成功率（success rate），衡量机器人成功把该物体放到正确位置（视测试场景，抽屉内或水槽内）的频率。我们分别统计在训练中见过的物体类别（但是新实例）与未见过的（"分布外"）物体类别上的表现。该实验的细节见附录 C。图 9 表明，随着训练数据中地点数量的增加，语言跟随表现与成功率都在提升。正如预期，分布内物体上的性能提升速度快于分布外物体。由于每个新环境都会引入新的家居物品，模型总体上变得更加鲁棒，并开始泛化到训练数据中不存在的任务类别。
+**中文:** 第二个实验（语言跟随）的结果见图 9。我们报告两个指标：**语言跟随率（language following rate），衡量机器人选中语言指令所指物体的频率**；以及**成功率（success rate），衡量机器人成功把该物体放到正确位置（视测试场景，抽屉内或水槽内）的频率**。我们分别统计在训练中见过的物体类别（但是新实例）与未见过的（"分布外"）物体类别上的表现。该实验的细节见附录 C。图 9 表明，随着训练数据中地点数量的增加，语言跟随表现与成功率都在提升。正如预期，分布内物体上的性能提升速度快于分布外物体。由于每个新环境都会引入新的家居物品，模型总体上变得更加鲁棒，并开始泛化到训练数据中不存在的任务类别。
 
 <a id="F009"></a>
+
 ### Fig. 9. 不同训练地点数量下的语言跟随
 
 **Placed near:** p.9 S034
@@ -1145,9 +1174,9 @@ Next, we outline the evaluation metrics for the bedroom cleanup tasks: putting l
 <a id="S053"></a>
 **Source:** p.19 S053
 
-**Original:** The π0.5 model builds upon π0 and adopts the PaliGemma VLM [5] as the backbone for visual-language understanding as well as an "action expert" for fast action generation. The VLM backbone takes in a sequence of images [I1t, ..., Int] and a language prompt ℓ as in π0, but also the robot's proprioceptive state qt in tokenized form and tokenized actions [64], which will be auto-regressively predicted. The action expert is a smaller transformer that takes in a sequence of noisy action tokens aτ,ωt:t+H for an action horizon of 50, i.e. H = 49, and is trained with the flow matching objective. The noisy action chunk (with action dimension d) is first projected to the transformer embedding dimension using a single linear layer. Unlike π0 that fuses the flow-matching timestep τ with the noisy action before being fed into the transformer, π0.5 uses a separate MLP for projecting τ only and then applies adaptive RMSNorm to inject the timestep information to each layer of the action expert. The timestep MLP takes in the form of swish(W2 · swish(W1 · φ(τ))), where φ : R → Rw is a sinusoidal positional encoding function [79] and W1, W2 ∈ Rw×w. The action expert outputs action tokens y1:Ha, which are then decoded into the target vector field using a final linear projection.
+**Original:** The π0.5 model builds upon π0 and adopts the PaliGemma VLM [5] as the backbone for visual-language understanding as well as an "action expert" for fast action generation. The VLM backbone takes in a sequence of images $[I_t^1,\ldots,I_t^n]$ and a language prompt $\ell$ as in π0, but also the robot's proprioceptive state $q_t$ in tokenized form and tokenized actions [64], which will be auto-regressively predicted. The action expert is a smaller transformer that takes in a sequence of noisy action tokens $a_{t:t+H}^{\tau,\omega}$ for an action horizon of 50, i.e. $H=49$, and is trained with the flow matching objective. The noisy action chunk (with action dimension $d$) is first projected to the transformer embedding dimension using a single linear layer. Unlike π0 that fuses the flow-matching timestep $\tau$ with the noisy action before being fed into the transformer, π0.5 uses a separate MLP for projecting $\tau$ only and then applies adaptive RMSNorm to inject the timestep information to each layer of the action expert. The timestep MLP takes in the form of $\operatorname{swish}\!\left(W_2\cdot\operatorname{swish}(W_1\cdot\phi(\tau))\right)$, where $\phi:\mathbb{R}\to\mathbb{R}^{w}$ is a sinusoidal positional encoding function [79] and $W_1,W_2\in\mathbb{R}^{w\times w}$. The action expert outputs action tokens $y_{1:H}^{a}$, which are then decoded into the target vector field using a final linear projection.
 
-**中文:** π0.5 模型在 π0 基础上构建，采用 PaliGemma VLM [5] 作为视觉-语言理解的主干，并配有一个用于快速动作生成的"动作专家"。与 π0 一样，VLM 主干接收一串图像 [I_1^t, ..., I_n^t] 与语言提示 ℓ，但此外还接收 token 化形式的机器人本体感受状态 q_t 以及 token 化动作 [64]，后者将以自回归方式预测。动作专家是一个更小的 Transformer：它接收一串带噪动作 token a_{τ,ω}^{t:t+H}，动作时域为 50（即 H = 49），并用流匹配目标训练。带噪动作块（动作维度为 d）先用单个线性层投影到 Transformer 的嵌入维度。与 π0 把流匹配时间步 τ 与带噪动作融合后再送入 Transformer 不同，π0.5 用一个单独的 MLP 只投影 τ，再通过自适应 RMSNorm 把时间步信息注入动作专家的每一层。该时间步 MLP 的形式为 swish(W_2 · swish(W_1 · φ(τ)))，其中 φ : R → R^w 是正弦位置编码函数 [79]，W_1, W_2 ∈ R^{w×w}。动作专家输出动作 token y_{1:H}^a，再通过最后一个线性投影解码为目标向量场。
+**中文:** π0.5 模型在 π0 基础上构建，采用 PaliGemma VLM [5] 作为视觉-语言理解的主干，并配有一个用于快速动作生成的"动作专家"。与 π0 一样，VLM 主干接收一串图像 $[I_t^1,\ldots,I_t^n]$ 与语言提示 $\ell$，但此外还接收 token 化形式的机器人本体感受状态 $q_t$ 以及 token 化动作 [64]，后者将以自回归方式预测。动作专家是一个更小的 Transformer：它接收一串带噪动作 token $a_{t:t+H}^{\tau,\omega}$，动作时域为 50（即 $H=49$），并用流匹配目标训练。带噪动作块（动作维度为 $d$）先用单个线性层投影到 Transformer 的嵌入维度。与 π0 把流匹配时间步 $\tau$ 与带噪动作融合后再送入 Transformer 不同，π0.5 用一个单独的 MLP 只投影 $\tau$，再通过自适应 RMSNorm 把时间步信息注入动作专家的每一层。该时间步 MLP 的形式为 $\operatorname{swish}\!\left(W_2\cdot\operatorname{swish}(W_1\cdot\phi(\tau))\right)$，其中 $\phi:\mathbb{R}\to\mathbb{R}^{w}$ 是正弦位置编码函数 [79]，$W_1,W_2\in\mathbb{R}^{w\times w}$。动作专家输出动作 token $y_{1:H}^{a}$，再通过最后一个线性投影解码为目标向量场。
 
 <a id="S054"></a>
 **Source:** p.19 S054
@@ -1173,9 +1202,9 @@ Next, we outline the evaluation metrics for the bedroom cleanup tasks: putting l
 <a id="S055"></a>
 **Source:** p.19 S055
 
-**Original:** We follow π0 for sampling the flow-matching timestep τ. In summary we deviate from standard uniform sampling τ ∼ U(0, 1) [50, 54] or methods emphasizing midrange timesteps [27], and instead use a time-step sampling distribution that emphasizes low time-steps [8], given by p(τ) = Beta((s−τ)/s; α = 1.5, β = 1). Timesteps above the threshold s are excluded from sampling, as they are not needed if the integration step δ satisfies δ > 1 − s. We use s = 0.999 in our experiments, which accommodates up to 1,000 integration steps (δ > 0.001).
+**Original:** We follow π0 for sampling the flow-matching timestep $\tau$. In summary we deviate from standard uniform sampling $\tau\sim U(0,1)$ [50, 54] or methods emphasizing midrange timesteps [27], and instead use a time-step sampling distribution that emphasizes low time-steps [8], given by $p(\tau)=\operatorname{Beta}\!\left(\frac{s-\tau}{s};\,\alpha=1.5,\beta=1\right)$. Timesteps above the threshold $s$ are excluded from sampling, as they are not needed if the integration step $\delta$ satisfies $\delta>1-s$. We use $s=0.999$ in our experiments, which accommodates up to 1,000 integration steps ($\delta>0.001$).
 
-**中文:** 流匹配时间步 τ 的采样沿用 π0 的做法。概括来说，我们不采用标准均匀采样 τ ∼ U(0, 1) [50, 54]，也不采用强调中间时间步的方法 [27]，而是使用一种强调低时间步的采样分布 [8]：p(τ) = Beta((s−τ)/s; α = 1.5, β = 1)。高于阈值 s 的时间步被排除在采样之外，因为当积分步长 δ 满足 δ > 1 − s 时它们并不需要被采样。我们在实验中使用 s = 0.999，可容纳最多 1,000 个积分步（δ > 0.001）。
+**中文:** 流匹配时间步 $\tau$ 的采样沿用 π0 的做法。概括来说，我们不采用标准均匀采样 $\tau\sim U(0,1)$ [50, 54]，也不采用强调中间时间步的方法 [27]，而是使用一种强调低时间步的采样分布 [8]：$p(\tau)=\operatorname{Beta}\!\left(\frac{s-\tau}{s};\,\alpha=1.5,\beta=1\right)$。高于阈值 $s$ 的时间步被排除在采样之外，因为当积分步长 $\delta$ 满足 $\delta>1-s$ 时它们并不需要被采样。我们在实验中使用 $s=0.999$，可容纳最多 1,000 个积分步（$\delta>0.001$）。
 
 <a id="S056"></a>
 **Source:** p.19 S056
@@ -1220,7 +1249,7 @@ transforms = [
 | high-level inference | 高层推理 | 由 π0.5 先输出语义子任务（如 "pick up the plate"） |
 | low-level inference | 低层推理 | 以子任务为条件，通过动作专家输出连续动作块 |
 | semantic subtask | 语义子任务 | 用语言描述的中等粒度行为，是高层与低层之间的接口 |
-| action chunk | 动作块 | 一次前向预测出的一段未来动作序列（本文 H = 49，配合 50 Hz 控制） |
+| action chunk | 动作块 | 一次前向预测出的一段未来动作序列（本文 $H=49$，配合 50 Hz 控制） |
 | action expert | 动作专家 | 处理动作 token 的较小编码器/权重组，300M 参数，负责流匹配 |
 | flow matching | 流匹配 | 通过学习向量场把噪声传输为动作分布的多步生成方法 |
 | FAST tokenizer | FAST 分词器 | 把动作块高效压缩为离散 token 的方案，用于预训练 |
@@ -1257,7 +1286,8 @@ transforms = [
 
 - 本阅读包的英文原文取自 PDF 文本层（pdftotext + pdfplumber 双栏重建），并修复了分栏排版导致的断行连字符（例如 "manip- ulation" → "manipulation"）。
 - 参考文献（92 条，p.12-17）按原文语言保留，仅修复断行连字符与 URL 中的换行空格；作者名中的 PDF 字体映射异常已做少量修正（如 "Castañeda"）。
-- 图 1-18 均从 PDF 以 300 dpi 裁切，裁切范围经程序校验：不含正文/图注文字层，仅保留图形本体（图形内部的标签文字除外）。图注以文本形式单独给出，中英并列。
+- 图 1-18 均从 PDF 以 300 dpi 彩色裁切，裁切范围经程序校验：不含正文/图注文字层，仅保留图形本体（图形内部的标签文字除外）。图注以文本形式单独给出，中英并列。
+- 数学表达式使用标准行内及独立行 LaTeX；图像索引与带噪动作的上下标已按原 PDF 核对。
 - 原文中的 π0.5 在下标排版上为 π 加下标 0.5；本文件统一写作 `π0.5`，与正文引用编号保持一致。
 - 附录 E 在 PDF 中跨两栏排版，段落顺序（架构描述 → 注意力掩码 → 时间步采样 → 图像增强 → 维度配置）按语义重建；原始版面中同一段落可能被分栏打断。
 - 表格式内容（评分标准、贡献说明、术语表）按源文本的列表/条目形式保留，未改写为连续散文。
